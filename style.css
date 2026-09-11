@@ -1,0 +1,413 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Mission CGL 2027 & Railway Tracker - "Aspirant Command Center" Theme
+   Visual Vibe: Serious Mission Control board, dark midnight blue/charcoal background,
+   focus green accents, and a subtle mission control grid pattern.
+   ========================================================================== */
+
+:root {
+  --bg-deep: #060911;
+  --bg-surface: #0b1120;
+  --bg-card: #0f172a;
+  --bg-card-hover: #162238;
+  --border-subtle: #1e293b;
+  --border-focus: #10b981;
+  --accent-green: #10b981;
+  --accent-green-bright: #22c55e;
+  --accent-amber: #f59e0b;
+  --accent-cyan: #06b6d4;
+  --accent-rose: #f43f5e;
+}
+
+/* Subtle Mission Control Grid Background */
+.mission-control-grid {
+  background-color: #060911;
+  background-image: 
+    linear-gradient(to right, rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060911;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Circular Gauge Smooth Transition */
+#home-progress-circle {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+}
+
+/* Sidebar Active Link Style */
+.nav-link.active {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #f8fafc;
+}
+
+.nav-link:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+}
+
+/* Calendar Day Cell Styles */
+.cal-day-cell {
+  aspect-ratio: 1;
+  border-radius: 0.75rem;
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  padding: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.cal-day-cell:hover {
+  border-color: #10b981;
+  transform: translateY(-2px);
+  background: #0f1a2e;
+}
+
+.cal-day-cell.today {
+  border: 2px solid #10b981;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+}
+
+.cal-day-cell.selected {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+.cal-day-cell.other-month {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.cal-day-cell.goal-met {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(11, 17, 32, 0.95));
+}
+
+.cal-day-cell.partial {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(11, 17, 32, 0.95));
+}
+
+.cal-day-cell.break-day {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(11, 17, 32, 0.95));
+}
+
+/* Treasure Chest Milestone Cards */
+.milestone-card {
+  border-radius: 1rem;
+  padding: 1.15rem;
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.milestone-card.unlocked {
+  border-color: #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), #0b1120);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.milestone-card.claimed {
+  border-color: #06b6d4;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), #0b1120);
+}
+
+.milestone-card.locked {
+  opacity: 0.6;
+}
+
+/* Modal Open & Close Utility */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 15, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  visibility: hidden;
+}
+
+.modal-overlay.active {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+
+.modal-content {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 1.25rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(16, 185, 129, 0.1);
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  transform: scale(0.95);
+  transition: transform 0.25s ease;
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1);
+}
+
+/* Pulse animation for active break timer */
+@keyframes breakPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+}
+
+.break-active-pulse {
+  animation: breakPulse 2s infinite;
+}
+
+/* Radar scan effect for weak areas */
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.radar-sweep-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.radar-sweep-effect::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(16, 185, 129, 0.05) 60deg, transparent 65deg);
+  pointer-events: none;
+  animation: radarSweep 6s linear infinite;
+}
+
+/* Drag Active State for PDF Uploader */
+.drag-active {
+  border-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  transform: scale(0.995);
+}
+
+/* Exam Countdown Ticker Box */
+.countdown-digit-box {
+  background: linear-gradient(180deg, #0b1120 0%, #060911 100%);
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.countdown-digit-box:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 25px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(16, 185, 129, 0.2);
+}
+
+/* Energy Rating Star / Bolt */
+.energy-btn {
+  transition: all 0.2s ease;
+}
+
+.energy-btn:hover {
+  transform: scale(1.15);
+}
+
+.energy-btn.selected {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.4);
+}
+
+/* Vault Formula Card */
+.vault-card {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+}
+
+.vault-card:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Revision Stage Pill */
+.rev-stage-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.rev-stage-pill.done {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.rev-stage-pill.pending {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.rev-stage-pill.due {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  animation: breakPulse 2s infinite;
+}
+
+.rev-stage-pill.overdue {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+/* ==========================================================================
+   JOURNAL & SUBJECTIVE EVALUATION STYLES
+   ========================================================================== */
+
+.journal-tick-btn {
+  transition: all 0.18s ease;
+}
+.journal-tick-btn:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #34d399;
+}
+.journal-tick-btn.selected {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
+.journal-cross-btn {
+  transition: all 0.18s ease;
+}
+.journal-cross-btn:hover {
+  border-color: rgba(244, 63, 94, 0.6);
+  color: #fb7185;
+}
+.journal-cross-btn.selected {
+  background: rgba(244, 63, 94, 0.22) !important;
+  border-color: #f43f5e !important;
+  color: #fb7185 !important;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.35);
+}
+
+.journal-overall-btn.selected-good {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.3);
+}
+.journal-overall-btn.selected-good span:first-child {
+  transform: scale(1.15);
+}
+
+.journal-overall-btn.selected-poor {
+  background: rgba(244, 63, 94, 0.18) !important;
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 18px rgba(244, 63, 94, 0.3);
+}
+.journal-overall-btn.selected-poor span:first-child {
+  transform: scale(1.15);
+}
+
+.journal-entry-card {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.journal-entry-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+/* ==========================================================================
+   MOCK TRENDS & PERFORMANCE ANALYTICS STYLES
+   ========================================================================== */
+
+.mock-entry-card {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  border-radius: 1.25rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mock-entry-card:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+.mock-filter-btn.active {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  font-weight: 700;
+}
+
+.trend-pill-up {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.trend-pill-down {
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fb7185;
+}
+
+.trend-pill-flat {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fcd34d;
+}
+
+

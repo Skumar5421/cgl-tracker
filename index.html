@@ -1,0 +1,2683 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission CGL 2027 & Railway Tracker</title>
+  <meta name="description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
+  <meta property="og:title" content="Mission CGL 2027 & Railway Tracker" />
+  <meta property="og:description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
+  <meta name="theme-color" content="#060911" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            command: {
+              deep: '#060911',
+              surface: '#0b1120',
+              card: '#0f172a',
+              border: '#1e293b',
+              accent: '#10b981',
+              accentHover: '#059669',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Mozilla PDF.js Library CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- Chart.js Library CDN for Hardware-Accelerated Trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="mission-control-grid text-slate-100 min-h-screen font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200 relative overflow-x-hidden">
+
+  <!-- Ambient Glow for Mission Control Aesthetic -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[950px] h-[340px] bg-emerald-500/5 blur-[140px] rounded-full pointer-events-none -z-10"></div>
+
+  <!-- ========================================================
+       TOP HEADER (MINIMALIST COMMAND BAR)
+       ======================================================== -->
+  <header class="sticky top-0 z-40 bg-[#060911]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 py-3 flex items-center justify-between transition-all">
+    <div class="flex items-center gap-3">
+      <!-- ☰ Hamburger Sidebar Toggle Button -->
+      <button
+        id="btn-open-sidebar"
+        class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/90 text-slate-300 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95 shadow-sm"
+        title="Open Navigation Menu"
+        aria-label="Open Sidebar Menu"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+
+      <div class="flex items-center gap-2.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div class="flex flex-col">
+          <span class="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase font-mono">MISSION CGL 2027</span>
+          <span class="text-[10px] text-slate-400 font-mono tracking-tight hidden sm:inline">RAILWAY NTPC & CENTRAL GOVT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Status Badges -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- Live Break Status Pill (Shown when on Break) -->
+      <div id="top-break-active-pill" class="hidden items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] sm:text-xs font-mono break-active-pulse">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span>BREAK ACTIVE: <strong id="top-break-active-time">00:00</strong></span>
+      </div>
+
+      <!-- 5:00 AM Cycle Countdown -->
+      <div class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] sm:text-xs text-slate-300 font-mono" title="Daily study cycle resets at 5:00 AM">
+        <span class="text-emerald-400">⏳</span>
+        <span id="top-5am-countdown">5 AM in --:--</span>
+      </div>
+
+      <!-- Streak Flame Badge -->
+      <div id="top-streak-badge" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-bold shadow-sm cursor-pointer hover:bg-emerald-500/20 transition" title="Click to view Streak & Treasure Chests">
+        <span>🔥</span>
+        <span id="top-streak-count">0 Days</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       SLIDING SIDEBAR & OVERLAY (OFF-CANVAS NAVIGATION)
+       All other features hidden here as requested
+       ======================================================== -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <aside
+    id="sidebar"
+    class="fixed top-0 left-0 bottom-0 w-80 max-w-[88vw] bg-[#0b1120] border-r border-slate-800 z-50 flex flex-col justify-between -translate-x-full transition-transform duration-300 ease-out shadow-2xl overflow-y-auto"
+  >
+    <div>
+      <!-- Sidebar Header -->
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-extrabold text-lg">
+            ⚡
+          </div>
+          <div>
+            <h2 class="text-sm font-extrabold text-white tracking-wide font-mono">COMMAND CENTER</h2>
+            <p class="text-[11px] text-slate-400">SSC CGL 2027 & Railway</p>
+          </div>
+        </div>
+
+        <button
+          id="btn-close-sidebar"
+          class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
+          title="Close Sidebar"
+          aria-label="Close Sidebar"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-4 space-y-1.5" id="sidebar-nav">
+        <!-- 1. Homepage / Aspirant Command Center -->
+        <button
+          data-nav="home"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99] active"
+        >
+          <span class="text-lg">🏠</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Aspirant Command Center</div>
+            <div class="text-[11px] text-slate-400 font-normal">Ticker, Quotes, Gauge, Breakdown, Radar & Breaks</div>
+          </div>
+        </button>
+
+        <!-- 2. Subject Stopwatches & 320-Q Maths Target -->
+        <button
+          data-nav="subjects"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">⏱️</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Subject Stopwatches</div>
+            <div class="text-[11px] text-slate-400 font-normal">Auto-Break Link & 320 Maths Qs</div>
+          </div>
+        </button>
+
+        <!-- 3. Customized Syllabus Tracker (Per Subject) -->
+        <button
+          data-nav="syllabus"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">📚</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Customized Syllabus Tracker</div>
+            <div class="text-[11px] text-slate-400 font-normal">Per-Subject Chapters, Custom Topics & Status</div>
+          </div>
+        </button>
+
+        <!-- 4. Subject-Wise Revision System (Interval Tracking) -->
+        <button
+          data-nav="revision"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">🔄</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Subject-Wise Revision System</div>
+            <div class="text-[11px] text-slate-400 font-normal">Interval Tracking (R1: 3d, R2: 7d, R3: 15d, R4: 30d)</div>
+          </div>
+        </button>
+
+        <!-- 5. Unified Gamified Habit & Calendar Tracker -->
+        <button
+          data-nav="calendar"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">🏆</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Gamified Habits & Calendar</div>
+            <div class="text-[11px] text-slate-400 font-normal">Dynamic Habits, Green Dots & Day Inspector</div>
+          </div>
+        </button>
+
+        <!-- Dedicated Independent Journal Section -->
+        <button
+          data-nav="journal"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">📓</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Daily Aspirant Journal</div>
+            <div class="text-[11px] text-slate-400 font-normal">Daily Notes, [✔]/[✘] Evaluation & Calendar Sync</div>
+          </div>
+        </button>
+
+        <!-- Dedicated Mock Score Trend Graph & Analytics Section -->
+        <button
+          data-nav="mock-trends"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">📈</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Mock Score Trends</div>
+            <div class="text-[11px] text-slate-400 font-normal">Full & Sectional Mocks, Visual Graph & Trajectory</div>
+          </div>
+        </button>
+
+        <!-- 6. Daily Energy & Focus Rating -->
+        <button
+          data-nav="energy"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">⚡</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Daily Energy & Focus Rating</div>
+            <div class="text-[11px] text-slate-400 font-normal">1-5 Energy Scale & Session Reflections</div>
+          </div>
+        </button>
+
+        <!-- 7. Formula & Short-Trick Quick Vault -->
+        <button
+          data-nav="vault"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">🗝️</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Formula & Short-Trick Vault</div>
+            <div class="text-[11px] text-slate-400 font-normal">Maths Shortcuts, Vocab & Static Facts</div>
+          </div>
+        </button>
+
+        <!-- 8. Mock PDF & Scorecard Analyzer -->
+        <button
+          data-nav="mock-pdf"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">📄</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Mock PDF Analyzer</div>
+            <div class="text-[11px] text-slate-400 font-normal">PDF Scorecards & AI Weak Areas</div>
+          </div>
+        </button>
+
+        <!-- 9. Settings, History Logs & Factory Reset -->
+        <button
+          data-nav="history"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">⚙️</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Settings & History</div>
+            <div class="text-[11px] text-slate-400 font-normal">Daily Logs, Resets & Master Factory Wipe</div>
+          </div>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-4 border-t border-slate-800 space-y-3 bg-[#060911]/60">
+      <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
+        <div class="flex items-center justify-between text-slate-400">
+          <span>Active Cycle:</span>
+          <span id="sidebar-cycle-date" class="font-mono text-emerald-400 font-semibold">--</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-400">
+          <span>Daily Target:</span>
+          <span id="sidebar-target-hours" class="font-bold text-slate-200">10.0 Hours</span>
+        </div>
+        <div class="flex items-center justify-between text-slate-400">
+          <span>Maths 320-Q:</span>
+          <span id="sidebar-maths-qs" class="font-mono text-emerald-400 font-bold">0 / 320</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <button
+          id="btn-sidebar-sound"
+          class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1.5"
+        >
+          <span>🔊 Sound ON</span>
+        </button>
+        <span class="text-[10px] text-slate-500 font-mono">v4.0 • Command Center</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================================
+       MAIN APPLICATION VIEWPORTS CONTAINER
+       ======================================================== -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- ========================================================
+         SECTION 1: HOMEPAGE ("ASPIRANT COMMAND CENTER" THEME)
+         Strictly contains ONLY:
+         a) Large, bold Exam Countdown Ticker counting down to the target exam date
+         b) Daily Motivational & Accountability Quotes placed directly below the countdown ticker
+         c) Main "Total Hours Today" circular display
+         d) Compact "Subject-wise Hours Breakdown" summary card
+         e) Dedicated "Weak Areas" card (populated from latest Mock PDF analysis)
+         f) "Break & Inactivity Tracker" card (displays today's break time, and directly below it,
+            shows yesterday's total break time for comparison, accompanied by dynamic accountability feedback)
+         ======================================================== -->
+    <section id="section-home" class="space-y-6">
+
+      <!-- a) Large, bold Exam Countdown Ticker counting down to the target exam date -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-2xl relative overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 mb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <div>
+              <span class="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">MISSION TARGET COUNTDOWN</span>
+              <h2 id="home-exam-title" class="text-base sm:text-lg font-extrabold text-white font-mono">SSC CGL 2027 TIER-1 & RAILWAY NTPC</h2>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="home-exam-target-date-label" class="text-xs font-mono text-slate-300 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+              Target: July 15, 2027
+            </span>
+            <button
+              id="btn-edit-exam-date"
+              class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition"
+              title="Change target date or exam title"
+            >
+              ✏️ Edit Target Date
+            </button>
+          </div>
+        </div>
+
+        <!-- Bold 4-Unit Digits Grid: Days, Hours, Minutes, Seconds -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center my-1">
+          <div class="countdown-digit-box p-4 rounded-2xl">
+            <div id="ticker-days" class="text-3xl sm:text-5xl font-black font-mono text-emerald-400 tracking-tight">---</div>
+            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">DAYS REMAINING</div>
+          </div>
+          <div class="countdown-digit-box p-4 rounded-2xl">
+            <div id="ticker-hours" class="text-3xl sm:text-5xl font-black font-mono text-white tracking-tight">--</div>
+            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">HOURS</div>
+          </div>
+          <div class="countdown-digit-box p-4 rounded-2xl">
+            <div id="ticker-minutes" class="text-3xl sm:text-5xl font-black font-mono text-white tracking-tight">--</div>
+            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">MINUTES</div>
+          </div>
+          <div class="countdown-digit-box p-4 rounded-2xl">
+            <div id="ticker-seconds" class="text-3xl sm:text-5xl font-black font-mono text-teal-300 tracking-tight">--</div>
+            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">SECONDS</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- b) Daily Motivational & Accountability Quotes placed directly below the countdown ticker -->
+      <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl relative overflow-hidden">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-mono">
+            <span class="text-amber-400">⚡</span>
+            <span class="text-amber-300">DAILY MOTIVATIONAL & ACCOUNTABILITY PROTOCOL</span>
+          </div>
+          <button
+            id="btn-rotate-quote"
+            class="text-[11px] text-slate-400 hover:text-emerald-400 transition flex items-center gap-1 font-mono"
+            title="Manually rotate to next quote"
+          >
+            <span>🔄 Next Quote</span>
+          </button>
+        </div>
+        <div class="space-y-2">
+          <p id="quote-text" class="text-sm sm:text-base font-medium text-slate-200 italic leading-relaxed">
+            "35 Lakh applicants registered for SSC CGL. Only 8,000 will get a 4600 Grade Pay desk in New Delhi. While you hesitate at 5:00 AM, someone in a small town library has already solved 50 trigonometry questions."
+          </p>
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px] text-slate-400 font-mono border-t border-slate-800/60">
+            <span id="quote-context" class="text-emerald-400 font-semibold">Brahma Muhurta 5 AM • 35 Lakh Aspirants Reality Check</span>
+            <span class="text-slate-500">Auto-rotates every 2 hours (setInterval)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mid Row: Main "Total Hours Today" circular display (c) & Compact "Subject-wise Hours Breakdown" (d) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- c) Main "Total Hours Today" Circular Display -->
+        <div class="lg:col-span-5 flex flex-col items-center justify-center text-center p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl relative overflow-hidden">
+          <div class="w-full flex items-center justify-between mb-2">
+            <span class="text-xs font-mono tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Total Study Today
+            </span>
+            <!-- Break Day Toggle Button -->
+            <button
+              id="home-break-day-toggle"
+              class="px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition"
+              title="Toggle planned break day to protect streak"
+            >
+              ☕ Mark Break Day
+            </button>
+          </div>
+
+          <div class="relative flex items-center justify-center my-3">
+            <!-- Circular SVG Gauge -->
+            <svg class="w-56 h-56 sm:w-64 sm:h-64 transform -rotate-90">
+              <circle
+                cx="50%"
+                cy="50%"
+                r="100"
+                class="stroke-slate-800/80"
+                stroke-width="12"
+                fill="transparent"
+              />
+              <circle
+                id="home-progress-circle"
+                cx="50%"
+                cy="50%"
+                r="100"
+                stroke="#10b981"
+                stroke-width="12"
+                stroke-linecap="round"
+                fill="transparent"
+                stroke-dasharray="628.3"
+                stroke-dashoffset="628.3"
+              />
+            </svg>
+
+            <!-- Center Gauge Stats -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center select-none">
+              <span class="text-[11px] font-mono tracking-widest text-slate-400 uppercase">TIME LOGGED</span>
+              <span id="home-total-hours-display" class="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight my-1">
+                00h 00m 00s
+              </span>
+              <div class="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+                <span>Target:</span>
+                <span id="home-target-stat" class="text-emerald-400 font-bold">10.0h</span>
+                <span id="home-target-pct" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold">(0%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Timer State Badge -->
+          <div id="home-timer-status-badge" class="mt-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+            <span>All Timers Idle • Ready to Focus</span>
+          </div>
+        </div>
+
+        <!-- d) Compact "Subject-wise Hours Breakdown" Summary Card -->
+        <div class="lg:col-span-7 flex flex-col justify-between p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div>
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                  <span>📊</span> Subject Hours Breakdown
+                </h3>
+                <p class="text-xs text-slate-400">Distribution of today's study across subjects</p>
+              </div>
+              <button
+                id="btn-goto-stopwatches"
+                class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-bold transition flex items-center gap-1.5"
+              >
+                <span>Open Stopwatches</span>
+                <span>↗</span>
+              </button>
+            </div>
+
+            <!-- Subject Progress Bars List -->
+            <div id="home-subject-breakdown-list" class="space-y-3.5">
+              <!-- Dynamically populated via renderSubjectBreakdown() -->
+            </div>
+          </div>
+
+          <!-- Bottom Summary Indicator -->
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
+            <span>5:00 AM Cycle Reset Active</span>
+            <span id="home-breakdown-total-tag" class="text-emerald-400 font-bold">Total: 0.0 hrs</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Row: Dedicated "Weak Areas" Card (e) & "Break & Inactivity Tracker" Card (f) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- e) Dedicated "Weak Areas" Card (Populated from Mock PDF Analysis) -->
+        <div class="lg:col-span-5 flex flex-col justify-between p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl radar-sweep-effect">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                  <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+                    <span>🎯</span> Weak Areas Radar
+                  </h3>
+                </div>
+                <p class="text-xs text-slate-400">Auto-populated from latest Mock Scorecard</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  id="btn-home-add-weakness"
+                  class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
+                  title="Add custom weakness topic"
+                >
+                  + Add
+                </button>
+                <button
+                  id="btn-goto-mock-trends-home"
+                  class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1"
+                  title="Open Mock Trends & Score Graph"
+                >
+                  <span>Mock Trends</span> <span>📈</span>
+                </button>
+                <button
+                  id="btn-goto-mock-analyzer"
+                  class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
+                  title="Analyze Mock PDF"
+                >
+                  Analyze Mock ↗
+                </button>
+              </div>
+            </div>
+
+            <!-- Weakness Items Container -->
+            <div id="home-weak-areas-container" class="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+              <!-- Dynamically populated via renderWeakAreas() -->
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Focus high-priority drills on these topics</span>
+            <button id="btn-reset-weak-areas" class="text-rose-400/80 hover:text-rose-300 transition text-[11px]">
+              Clear Radar
+            </button>
+          </div>
+        </div>
+
+        <!-- f) "Break & Inactivity Tracker" Card: Displays today's break time, and directly below it,
+             shows yesterday's total break time for comparison, accompanied by dynamic accountability feedback -->
+        <div class="lg:col-span-7 flex flex-col justify-between p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">☕</span>
+                <div>
+                  <h3 class="text-base font-bold text-white">Break & Inactivity Tracker</h3>
+                  <p class="text-xs text-slate-400">Auto-tracks when subject timers pause or stop</p>
+                </div>
+              </div>
+
+              <!-- Active Break Pill -->
+              <div id="home-break-state-badge" class="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                ⏸️ Study Mode Active
+              </div>
+            </div>
+
+            <!-- Two-Tier Vertical Comparison Display: Today's Break and Directly Below It Yesterday's Break -->
+            <div class="space-y-3.5">
+              <!-- Today's Total Break -->
+              <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 relative overflow-hidden">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                  <span class="font-mono uppercase tracking-wider font-bold text-amber-400">TODAY'S TOTAL BREAK TIME</span>
+                  <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                </div>
+                <div id="home-break-today-display" class="text-3xl sm:text-4xl font-extrabold font-mono text-amber-300">
+                  00h 00m 00s
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                  <span id="home-break-current-session-label">Current Break Session: 00:00</span>
+                  <span class="text-[10px] font-mono text-slate-500">Auto-synced with subject timers</span>
+                </div>
+              </div>
+
+              <!-- Directly Below: Yesterday's Total Break Time for Comparison -->
+              <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 relative overflow-hidden">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                  <span class="font-mono uppercase tracking-wider font-bold text-slate-300">YESTERDAY'S TOTAL BREAK TIME (BENCHMARK)</span>
+                  <span class="text-[10px] font-mono text-slate-500">Archived at 5:00 AM</span>
+                </div>
+                <div id="home-break-yesterday-display" class="text-2xl sm:text-3xl font-extrabold font-mono text-slate-300">
+                  00h 00m 00s
+                </div>
+                <!-- Direct Comparison Metric Badge -->
+                <div id="home-break-diff-badge" class="text-xs font-semibold mt-1 text-emerald-400">
+                  Comparing today's break against yesterday...
+                </div>
+              </div>
+
+              <!-- Dynamic Accountability Feedback Box -->
+              <div id="quote-comparison-notice" class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans flex items-start gap-2.5">
+                <span class="text-amber-400 text-base">⚠️</span>
+                <span id="quote-comparison-text">Evaluating discipline ratio against yesterday's cycle...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Controls for Break -->
+          <div class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <button
+                id="btn-manual-break-toggle"
+                class="px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold transition active:scale-95"
+              >
+                ☕ Start Manual Break
+              </button>
+              <button
+                id="btn-edit-break-time"
+                class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
+                title="Manually correct today's break duration"
+              >
+                ✏️ Edit Break Time
+              </button>
+            </div>
+
+            <button
+              id="btn-reset-break-today"
+              class="text-xs text-slate-400 hover:text-rose-400 transition"
+              title="Reset today's break counter"
+            >
+              Reset Break
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 2: SUBJECT STOPWATCHES & 320 MATHS TARGET
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-subjects" class="hidden space-y-6">
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>⏱️</span> Subject Stopwatches & Timers
+          </h2>
+          <p class="text-xs text-slate-400">
+            <strong>Auto-Switching Rule:</strong> Pausing or stopping any subject timer automatically starts the Break Timer!
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="btn-add-custom-subject"
+            class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition"
+          >
+            + Add Custom Subject
+          </button>
+          <button
+            id="btn-reset-subjects-all"
+            class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition"
+          >
+            Reset All Timers
+          </button>
+        </div>
+      </div>
+
+      <!-- 320-Question Daily Maths Mission Bar -->
+      <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🎯</span>
+              <h3 class="text-sm sm:text-base font-extrabold text-white font-mono">320-QUESTION DAILY MATHS TARGET</h3>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                Non-Negotiable
+              </span>
+            </div>
+            <p class="text-xs text-slate-400">Speed arithmetic & advanced maths for Tier 1 & Tier 2 mastery</p>
+          </div>
+
+          <!-- Quick Increment Buttons -->
+          <div class="flex items-center gap-2">
+            <button id="btn-maths-add-10" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-mono font-bold border border-slate-700 transition active:scale-95">+10 Qs</button>
+            <button id="btn-maths-add-25" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-mono font-bold border border-slate-700 transition active:scale-95">+25 Qs</button>
+            <button id="btn-maths-add-50" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-mono font-bold border border-slate-700 transition active:scale-95">+50 Qs</button>
+            <button id="btn-maths-reset" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-mono border border-slate-700 transition">Reset</button>
+          </div>
+        </div>
+
+        <!-- Progress Bar & Count -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="text-slate-400">Questions Completed Today:</span>
+            <span class="text-emerald-400 font-bold text-sm">
+              <span id="maths-qs-count">0</span> / 320 Qs (<span id="maths-qs-pct">0%</span>)
+            </span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-800/90 overflow-hidden p-0.5 border border-slate-700">
+            <div id="maths-qs-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300 w-0"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject Stopwatches Grid -->
+      <div id="subjects-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Dynamically rendered via renderSubjectCards() -->
+      </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 4: MOCK PDF ANALYZER & SCORECARD DIAGNOSTIC
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-mock-pdf" class="hidden space-y-6">
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>📄</span> Mock PDF & Scorecard Analyzer
+          </h2>
+          <p class="text-xs text-slate-400">
+            Upload PDF scorecard or paste raw mock text. AI generates diagnostic report and updates Weak Areas Radar!
+          </p>
+        </div>
+
+        <button
+          id="btn-clear-mock-results"
+          class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition"
+        >
+          Clear Mock History
+        </button>
+      </div>
+
+      <!-- Mock Type Selector & Upload Box -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left: Upload / Input Container -->
+        <div class="lg:col-span-6 space-y-4 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl">
+          <!-- Mock Type Selector -->
+          <div>
+            <label class="block text-xs font-mono uppercase text-slate-400 mb-1.5">Mock Test Category</label>
+            <select
+              id="select-mock-type"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+            >
+              <option value="Full SSC Pre Mock (100 Qs / 200 Mks)">Full SSC Pre Mock (100 Qs / 200 Marks)</option>
+              <option value="Sectional Quantitative Aptitude (25 Qs)">Sectional Quantitative Aptitude (25 Qs)</option>
+              <option value="Sectional English Comprehension (25 Qs)">Sectional English Comprehension (25 Qs)</option>
+              <option value="Sectional Reasoning & GI (25 Qs)">Sectional Reasoning & GI (25 Qs)</option>
+              <option value="Sectional General Awareness (25 Qs)">Sectional General Awareness (25 Qs)</option>
+              <option value="Railway NTPC CBT Mock">Railway NTPC CBT Full Mock</option>
+            </select>
+          </div>
+
+          <!-- Drag and Drop PDF File Upload Zone -->
+          <div>
+            <label class="block text-xs font-mono uppercase text-slate-400 mb-1.5">Mode 1: Upload PDF Scorecard (Mozilla pdf.js)</label>
+            <div
+              id="mock-pdf-dropzone"
+              class="border-2 border-dashed border-slate-700 hover:border-emerald-500/70 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-900/50 hover:bg-slate-900"
+            >
+              <input type="file" id="mock-pdf-file-input" accept="application/pdf" class="hidden" />
+              <div class="text-3xl mb-2">📑</div>
+              <p class="text-sm font-semibold text-slate-200">Click to upload or drag & drop PDF</p>
+              <p class="text-xs text-slate-400 mt-1">Testbook, Oliveboard, Supercoaching, Adda247</p>
+              <p id="mock-pdf-file-name" class="text-xs text-emerald-400 font-mono mt-2 font-bold"></p>
+            </div>
+          </div>
+
+          <!-- Mode 2: Raw Text Paste -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-mono uppercase text-slate-400">Mode 2: Or Paste Raw Scorecard / Solution Text</label>
+              <button id="btn-fill-sample-mock" class="text-[11px] text-emerald-400 hover:underline">Sample Testbook Data</button>
+            </div>
+            <textarea
+              id="mock-raw-text"
+              rows="5"
+              placeholder="Paste score, accuracy, section breakdowns, or error question text here..."
+              class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+            ></textarea>
+          </div>
+
+          <button
+            id="btn-analyze-mock"
+            class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition active:scale-[0.99] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+          >
+            <span>🤖 Run Full AI Diagnostic & Update Radar</span>
+          </button>
+        </div>
+
+        <!-- Right: Diagnostic Output Report Card -->
+        <div class="lg:col-span-6 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>📊</span> AI Diagnostic Output
+              </h3>
+              <span id="mock-status-pill" class="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">
+                Awaiting Mock Data
+              </span>
+            </div>
+
+            <!-- Analysis Output Container -->
+            <div id="mock-analysis-output" class="space-y-4 text-xs text-slate-300 leading-relaxed max-h-[480px] overflow-y-auto pr-2">
+              <div class="text-center py-12 text-slate-500 space-y-2">
+                <div class="text-4xl">🎯</div>
+                <p class="font-medium text-sm text-slate-400">No mock test analyzed yet</p>
+                <p class="text-xs">Upload your PDF scorecard or paste mock results to unlock sectional breakdowns and populate your homepage Weakness Radar.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Negative Marking Rule: -0.5 Tier 1, -1.0 Tier 2</span>
+            <span class="text-emerald-400 font-mono">Gemini AI Model Powered</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 3: CUSTOMIZED SYLLABUS TRACKER (PER SUBJECT)
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-syllabus" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>📚</span> Customized Syllabus Tracker
+          </h2>
+          <p class="text-xs text-slate-400">
+            Track subject chapters, mark completion status (Not Started / In Progress / Completed), and customize topics.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-add-syllabus-topic" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition">
+            + Add Topic
+          </button>
+          <button id="btn-reset-syllabus" class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition">
+            Reset Syllabus
+          </button>
+        </div>
+      </div>
+
+      <!-- Subject Tabs & Overview Progress -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-5">
+        <!-- Subject Selection Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800" id="syllabus-subject-tabs">
+          <button data-syl-subject="all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap">All Subjects</button>
+          <button data-syl-subject="maths" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">📐 Quantitative Aptitude</button>
+          <button data-syl-subject="english" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">📖 English Language</button>
+          <button data-syl-subject="reasoning" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🧩 Reasoning & GI</button>
+          <button data-syl-subject="ga" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🌍 General Awareness</button>
+          <button data-syl-subject="railway" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🚆 Railway NTPC Special</button>
+        </div>
+
+        <!-- Subject Progress Bar -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="text-slate-400">Selected Subject Progress:</span>
+            <span class="text-emerald-400 font-bold">
+              <span id="syllabus-completed-count">0</span> / <span id="syllabus-total-count">0</span> Topics (<span id="syllabus-pct-count">0%</span>)
+            </span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-800/90 overflow-hidden p-0.5 border border-slate-700">
+            <div id="syllabus-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300 w-0"></div>
+          </div>
+        </div>
+
+        <!-- Filter Chips: All, Completed, In Progress, Not Started -->
+        <div class="flex items-center justify-between gap-3 pt-2">
+          <div class="flex items-center gap-1.5 text-xs font-mono" id="syllabus-status-filter-chips">
+            <button data-status-filter="all" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold">All</button>
+            <button data-status-filter="Completed" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-emerald-400 text-[11px]">Completed</button>
+            <button data-status-filter="In Progress" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-amber-400 text-[11px]">In Progress</button>
+            <button data-status-filter="Not Started" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 hover:text-slate-300 text-[11px]">Not Started</button>
+          </div>
+          <span class="text-[11px] text-slate-500 font-mono hidden sm:inline">1-Click Status Toggle</span>
+        </div>
+
+        <!-- Chapters List -->
+        <div id="syllabus-chapters-list" class="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
+          <!-- Dynamically populated via renderSyllabus() -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 4: SUBJECT-WISE REVISION SYSTEM (INTERVAL TRACKING)
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-revision" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>🔄</span> Subject-Wise Revision System
+          </h2>
+          <p class="text-xs text-slate-400">
+            Multi-stage revision interval engine: <strong>R1 (Day 3)</strong>, <strong>R2 (Day 7)</strong>, <strong>R3 (Day 15)</strong>, and <strong>R4 (Day 30)</strong>.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-add-revision-topic" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition">
+            + Add Revision Topic
+          </button>
+          <button id="btn-reset-revision" class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition">
+            Reset Revision Hub
+          </button>
+        </div>
+      </div>
+
+      <!-- Revision Hub Container -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800" id="revision-subject-filter-tabs">
+          <button data-rev-filter="all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap">All Subjects</button>
+          <button data-rev-filter="Maths" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Maths</button>
+          <button data-rev-filter="English" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">English</button>
+          <button data-rev-filter="Reasoning" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Reasoning</button>
+          <button data-rev-filter="GA" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">General Awareness</button>
+        </div>
+
+        <!-- Revision Topic Cards List -->
+        <div id="revision-topics-list" class="space-y-3 max-h-[580px] overflow-y-auto pr-1">
+          <!-- Dynamically populated via renderRevisionSystem() -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 3: UNIFIED GAMIFIED HABIT & CALENDAR TRACKER (COMBINED VIEW)
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-calendar" class="hidden space-y-6">
+
+      <!-- Unified Header -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>🏆</span> Unified Gamified Habit & Calendar Tracker
+          </h2>
+          <p class="text-xs text-slate-400">
+            Daily disciplines, 30-day consistency calendar with green dots, interactive day inspection, and milestone treasure unlocks.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="btn-reset-habits-today"
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
+            title="Uncheck today's habits"
+          >
+            Uncheck Today's
+          </button>
+          <button
+            id="btn-restore-default-habits"
+            class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition"
+            title="Restore default disciplines"
+          >
+            Restore Defaults
+          </button>
+          <button
+            id="btn-reset-streaks"
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 text-xs font-mono border border-slate-700 transition"
+            title="Reset streak counter"
+          >
+            Reset Streaks
+          </button>
+        </div>
+      </div>
+
+      <!-- Part 1: Dynamic Custom Habits Manager (Today's Disciplines) -->
+      <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+              <span>📋</span> Daily Disciplines & Custom Habit Tracker
+            </h3>
+            <p class="text-[11px] text-slate-400">Toggling checkboxes directly updates your streak engine & calendar green dots in real time.</p>
+          </div>
+          <!-- Habit Progress Overview Badge -->
+          <div class="px-3 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono">
+            <span class="text-slate-400">Today: </span>
+            <span class="text-emerald-400 font-bold">
+              <span id="habits-completed-count">0</span> / <span id="habits-total-count">0</span> (<span id="habits-pct-count">0%</span>)
+            </span>
+          </div>
+        </div>
+
+        <!-- Add Custom Habit Input Bar -->
+        <form id="form-add-habit" class="flex flex-col sm:flex-row items-center gap-3">
+          <input
+            type="text"
+            id="input-new-habit-title"
+            placeholder="e.g. Current Affairs 1 Hr, The Hindu Editorial, 100 Idioms..."
+            class="w-full flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            required
+          />
+          <button
+            type="submit"
+            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5 whitespace-nowrap"
+          >
+            <span>+ Add Habit</span>
+          </button>
+        </form>
+
+        <!-- Dynamic Habits List -->
+        <div id="habits-list-container" class="space-y-2.5 pt-1">
+          <!-- Dynamically rendered via renderHabitsList() -->
+        </div>
+      </div>
+
+      <!-- Part 2: Calendar Month Grid & Interactive Day Details + Treasure Chests -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Calendar & Interactive Day Inspection Card -->
+        <div class="lg:col-span-7 space-y-6">
+
+          <!-- Calendar Month Grid Card -->
+          <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+              <button id="btn-cal-prev-month" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition">◀</button>
+              <h3 id="cal-month-year-label" class="text-base font-extrabold text-white font-mono">--</h3>
+              <button id="btn-cal-next-month" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition">▶</button>
+            </div>
+
+            <!-- Day Names Header -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-mono font-bold text-slate-500">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5">
+              <!-- Dynamically populated via renderCalendar() -->
+            </div>
+
+            <!-- Calendar Legend -->
+            <div class="flex flex-wrap items-center justify-center gap-4 pt-2 text-[11px] text-slate-400 font-mono border-t border-slate-800/80">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Goal Met</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Partial</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Break Day</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md border-2 border-cyan-400"></span> Selected Date</span>
+            </div>
+          </div>
+
+          <!-- Interactive Date Details & History Inspection Card -->
+          <div id="cal-day-detail-panel" class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+            <!-- Dynamically populated via renderDayInspectionCard() -->
+          </div>
+
+        </div>
+
+        <!-- Right Column: Treasure Chest Milestones (7, 15, 30, 45, 60 Days) -->
+        <div class="lg:col-span-5 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <span>🎁</span> Milestone Feature Unlocks
+              </h3>
+              <p class="text-xs text-slate-400">Click unlocked chest to claim features</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold font-mono">
+              🔥 <span id="cal-streak-counter-number">0</span> Days
+            </span>
+          </div>
+
+          <div id="treasure-chests-container" class="space-y-3">
+            <!-- Dynamically rendered via renderMilestones() -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SECTION: INDEPENDENT DAILY ASPIRANT JOURNAL & SELF-EVALUATION
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-journal" class="hidden space-y-6">
+
+      <!-- Section Header -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>📓</span> Daily Aspirant Journal & Self-Evaluation
+          </h2>
+          <p class="text-xs text-slate-400">
+            Write daily reflections, evaluate your execution with interactive [✔]/[✘] discipline ratings, and sync with your study calendar.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="btn-journal-today"
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition"
+            title="Jump to Today's Active Cycle"
+          >
+            ⚡ Today's Entry
+          </button>
+          <button
+            id="btn-reset-journal"
+            class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition"
+            title="Reset journal options"
+          >
+            Reset Journal
+          </button>
+        </div>
+      </div>
+
+      <!-- Calendar Sync & Date Navigator Banner -->
+      <div class="p-4 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <button
+              id="btn-journal-prev-day"
+              class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition"
+              title="Previous Day"
+            >
+              ◀
+            </button>
+            <div class="relative">
+              <input
+                type="date"
+                id="journal-date-picker"
+                class="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+              />
+            </div>
+            <button
+              id="btn-journal-next-day"
+              class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold transition"
+              title="Next Day"
+            >
+              ▶
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span id="journal-selected-date-heading" class="text-sm font-bold text-white font-mono">--</span>
+            <span id="journal-entry-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-800 text-slate-400">Draft</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono text-slate-400">Calendar Sync:</span>
+          <button
+            id="btn-journal-open-cal"
+            class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono transition flex items-center gap-1.5"
+          >
+            <span>📅 View on Calendar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Journal Editor & Evaluation Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Custom Daily Notes & Reflection Textarea -->
+        <div class="lg:col-span-7 space-y-5 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white font-mono uppercase flex items-center gap-2">
+                <span>📝</span> Custom Daily Notes & Reflections
+              </h3>
+              <p class="text-[11px] text-slate-400">Write honest self-assessments, topics conquered, mistakes & plan for tomorrow.</p>
+            </div>
+            <span id="journal-word-counter" class="text-[11px] font-mono text-slate-400">0 words</span>
+          </div>
+
+          <!-- Quick Starter Prompts / Tags -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-mono uppercase text-slate-500">Insert Tag:</span>
+            <button type="button" class="journal-tag-btn px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] text-emerald-400 font-mono transition" data-tag="🎯 Topic Conquered: ">+ Syllabus Win</button>
+            <button type="button" class="journal-tag-btn px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] text-amber-400 font-mono transition" data-tag="⚠️ Distraction / Blocker: ">+ Distraction</button>
+            <button type="button" class="journal-tag-btn px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] text-sky-400 font-mono transition" data-tag="💡 Key Formula / Short-Trick: ">+ Formula Trick</button>
+            <button type="button" class="journal-tag-btn px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] text-purple-400 font-mono transition" data-tag="🚀 Plan for Tomorrow (5 AM): ">+ Tomorrow's Goal</button>
+          </div>
+
+          <!-- The Custom Notes Textarea -->
+          <div class="space-y-2">
+            <textarea
+              id="journal-notes-input"
+              rows="10"
+              placeholder="Write your honest reflection for this study cycle... What topics were conquered? How was your accuracy in Maths 320 Qs? Did you fall into any distraction traps? What will you improve at tomorrow's 5:00 AM reset?"
+              class="w-full px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 leading-relaxed font-sans"
+            ></textarea>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                id="btn-save-journal-entry"
+                class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs font-mono transition active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+              >
+                <span>💾 Save Journal Entry</span>
+              </button>
+              <button
+                id="btn-clear-journal-notes"
+                class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-mono border border-slate-800 transition"
+                title="Clear current text"
+              >
+                Clear
+              </button>
+            </div>
+            <span id="journal-save-status-msg" class="text-[11px] font-mono text-emerald-400 transition opacity-0"></span>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Tick/Cross Evaluation Engine -->
+        <div class="lg:col-span-5 space-y-5 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl">
+          <div class="border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white font-mono uppercase flex items-center gap-2">
+              <span>⚖️</span> Subjective Daily Evaluation
+            </h3>
+            <p class="text-[11px] text-slate-400">Evaluate whether today's execution was truly good with interactive [✔] and [✘] marks.</p>
+          </div>
+
+          <!-- 1. Primary Overall Execution Dual Buttons -->
+          <div class="space-y-2">
+            <label class="block text-xs font-mono uppercase text-slate-400">
+              Overall Day's Execution Verdict:
+            </label>
+            <div class="grid grid-cols-2 gap-3" id="journal-overall-execution-buttons">
+              <button
+                type="button"
+                id="btn-journal-exec-good"
+                data-verdict="good"
+                class="journal-overall-btn p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 flex flex-col items-center justify-center gap-1 transition text-center active:scale-95"
+              >
+                <span class="text-2xl font-bold text-emerald-400">✔</span>
+                <span class="text-xs font-bold font-mono text-slate-200">Execution Good</span>
+                <span class="text-[10px] text-slate-400">High Discipline & Targets Hit</span>
+              </button>
+              <button
+                type="button"
+                id="btn-journal-exec-poor"
+                data-verdict="poor"
+                class="journal-overall-btn p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-rose-500/50 flex flex-col items-center justify-center gap-1 transition text-center active:scale-95"
+              >
+                <span class="text-2xl font-bold text-rose-400">✘</span>
+                <span class="text-xs font-bold font-mono text-slate-200">Lacked Discipline</span>
+                <span class="text-[10px] text-slate-400">Procrastinated / Off-Track</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Interactive Tick / Cross Checklist (5 Key Standards) -->
+          <div class="space-y-2.5 pt-1">
+            <label class="block text-xs font-mono uppercase text-slate-400">
+              Discipline Criteria [✔ Pass] vs [✘ Fail]:
+            </label>
+            <div class="space-y-2" id="journal-criteria-checklist">
+              <!-- Dynamically populated via renderJournal() with interactive [✔] and [✘] toggle buttons -->
+            </div>
+          </div>
+
+          <!-- Evaluation Summary Score Badge -->
+          <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between font-mono text-xs">
+            <span class="text-slate-400">Discipline Score:</span>
+            <span id="journal-eval-score-badge" class="font-bold text-emerald-400 text-sm">0 / 5 ✔ Checked</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Historical Journal Archive / Calendar-Connected Review -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>📚</span> Past Journal Entries & Historical Review
+            </h3>
+            <p class="text-xs text-slate-400">Review past reflections and subjective scores connected to your calendar dates. Click "Edit" to modify any past entry.</p>
+          </div>
+          <span id="journal-total-entries-badge" class="text-xs font-mono px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
+            0 Recorded Entries
+          </span>
+        </div>
+
+        <!-- Past Entries List -->
+        <div id="journal-entries-archive-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+          <!-- Dynamically populated via renderJournal() -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SECTION: MOCK SCORE TREND GRAPH & ANALYTICS
+         (Dedicated Hamburger Sidebar Section)
+         ======================================================== -->
+    <section id="section-mock-trends" class="hidden space-y-6">
+
+      <!-- Section Header -->
+      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-lg">📈</span>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+              Mock Score Trends & Performance Analytics
+            </h2>
+          </div>
+          <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            Dual-track visual diagnostic engine for SSC CGL 2027 & Railway NTPC tests. Monitor Full Mocks (out of 200) and Sectional Drills (out of 50) with interactive trendlines and momentum trajectory.
+          </p>
+        </div>
+
+        <!-- Quick Actions Header -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button
+            id="btn-open-log-full-mock"
+            class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-emerald-500/20"
+          >
+            <span>📝</span> + Log Full Mock (200 Mks)
+          </button>
+          <button
+            id="btn-open-log-sectional-mock"
+            class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-sky-500/20"
+          >
+            <span>🎯</span> + Log Sectional (50 Mks)
+          </button>
+          <button
+            id="btn-open-reset-mock-trends"
+            class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 text-xs font-mono border border-slate-700 transition flex items-center gap-1.5"
+            title="Reset mock trend data"
+          >
+            <span>🔄</span> Reset Mock Data
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. SUMMARY INSIGHTS KPI METRICS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        
+        <!-- KPI 1: Average Full Mock Score -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] font-mono uppercase font-semibold">
+            <span>Avg Full Mock</span>
+            <span class="text-xs">🎯</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="mock-kpi-avg-score" class="text-2xl font-black text-white font-mono">--</span>
+            <span class="text-xs text-slate-500 font-mono">/ 200</span>
+          </div>
+          <div class="mt-1 flex items-center gap-1.5 text-[11px]">
+            <span id="mock-kpi-avg-pct" class="font-bold text-emerald-400">--%</span>
+            <span class="text-slate-600">•</span>
+            <span id="mock-kpi-cutoff-gap" class="text-slate-400 text-[10px]">vs 145 safe cutoff</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-500/40 to-transparent"></div>
+        </div>
+
+        <!-- KPI 2: Highest Score (Personal Best) -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] font-mono uppercase font-semibold">
+            <span>Personal Best</span>
+            <span class="text-xs">🏆</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="mock-kpi-highest-score" class="text-2xl font-black text-amber-300 font-mono">--</span>
+            <span class="text-xs text-slate-500 font-mono">/ 200</span>
+          </div>
+          <div class="mt-1 truncate text-[11px] text-slate-400" id="mock-kpi-highest-title">
+            No mocks logged yet
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500/40 to-transparent"></div>
+        </div>
+
+        <!-- KPI 3: Recent Performance Trajectory -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] font-mono uppercase font-semibold">
+            <span>Score Trajectory</span>
+            <span class="text-xs">🚀</span>
+          </div>
+          <div class="mt-2 flex items-center gap-2">
+            <span id="mock-kpi-trajectory-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-slate-800 text-slate-300 border border-slate-700">
+              Analyzing...
+            </span>
+          </div>
+          <div class="mt-1.5 text-[11px] text-slate-400 line-clamp-1" id="mock-kpi-trajectory-detail">
+            Calculating 3-mock momentum
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-sky-500/40 to-transparent"></div>
+        </div>
+
+        <!-- KPI 4: Sectional Diagnostic (Strong vs Weak) -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] font-mono uppercase font-semibold">
+            <span>Sectional Index</span>
+            <span class="text-xs">⚖️</span>
+          </div>
+          <div class="mt-2 space-y-1 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-slate-400 uppercase font-mono">Strong:</span>
+              <span id="mock-kpi-strongest-section" class="font-bold text-emerald-400 truncate max-w-[90px]">--</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-slate-400 uppercase font-mono">Focus:</span>
+              <span id="mock-kpi-weakest-section" class="font-bold text-rose-400 truncate max-w-[90px]">--</span>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-purple-500/40 to-transparent"></div>
+        </div>
+
+        <!-- KPI 5: Total Tests Attempted -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] font-mono uppercase font-semibold">
+            <span>Total Mocks</span>
+            <span class="text-xs">📊</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="mock-kpi-total-count" class="text-2xl font-black text-white font-mono">0</span>
+            <span class="text-xs text-slate-400">Tests</span>
+          </div>
+          <div class="mt-1 text-[11px] text-slate-400" id="mock-kpi-count-split">
+            0 Full • 0 Sectional
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-500/40 to-transparent"></div>
+        </div>
+
+      </div>
+
+      <!-- 2. VISUAL TREND GRAPH CONTAINER (CHART.JS) -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        
+        <!-- Chart Controls Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div class="space-y-0.5">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>📈</span> Score Progression & Trajectory Curve
+            </h3>
+            <p class="text-xs text-slate-400">
+              Interactive historical trendline showing whether your exam readiness is ascending, stagnating, or dropping.
+            </p>
+          </div>
+
+          <!-- Chart View Switcher Tabs -->
+          <div class="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
+            <button
+              id="btn-chart-view-full"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition active:scale-95"
+            >
+              Full Mocks (/200)
+            </button>
+            <button
+              id="btn-chart-view-sectional"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition active:scale-95"
+            >
+              Sectional Breakdown
+            </button>
+            <button
+              id="btn-chart-view-accuracy"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition active:scale-95"
+            >
+              Percentile & Accuracy (%)
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas Container with Fixed Aspect Ratio -->
+        <div class="relative w-full h-72 sm:h-80 md:h-96 pt-2">
+          <canvas id="mock-trends-canvas"></canvas>
+        </div>
+
+        <!-- Dynamic Trajectory Analysis Banner -->
+        <div id="mock-chart-trajectory-banner" class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 transition">
+          <div class="flex items-center gap-3">
+            <span id="mock-trajectory-icon" class="text-2xl">📈</span>
+            <div>
+              <div id="mock-trajectory-heading" class="text-xs font-bold font-mono text-white flex items-center gap-2">
+                Upward Score Trajectory Detected
+              </div>
+              <div id="mock-trajectory-explanation" class="text-xs text-slate-300 mt-0.5">
+                Your average score has progressed from 122.5 to 148.0 over the last 4 full mocks.
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 font-mono text-[11px] shrink-0 text-slate-400">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span>Target Safe Cutoff: <strong class="text-white">145.0</strong></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3. QUICK LOG MOCK CONSOLE (INLINE FORM) -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>✍️</span> Log New Mock Test Score
+            </h3>
+            <p class="text-xs text-slate-400">Log score immediately after test analysis to keep your momentum curve updated.</p>
+          </div>
+
+          <!-- Mock Type Toggle Buttons -->
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-tab-quick-full"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition active:scale-95"
+            >
+              Full Mock (200 Mks)
+            </button>
+            <button
+              id="btn-tab-quick-sectional"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200 transition active:scale-95"
+            >
+              Sectional Mock (50 Mks)
+            </button>
+          </div>
+        </div>
+
+        <!-- FORM 1: FULL MOCK LOGGING -->
+        <form id="form-quick-log-full" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Test Title / Source *</label>
+              <input
+                type="text"
+                id="full-mock-input-title"
+                placeholder="e.g. SSC CGL Tier 1 Live Mock 5 (Testbook)"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Date Attempted *</label>
+              <input
+                type="date"
+                id="full-mock-input-date"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Total Score (Marks) *</label>
+              <input
+                type="number"
+                id="full-mock-input-score"
+                step="0.25"
+                min="-50"
+                max="200"
+                placeholder="e.g. 142.5"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-emerald-400 font-bold focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Max Marks</label>
+              <input
+                type="number"
+                id="full-mock-input-max"
+                value="200"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-400"
+                readonly
+              />
+            </div>
+          </div>
+
+          <!-- Optional Sectional Marks Breakdown -->
+          <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 font-semibold">
+              <span>Sectional Marks Breakdown (Optional - 50 Marks Each)</span>
+              <span class="text-[10px] text-slate-500">Tier-1 Pattern</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-mono text-emerald-400 uppercase mb-1">Maths (/50)</label>
+                <input
+                  type="number"
+                  id="full-mock-input-maths"
+                  step="0.5"
+                  min="-12.5"
+                  max="50"
+                  placeholder="e.g. 42.5"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-mono text-sky-400 uppercase mb-1">English (/50)</label>
+                <input
+                  type="number"
+                  id="full-mock-input-english"
+                  step="0.5"
+                  min="-12.5"
+                  max="50"
+                  placeholder="e.g. 40.0"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-mono text-purple-400 uppercase mb-1">Reasoning (/50)</label>
+                <input
+                  type="number"
+                  id="full-mock-input-reasoning"
+                  step="0.5"
+                  min="-12.5"
+                  max="50"
+                  placeholder="e.g. 45.0"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                />
+              </div>
+              <div>
+                <label class="block text-[10px] font-mono text-amber-400 uppercase mb-1">GA / GK (/50)</label>
+                <input
+                  type="number"
+                  id="full-mock-input-ga"
+                  step="0.5"
+                  min="-12.5"
+                  max="50"
+                  placeholder="e.g. 15.0"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Percentile % (Optional)</label>
+              <input
+                type="number"
+                id="full-mock-input-percentile"
+                step="0.1"
+                min="0"
+                max="100"
+                placeholder="e.g. 92.4"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Accuracy % (Optional)</label>
+              <input
+                type="number"
+                id="full-mock-input-accuracy"
+                step="0.1"
+                min="0"
+                max="100"
+                placeholder="e.g. 86.5"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+              />
+            </div>
+            <div class="sm:col-span-2 lg:col-span-1">
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Key Observation / Weak Topics</label>
+              <input
+                type="text"
+                id="full-mock-input-notes"
+                placeholder="e.g. Missed 3 geometry theorems; GS scored low"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button
+              type="submit"
+              class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow-md shadow-emerald-500/20"
+            >
+              <span>💾</span> Save Full Mock Record
+            </button>
+          </div>
+        </form>
+
+        <!-- FORM 2: SECTIONAL MOCK LOGGING (HIDDEN BY DEFAULT) -->
+        <form id="form-quick-log-sectional" class="hidden space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject *</label>
+              <select
+                id="sec-mock-input-subject"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500"
+                required
+              >
+                <option value="maths">Quantitative Aptitude (Maths)</option>
+                <option value="english">English Comprehension</option>
+                <option value="reasoning">General Intelligence & Reasoning</option>
+                <option value="ga">General Awareness (GK/GS)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Test Title / Topic *</label>
+              <input
+                type="text"
+                id="sec-mock-input-title"
+                placeholder="e.g. Geometry & Circle Theorems 25 Qs"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Date Attempted *</label>
+              <input
+                type="date"
+                id="sec-mock-input-date"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Marks Obtained (/50) *</label>
+              <input
+                type="number"
+                id="sec-mock-input-score"
+                step="0.5"
+                min="-12.5"
+                max="50"
+                placeholder="e.g. 42.5"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-sky-400 font-bold focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Time Taken (Minutes)</label>
+              <input
+                type="number"
+                id="sec-mock-input-time"
+                step="1"
+                min="1"
+                max="60"
+                placeholder="e.g. 16"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Accuracy % (Optional)</label>
+              <input
+                type="number"
+                id="sec-mock-input-accuracy"
+                step="0.5"
+                min="0"
+                max="100"
+                placeholder="e.g. 92.0"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+              />
+            </div>
+            <div>
+              <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Key Mistake / Topic to Revise</label>
+              <input
+                type="text"
+                id="sec-mock-input-notes"
+                placeholder="e.g. Revision required on incircle formula"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button
+              type="submit"
+              class="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold text-xs flex items-center gap-2 transition active:scale-95 shadow-md shadow-sky-500/20"
+            >
+              <span>💾</span> Save Sectional Mock Record
+            </button>
+          </div>
+        </form>
+
+      </div>
+
+      <!-- 4. HISTORICAL MOCK LOGS ARCHIVE & EDIT CONTROLS -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>📚</span> Logged Mock Records & Historical Scorecards
+            </h3>
+            <p class="text-xs text-slate-400">
+              Complete archive of past Full and Sectional test attempts. Click "Edit" to modify any past score.
+            </p>
+          </div>
+
+          <span id="mock-history-total-count-badge" class="text-xs font-mono px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
+            0 Tests Logged
+          </span>
+        </div>
+
+        <!-- Filter and Search Bar -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          
+          <!-- Category Filter Pills -->
+          <div class="flex flex-wrap items-center gap-1.5" id="mock-history-filter-container">
+            <button data-filter="all" class="mock-filter-btn px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+              All Mocks
+            </button>
+            <button data-filter="full" class="mock-filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:text-white">
+              Full Mocks Only
+            </button>
+            <button data-filter="maths" class="mock-filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:text-white">
+              Maths Sectional
+            </button>
+            <button data-filter="english" class="mock-filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:text-white">
+              English Sectional
+            </button>
+            <button data-filter="reasoning" class="mock-filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:text-white">
+              Reasoning Sectional
+            </button>
+            <button data-filter="ga" class="mock-filter-btn px-3 py-1 rounded-lg text-xs font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:text-white">
+              GA / GK Sectional
+            </button>
+          </div>
+
+          <!-- Search Input -->
+          <div class="w-full sm:w-64">
+            <input
+              type="text"
+              id="mock-history-search-input"
+              placeholder="Search mock by title or topic..."
+              class="w-full px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </div>
+
+        <!-- Entries Container -->
+        <div id="mock-entries-archive-list" class="space-y-3 max-h-[550px] overflow-y-auto pr-1">
+          <!-- Dynamically populated via renderMockTrends() -->
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 6: DAILY ENERGY & FOCUS RATING
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-energy" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>⚡</span> Daily Energy & Focus Rating
+          </h2>
+          <p class="text-xs text-slate-400">
+            Rate today's cognitive stamina on a 1-5 scale and log study reflections.
+          </p>
+        </div>
+        <button id="btn-reset-energy-today" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 text-xs font-mono border border-slate-700 transition">
+          Reset Today's Rating
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Rating & Reflection Input -->
+        <div class="lg:col-span-6 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-5">
+          <div>
+            <h3 class="text-sm font-bold text-white font-mono uppercase mb-2">1. Select Today's Focus & Energy Level</h3>
+            <!-- 5 Interactive Buttons -->
+            <div class="grid grid-cols-5 gap-2 text-center" id="energy-rating-buttons">
+              <button data-energy="1" class="energy-btn p-3 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center gap-1 hover:border-slate-600 transition">
+                <span class="text-2xl">⚡</span>
+                <span class="text-xs font-bold font-mono text-slate-300">1</span>
+                <span class="text-[9px] text-slate-400 leading-tight">Drained</span>
+              </button>
+              <button data-energy="2" class="energy-btn p-3 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center gap-1 hover:border-slate-600 transition">
+                <span class="text-2xl">⚡⚡</span>
+                <span class="text-xs font-bold font-mono text-slate-300">2</span>
+                <span class="text-[9px] text-slate-400 leading-tight">Low</span>
+              </button>
+              <button data-energy="3" class="energy-btn p-3 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center gap-1 hover:border-slate-600 transition">
+                <span class="text-2xl">⚡⚡⚡</span>
+                <span class="text-xs font-bold font-mono text-slate-300">3</span>
+                <span class="text-[9px] text-slate-400 leading-tight">Steady</span>
+              </button>
+              <button data-energy="4" class="energy-btn p-3 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center gap-1 hover:border-slate-600 transition">
+                <span class="text-2xl">⚡⚡⚡⚡</span>
+                <span class="text-xs font-bold font-mono text-slate-300">4</span>
+                <span class="text-[9px] text-slate-400 leading-tight">Sharp</span>
+              </button>
+              <button data-energy="5" class="energy-btn p-3 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center gap-1 hover:border-slate-600 transition">
+                <span class="text-2xl">⚡⚡⚡⚡⚡</span>
+                <span class="text-xs font-bold font-mono text-slate-300">5</span>
+                <span class="text-[9px] text-slate-400 leading-tight">Peak Flow</span>
+              </button>
+            </div>
+            <div id="energy-rating-description" class="mt-3 p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-emerald-400 text-center font-bold">
+              Select rating above
+            </div>
+          </div>
+
+          <!-- Reflection Textarea -->
+          <div class="space-y-2">
+            <label class="block text-xs font-mono uppercase text-slate-400">2. Aspirant Day Reflection & Blockers</label>
+            <textarea
+              id="input-energy-reflection"
+              rows="4"
+              placeholder="What went well today? What caused procrastination or mental fatigue? What will you conquer tomorrow at 5:00 AM?"
+              class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            ></textarea>
+            <button
+              id="btn-save-energy-rating"
+              class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition active:scale-95 shadow-lg shadow-emerald-500/20"
+            >
+              Save Today's Energy & Reflection
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Weekly Energy Log & Insights -->
+        <div class="lg:col-span-6 p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>📈</span> Recent Energy Trends & Reflections
+            </h3>
+            <span class="text-xs font-mono text-slate-400">Past 7 Days</span>
+          </div>
+          <div id="energy-history-list" class="space-y-3 max-h-[440px] overflow-y-auto pr-1">
+            <!-- Dynamically populated via renderEnergyHistory() -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================================
+         SECTION 7: FORMULA & SHORT-TRICK QUICK VAULT
+         (Hidden inside Hamburger Sidebar, opened via navigation)
+         ======================================================== -->
+    <section id="section-vault" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>🗝️</span> Formula & Short-Trick Vault
+          </h2>
+          <p class="text-xs text-slate-400">
+            Speed maths formulas, English grammar shortcuts, reasoning tricks, and static GK key facts.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-add-vault-item" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition">
+            + Add Formula / Shortcut
+          </button>
+          <button id="btn-reset-vault" class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition">
+            Reset Vault
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls & Search -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <!-- Subject Filter Pills -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1" id="vault-subject-filter-tabs">
+            <button data-vault-filter="all" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap">All Vault</button>
+            <button data-vault-filter="Maths" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">📐 Maths</button>
+            <button data-vault-filter="English" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">📖 English</button>
+            <button data-vault-filter="Reasoning" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🧩 Reasoning</button>
+            <button data-vault-filter="GA" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">🌍 General Awareness</button>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="w-full sm:w-72 relative">
+            <input
+              type="text"
+              id="input-vault-search"
+              placeholder="Search formula, shortcut, topic..."
+              class="w-full px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        </div>
+
+        <!-- Vault Cards Grid -->
+        <div id="vault-items-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+          <!-- Dynamically populated via renderVault() -->
+        </div>
+      </div>
+    </section>
+    <section id="section-history" class="hidden space-y-6">
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>⚙️</span> Settings & History Logs
+          </h2>
+          <p class="text-xs text-slate-400">
+            Edit past logs, run 7-Day AI Analytics, or perform sectional / factory resets.
+          </p>
+        </div>
+
+        <button
+          id="btn-run-ai-analytics"
+          class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center gap-1.5"
+        >
+          <span>✨ 7-Day Gemini AI Analytics</span>
+        </button>
+      </div>
+
+      <!-- Settings & Target Configuration -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 space-y-3">
+          <h3 class="text-sm font-bold text-white font-mono uppercase">🎯 Daily Target Hours Setting</h3>
+          <div class="flex items-center gap-3">
+            <input
+              type="number"
+              id="input-setting-target-hours"
+              min="1"
+              max="18"
+              step="0.5"
+              value="10.0"
+              class="w-32 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono font-bold text-sm focus:outline-none focus:border-emerald-500"
+            />
+            <button
+              id="btn-save-target-hours"
+              class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition"
+            >
+              Save Target
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">Changes the primary circular gauge target and sidebar requirement.</p>
+        </div>
+
+        <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 space-y-3">
+          <h3 class="text-sm font-bold text-white font-mono uppercase">🔄 Section Resets</h3>
+          <div class="flex flex-wrap gap-2">
+            <button id="btn-sec-reset-subjects" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">Reset Subjects</button>
+            <button id="btn-sec-reset-breaks" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">Reset Break Tracker</button>
+            <button id="btn-sec-reset-habits" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">Reset Habits</button>
+            <button id="btn-sec-reset-journal" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">Reset Journal</button>
+            <button id="btn-sec-reset-radar" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">Reset Weakness Radar</button>
+            <button id="btn-sec-reset-mock-trends" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">Reset Mock Trends</button>
+          </div>
+          <p class="text-[11px] text-slate-400">Resets specific sections without wiping your entire study history.</p>
+        </div>
+      </div>
+
+      <!-- History Log Table -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="text-base font-bold text-white">Daily Cycle History Logs (5:00 AM)</h3>
+            <p class="text-xs text-slate-400">Past days automatically archived at 5 AM. Click "Edit" to correct any entry.</p>
+          </div>
+          <span id="history-total-days-badge" class="text-xs font-mono px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
+            0 Records
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 font-mono">
+                <th class="py-2.5 px-3">Date</th>
+                <th class="py-2.5 px-3">Study Time</th>
+                <th class="py-2.5 px-3">Break Time</th>
+                <th class="py-2.5 px-3">Maths Qs</th>
+                <th class="py-2.5 px-3">Habits Done</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body" class="divide-y divide-slate-800 font-mono">
+              <!-- Dynamically populated via renderHistoryTable() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MASTER FACTORY RESET ZONE -->
+      <div class="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/50 shadow-xl space-y-3">
+        <div class="flex items-center gap-2 text-rose-400 font-bold font-mono text-sm">
+          <span>⚠️</span> DANGER ZONE: MASTER FACTORY RESET
+        </div>
+        <p class="text-xs text-slate-300">
+          This will completely wipe all local storage data, resetting subjects, timers, break logs, custom habits, mock history, and gamified streaks to the pristine default state.
+        </p>
+        <button
+          id="btn-master-factory-reset"
+          class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition active:scale-95 shadow-lg shadow-rose-600/30"
+        >
+          💥 Complete Master Factory Reset (Wipe All Data)
+        </button>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ========================================================
+       MODALS (REWARD UNLOCK, TIME EDITS, ETC.)
+       Equipped with working Close (×), backdrop-click, Escape key
+       ======================================================== -->
+
+  <!-- 1. Reward & Treasure Box Unlock Modal (BUG-FREE CLOSE FIX) -->
+  <div id="modal-reward" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 text-center space-y-4">
+      <!-- Prominent, guaranteed working Close Button -->
+      <button
+        id="btn-close-reward-x"
+        class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-bold text-lg transition shadow-md z-10"
+        title="Close (×)"
+        aria-label="Close Modal"
+      >
+        ✕
+      </button>
+
+      <div id="reward-icon-display" class="text-6xl my-2 animate-bounce">
+        🎁
+      </div>
+
+      <div class="space-y-1">
+        <span id="reward-streak-badge" class="px-3 py-1 rounded-full text-xs font-bold font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          🔥 7-DAY STREAK MILESTONE
+        </span>
+        <h3 id="reward-title-display" class="text-xl font-extrabold text-white mt-2">
+          New Feature Unlocked!
+        </h3>
+        <p id="reward-desc-display" class="text-xs text-slate-300 leading-relaxed px-2">
+          You have maintained ruthless consistency towards SSC CGL 2027!
+        </p>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex items-center justify-center gap-3">
+        <button
+          id="btn-close-reward-action"
+          class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition active:scale-95 shadow-lg shadow-emerald-500/20"
+        >
+          Awesome! Back to Mission
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Edit Subject Time Modal -->
+  <div id="modal-edit-subject-time" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-edit-subject-title" class="text-sm font-bold text-white">Edit Subject Time</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-edit-subject-time" class="space-y-3">
+        <input type="hidden" id="edit-subject-id" />
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Hours</label>
+            <input type="number" id="edit-subject-hrs" min="0" max="24" class="w-full px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-center font-mono font-bold" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Mins</label>
+            <input type="number" id="edit-subject-mins" min="0" max="59" class="w-full px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-center font-mono font-bold" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Secs</label>
+            <input type="number" id="edit-subject-secs" min="0" max="59" class="w-full px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-center font-mono font-bold" />
+          </div>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Save Time
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Edit Break Time Modal -->
+  <div id="modal-edit-break-time" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Edit Today's Break Time</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-edit-break-time" class="space-y-3">
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Hours</label>
+            <input type="number" id="edit-break-hrs" min="0" max="24" class="w-full px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-center font-mono font-bold" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Mins</label>
+            <input type="number" id="edit-break-mins" min="0" max="59" class="w-full px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-center font-mono font-bold" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Secs</label>
+            <input type="number" id="edit-break-secs" min="0" max="59" class="w-full px-2.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-center font-mono font-bold" />
+          </div>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition">
+          Save Break Time
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Edit Habit Modal -->
+  <div id="modal-edit-habit" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Edit Habit Title</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-edit-habit" class="space-y-3">
+        <input type="hidden" id="edit-habit-id" />
+        <input
+          type="text"
+          id="edit-habit-title"
+          class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:outline-none focus:border-emerald-500"
+          required
+        />
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Update Habit
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Edit History Entry Modal -->
+  <div id="modal-edit-history" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Edit Past History Log</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-edit-history" class="space-y-3">
+        <input type="hidden" id="edit-history-index" />
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Study Hours</label>
+          <input type="number" id="edit-history-study-hrs" step="0.1" min="0" max="24" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Break Hours</label>
+          <input type="number" id="edit-history-break-hrs" step="0.1" min="0" max="24" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono" />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Maths Questions Count</label>
+          <input type="number" id="edit-history-maths-qs" min="0" max="1000" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Update Log
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Add Custom Weakness Modal -->
+  <div id="modal-add-weakness" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Add Weak Area to Radar</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-add-weakness" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+          <select id="weakness-subject" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+            <option value="Maths">Mathematics (Quantitative Aptitude)</option>
+            <option value="English">English Language & Comprehension</option>
+            <option value="Reasoning">Reasoning & General Intelligence</option>
+            <option value="GA">General Awareness & Static GK</option>
+            <option value="Mock">Mock Test Strategy / Pacing</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Topic Name</label>
+          <input type="text" id="weakness-topic" placeholder="e.g. Geometry Circle Theorems, Active/Passive Voice" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Advice / Target Drill</label>
+          <input type="text" id="weakness-advice" placeholder="e.g. Solve 50 PYQs and revise formula sheet" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Add to Radar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. Add Spaced Repetition Chapter Modal -->
+  <div id="modal-add-chapter" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Add Spaced Repetition Chapter</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-add-chapter" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+          <select id="chapter-subject" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+            <option value="Maths">Mathematics</option>
+            <option value="English">English</option>
+            <option value="Reasoning">Reasoning</option>
+            <option value="GA">General Awareness</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Chapter / Topic</label>
+          <input type="text" id="chapter-title" placeholder="e.g. Number System & Remainder Theorem" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Add Chapter
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 8. Gemini AI Analytics Modal -->
+  <div id="modal-ai-analytics" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">✨</span>
+          <h3 class="text-base font-bold text-white">Gemini 7-Day Performance Analytics</h3>
+        </div>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div id="ai-analytics-content" class="text-xs text-slate-300 space-y-3 leading-relaxed max-h-[480px] overflow-y-auto pr-2">
+        <p class="text-slate-400">Loading AI mentor analysis...</p>
+      </div>
+      <div class="pt-3 border-t border-slate-800 text-right">
+        <button class="modal-close-btn px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold">
+          Close Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. Edit Exam Countdown Modal -->
+  <div id="modal-edit-countdown" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Target Exam & Countdown Date</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-edit-countdown" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Target Exam Title</label>
+          <input type="text" id="edit-countdown-title" placeholder="e.g. SSC CGL 2027 & RRB NTPC" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Target Exam Date</label>
+          <input type="date" id="edit-countdown-date" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono" required />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Update Countdown Target
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 10. Add Syllabus Topic Modal -->
+  <div id="modal-add-syllabus-topic" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Add Syllabus Topic</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-add-syllabus-topic" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+          <select id="syllabus-topic-subject" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+            <option value="maths">Quantitative Aptitude (Maths)</option>
+            <option value="english">English Language & Comprehension</option>
+            <option value="reasoning">Reasoning & General Intelligence</option>
+            <option value="ga">General Awareness & Static GK</option>
+            <option value="railway">Railway NTPC Special</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Chapter / Topic Title</label>
+          <input type="text" id="syllabus-topic-title" placeholder="e.g. Geometry Circle Theorems" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Exam Weightage</label>
+          <select id="syllabus-topic-weightage" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+            <option value="High (3-4 Qs)">High (3-4 Qs)</option>
+            <option value="Medium (1-2 Qs)">Medium (1-2 Qs)</option>
+            <option value="Low (0-1 Qs)">Low (0-1 Qs)</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Add to Syllabus
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 11. Add Revision Topic Modal -->
+  <div id="modal-add-revision-topic" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Add Revision Topic</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-add-revision-topic" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+          <select id="rev-topic-subject" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+            <option value="Maths">Mathematics</option>
+            <option value="English">English</option>
+            <option value="Reasoning">Reasoning</option>
+            <option value="GA">General Awareness</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Topic Title</label>
+          <input type="text" id="rev-topic-title" placeholder="e.g. Percentage & Profit/Loss Concept Formulas" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Initial Completion Date</label>
+          <input type="date" id="rev-topic-date" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono" required />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Track in Revision Hub
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 12. Add Vault Item Modal -->
+  <div id="modal-add-vault-item" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white">Add Formula / Short-Trick to Vault</h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-add-vault-item" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+          <select id="vault-item-subject" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+            <option value="Maths">Mathematics</option>
+            <option value="English">English</option>
+            <option value="Reasoning">Reasoning</option>
+            <option value="GA">General Awareness</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Title</label>
+          <input type="text" id="vault-item-title" placeholder="e.g. Successive Percentage Change Formula" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Formula / Key Rule</label>
+          <textarea id="vault-item-formula" rows="2" placeholder="e.g. Net % = a + b + (a * b)/100" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-emerald-300" required></textarea>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Pro-Tip / Application Note</label>
+          <input type="text" id="vault-item-tip" placeholder="e.g. Use negative sign for discount or decrease" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" />
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Save to Vault
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 13. Reset Journal Options Modal -->
+  <div id="modal-reset-journal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📓</span> Reset Journal Options
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Select which journal records you want to reset:
+      </p>
+      <div class="space-y-2 pt-1">
+        <button
+          id="btn-action-reset-journal-selected-date"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 text-left flex items-center justify-between transition"
+        >
+          <span>Clear Active Date Entry (<span id="reset-journal-date-label">Today</span>)</span>
+          <span class="text-slate-400">🗑️</span>
+        </button>
+        <button
+          id="btn-action-reset-journal-all"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold border border-rose-500/30 text-left flex items-center justify-between transition"
+        >
+          <span>Reset All Journal Entries & History</span>
+          <span class="text-rose-400">💥</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. Edit Past Mock Entry Modal -->
+  <div id="modal-edit-mock" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-lg p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>✏️</span> Edit Mock Test Record
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+
+      <form id="form-modal-edit-mock" class="space-y-3.5">
+        <input type="hidden" id="edit-mock-id" />
+        <input type="hidden" id="edit-mock-type" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Test Title *</label>
+            <input
+              type="text"
+              id="edit-mock-title"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Date Attempted *</label>
+            <input
+              type="date"
+              id="edit-mock-date"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Score Obtained *</label>
+            <input
+              type="number"
+              id="edit-mock-score"
+              step="0.25"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-emerald-400 font-bold"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Max Marks *</label>
+            <input
+              type="number"
+              id="edit-mock-max-score"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-400"
+              required
+            />
+          </div>
+          <div id="edit-mock-subject-container" class="hidden">
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+            <select
+              id="edit-mock-subject"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+            >
+              <option value="maths">Maths</option>
+              <option value="english">English</option>
+              <option value="reasoning">Reasoning</option>
+              <option value="ga">General Awareness</option>
+            </select>
+          </div>
+          <div id="edit-mock-percentile-container">
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Percentile %</label>
+            <input
+              type="number"
+              id="edit-mock-percentile"
+              step="0.1"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-white"
+            />
+          </div>
+        </div>
+
+        <!-- Sectional Marks (Shown only for Full Mocks) -->
+        <div id="edit-mock-sectional-box" class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+          <div class="text-[10px] font-mono text-slate-400 uppercase font-semibold">Sectional Marks Breakdown (Optional)</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div>
+              <label class="block text-[9px] font-mono text-emerald-400 uppercase">Maths (/50)</label>
+              <input type="number" id="edit-mock-maths" step="0.5" class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-white" />
+            </div>
+            <div>
+              <label class="block text-[9px] font-mono text-sky-400 uppercase">English (/50)</label>
+              <input type="number" id="edit-mock-english" step="0.5" class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-white" />
+            </div>
+            <div>
+              <label class="block text-[9px] font-mono text-purple-400 uppercase">Reasoning (/50)</label>
+              <input type="number" id="edit-mock-reasoning" step="0.5" class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-white" />
+            </div>
+            <div>
+              <label class="block text-[9px] font-mono text-amber-400 uppercase">GA (/50)</label>
+              <input type="number" id="edit-mock-ga" step="0.5" class="w-full px-2 py-1 rounded bg-slate-900 border border-slate-700 text-xs font-mono text-white" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Key Reflections / Topic Notes</label>
+          <textarea
+            id="edit-mock-notes"
+            rows="2"
+            class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" class="modal-close-btn px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold transition">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 15. Reset Mock Trends Options Modal -->
+  <div id="modal-reset-mock-trends" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-sm p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📈</span> Reset Mock Trend Data
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Choose which mock test scorecards and trend metrics to reset:
+      </p>
+      <div class="space-y-2 pt-1">
+        <button
+          id="btn-action-reset-sectional-mocks"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 text-left flex items-center justify-between transition"
+        >
+          <span>Clear Only Sectional Mocks</span>
+          <span class="text-slate-400">🎯</span>
+        </button>
+        <button
+          id="btn-action-reset-full-mocks"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 text-left flex items-center justify-between transition"
+        >
+          <span>Clear Only Full Mocks</span>
+          <span class="text-slate-400">📝</span>
+        </button>
+        <button
+          id="btn-action-reset-mock-defaults"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 text-xs font-semibold border border-sky-500/30 text-left flex items-center justify-between transition"
+        >
+          <span>Restore Sample Mock Records</span>
+          <span class="text-sky-400">🔄</span>
+        </button>
+        <button
+          id="btn-action-reset-all-mocks-wipe"
+          class="w-full py-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold border border-rose-500/30 text-left flex items-center justify-between transition"
+        >
+          <span>Wipe All Mock Records (Blank)</span>
+          <span class="text-rose-400">💥</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. Confirm Master Factory Reset Modal -->
+  <div id="modal-confirm-factory-reset" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 text-center space-y-4">
+      <div class="text-4xl text-rose-500 font-bold">⚠️</div>
+      <h3 class="text-base font-bold text-white">Confirm Master Factory Reset?</h3>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        This action is permanent and cannot be undone. All your subject study timers, break logs, custom habits, syllabus checklist, revision intervals, and mock analysis history will be completely erased.
+      </p>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button class="modal-close-btn px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+          Cancel (Keep My Data)
+        </button>
+        <button id="btn-confirm-factory-reset-yes" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/30">
+          Yes, Wipe Everything
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript Application Engine -->
+  <script src="./script.js"></script>
+</body>
+</html>
