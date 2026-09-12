@@ -975,8 +975,33 @@
       mockScores: getDefaultMockScores(),
       mockChartActiveTab: 'full',
       mockHistoryFilter: 'all',
-      mockSearchQuery: ''
+      mockSearchQuery: '',
+      activeSubjectId: null,
+      activeSubjectStartTime: null,
+      lastActiveTimestamp: Date.now()
     };
+  }
+
+  // Synchronize elapsed study and break time based on real wall-clock timestamps
+  // This guarantees accurate tracking even when browser tabs are backgrounded or throttled.
+  function syncElapsedActiveTime() {
+    const now = Date.now();
+    const runningSubject = state.subjects.find(s => s.isRunning);
+
+    if (runningSubject) {
+      const anchor = runningSubject.lastStartTime || state.activeSubjectStartTime || state.lastActiveTimestamp || now;
+      const elapsedMs = now - anchor;
+      if (elapsedMs >= 1000) {
+        const fullSecs = Math.floor(elapsedMs / 1000);
+        runningSubject.seconds = (runningSubject.seconds || 0) + fullSecs;
+        // Keep fractional millisecond remainder in the anchor for continuous sub-second accuracy
+        const newAnchor = anchor + (fullSecs * 1000);
+        runningSubject.lastStartTime = newAnchor;
+        state.activeSubjectStartTime = newAnchor;
+      }
+    }
+
+    state.lastActiveTimestamp = now;
   }
 
   // Load from LocalStorage
@@ -1013,6 +1038,20 @@
       if (state.soundEnabled === undefined) state.soundEnabled = true;
       if (!state.targetExamTitle) state.targetExamTitle = DEFAULT_TARGET_EXAM.title;
       if (!state.targetExamDate) state.targetExamDate = DEFAULT_TARGET_EXAM.date;
+
+      // Reconcile background elapsed time if app was restored with an active subject
+      const now = Date.now();
+      const runningSub = state.subjects.find(s => s.isRunning);
+      if (runningSub) {
+        const anchor = runningSub.lastStartTime || state.activeSubjectStartTime || state.lastActiveTimestamp || now;
+        const elapsedSecs = Math.max(0, Math.floor((now - anchor) / 1000));
+        if (elapsedSecs > 0) {
+          runningSub.seconds = (runningSub.seconds || 0) + elapsedSecs;
+        }
+        runningSub.lastStartTime = now;
+        state.activeSubjectStartTime = now;
+      }
+      state.lastActiveTimestamp = now;
     } else {
       // Brand new clean first-run: populate initial defaults & persist
       state = getInitialDefaultState();
@@ -1059,14 +1098,18 @@
   /**
    * Called whenever ANY subject timer is started.
    * Logic:
-   * 1. If Break Timer is currently running, automatically pause it!
+   * 1. Sync ongoing timers to ensure precision.
+   * 2. If Break Timer is currently running, automatically pause it!
    *    Calculate how long the break lasted, add it to today's total break hours, and save.
-   * 2. Pause any other currently running subject timer (only one runs at a time).
-   * 3. Start the target subject timer.
+   * 3. Pause any other currently running subject timer (only one runs at a time).
+   * 4. Start the target subject timer with precise timestamp anchoring.
    */
   function startSubjectTimer(subjectId) {
     const subject = state.subjects.find(s => s.id === subjectId);
     if (!subject) return;
+
+    // Synchronize any running timer prior to transition
+    syncElapsedActiveTime();
 
     // 1. Auto-pause Break Timer if running
     if (state.isBreakTimerRunning) {
@@ -1077,11 +1120,18 @@
     state.subjects.forEach(s => {
       if (s.id !== subjectId && s.isRunning) {
         s.isRunning = false;
+        s.lastStartTime = null;
       }
     });
 
-    // 3. Start target subject
+    // 3. Start target subject with timestamp anchor
+    const now = Date.now();
     subject.isRunning = true;
+    subject.lastStartTime = now;
+    state.activeSubjectId = subjectId;
+    state.activeSubjectStartTime = now;
+    state.lastActiveTimestamp = now;
+
     playChime('start');
     saveState();
     updateUI();
@@ -1090,7 +1140,7 @@
   /**
    * Called whenever ANY subject timer is paused or stopped.
    * Logic:
-   * 1. Pause/stop the subject timer.
+   * 1. Sync elapsed seconds and pause/stop the subject timer.
    * 2. Check if any subject is still running. If NO other subject is running:
    *    AUTOMATICALLY START THE BREAK/INACTIVITY TIMER IMMEDIATELY!
    */
@@ -1098,7 +1148,14 @@
     const subject = state.subjects.find(s => s.id === subjectId);
     if (!subject) return;
 
+    syncElapsedActiveTime();
+
     subject.isRunning = false;
+    subject.lastStartTime = null;
+    state.activeSubjectId = null;
+    state.activeSubjectStartTime = null;
+    state.lastActiveTimestamp = Date.now();
+
     playChime('pause');
 
     // Check if any other subject is running
@@ -1116,13 +1173,20 @@
    * Starts the Break / Inactivity Timer.
    */
   function startBreakTimer(isAuto = false) {
+    syncElapsedActiveTime();
+
     // If subjects were running, stop them
     state.subjects.forEach(s => {
       s.isRunning = false;
+      s.lastStartTime = null;
     });
+    state.activeSubjectId = null;
+    state.activeSubjectStartTime = null;
 
     state.isBreakTimerRunning = true;
     state.currentBreakSessionStart = Date.now();
+    state.lastActiveTimestamp = Date.now();
+
     playChime('break');
     saveState();
     updateUI();
@@ -1142,6 +1206,7 @@
 
     state.isBreakTimerRunning = false;
     state.currentBreakSessionStart = null;
+    state.lastActiveTimestamp = Date.now();
     saveState();
     updateUI();
   }
@@ -1688,6 +1753,11 @@
         if (s && confirm(`Reset time for ${s.name}?`)) {
           s.seconds = 0;
           s.isRunning = false;
+          s.lastStartTime = null;
+          if (state.activeSubjectId === id) {
+            state.activeSubjectId = null;
+            state.activeSubjectStartTime = null;
+          }
           saveState();
           updateUI();
         }
@@ -4236,25 +4306,53 @@ ${item.formula}
   // ==========================================================================
 
   async function extractTextFromPDF(file) {
+    // @ts-ignore
+    if (typeof window === 'undefined' || !window.pdfjsLib) {
+      throw new Error('PDF.js library is not available. Please verify your internet connection.');
+    }
+    try {
+      // @ts-ignore
+      if (window.pdfjsLib.GlobalWorkerOptions && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        // @ts-ignore
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    } catch (e) {
+      // Worker options setup fallback
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     // @ts-ignore
-    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const loadingTask = window.pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
     let fullText = '';
 
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const pageText = content.items.map(item => item.str).join(' ');
+      let pageText = '';
+      if (content && Array.isArray(content.items)) {
+        pageText = content.items
+          .map((item) => {
+            if (item && typeof item.str === 'string') return item.str;
+            if (item && item.chars && Array.isArray(item.chars)) {
+              return item.chars.map((c) => (c && c.c) || '').join('');
+            }
+            return '';
+          })
+          .filter(Boolean)
+          .join(' ');
+      }
       fullText += `\n--- PAGE ${i} ---\n` + pageText;
     }
 
-    return fullText;
+    return String(fullText || '').trim();
   }
 
   async function runMockAnalysis() {
     const outputBox = document.getElementById('mock-analysis-output');
     const statusPill = document.getElementById('mock-status-pill');
-    const mockType = document.getElementById('select-mock-type').value;
+    const selectMockType = document.getElementById('select-mock-type');
+    const mockType = selectMockType ? selectMockType.value : 'full';
     const fileInput = document.getElementById('mock-pdf-file-input');
     const rawTextArea = document.getElementById('mock-raw-text');
 
@@ -4265,12 +4363,12 @@ ${item.formula}
       const file = fileInput.files[0];
       fileName = file.name;
       if (statusPill) statusPill.textContent = 'Parsing PDF Pages...';
-      if (outputBox) outputBox.innerHTML = '<p class="text-emerald-400 animate-pulse font-mono">Parsing PDF using Mozilla pdf.js CDN...</p>';
+      if (outputBox) outputBox.innerHTML = '<p class="text-emerald-400 animate-pulse font-mono">Extracting text from PDF via PDF.js...</p>';
       try {
         textToAnalyze = await extractTextFromPDF(file);
       } catch (err) {
-        alert('Failed to parse PDF: ' + err.message);
         if (statusPill) statusPill.textContent = 'PDF Parse Error';
+        if (outputBox) outputBox.innerHTML = `<div class="p-3 rounded-xl bg-rose-950/30 border border-rose-800 text-rose-300 font-mono text-xs"><p class="font-bold">PDF Parse Error:</p><p class="text-slate-300 mt-1">${escapeHtml(err.message || String(err))}</p></div>`;
         return;
       }
     } else if (rawTextArea && rawTextArea.value.trim()) {
@@ -4280,12 +4378,23 @@ ${item.formula}
       return;
     }
 
+    if (!textToAnalyze || typeof textToAnalyze !== 'string' || !textToAnalyze.trim()) {
+      if (statusPill) statusPill.textContent = 'No Text Found';
+      if (outputBox) {
+        outputBox.innerHTML = '<div class="p-3 rounded-xl bg-amber-950/30 border border-amber-800 text-amber-300 font-mono text-xs"><p class="font-bold">⚠️ No Text Extracted</p><p class="text-slate-300 mt-1">No readable text found in this PDF (it might contain scanned images or screenshots). Please paste the mock scorecard text manually in the text area below.</p></div>';
+      }
+      return;
+    }
+
+    // Ensure textToAnalyze is a clean plain text string and limit payload size safely
+    textToAnalyze = String(textToAnalyze).trim().slice(0, 100000);
+
     if (statusPill) statusPill.textContent = 'Analyzing with Gemini AI...';
-    if (outputBox) outputBox.innerHTML = '<p class="text-emerald-400 animate-pulse font-mono">Querying Gemini AI mock performance model...</p>';
+    if (outputBox) outputBox.innerHTML = '<p class="text-emerald-400 animate-pulse font-mono">Querying Gemini AI mock diagnostic model...</p>';
 
     try {
-      let endpoint = fileName ? '/api/gemini/analyze-pdf-mock' : '/api/gemini/analyze-mock';
-      let payload = fileName ? { extractedText: textToAnalyze, pdfFileName: fileName } : { rawText: textToAnalyze, mockType };
+      const endpoint = fileName ? '/api/gemini/analyze-pdf-mock' : '/api/gemini/analyze-mock';
+      const payload = fileName ? { extractedText: textToAnalyze, pdfFileName: fileName } : { rawText: textToAnalyze, mockType };
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -4293,12 +4402,26 @@ ${item.formula}
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      // Safely read text first to prevent JSON parse crashes on HTML error responses
+      const rawResText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawResText);
+      } catch (parseErr) {
+        if (res.ok && rawResText && !rawResText.trim().startsWith('<')) {
+          data = { analysis: rawResText };
+        } else {
+          const cleanErr = rawResText.replace(/<[^>]*>?/gm, '').trim();
+          throw new Error(cleanErr.slice(0, 300) || `Server returned HTTP ${res.status}`);
+        }
+      }
+
       if (!res.ok || data.error) {
         throw new Error(data.error || 'Failed to analyze mock');
       }
 
       if (statusPill) statusPill.textContent = 'Analysis Complete';
+      playChime('reward');
 
       // Render response
       if (data.analysis) {
@@ -4329,15 +4452,26 @@ ${item.formula}
 
             <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
               <span class="text-[11px] font-bold text-white uppercase font-mono">Mentor Verdict:</span>
-              <p class="text-slate-300">${data.overallVerdict || 'Good attempt. Focus on negative marking prevention.'}</p>
+              <p class="text-slate-300">${escapeHtml(data.overallVerdict || 'Good attempt. Focus on negative marking prevention.')}</p>
             </div>
 
-            <div class="p-3 rounded-xl bg-rose-950/20 border border-rose-900/50 space-y-1.5">
-              <span class="text-[11px] font-bold text-rose-300 uppercase font-mono">Weak Areas Identified:</span>
-              <ul class="list-disc list-inside space-y-1 text-slate-300">
-                ${(data.weakPoints || []).map(wp => `<li>${wp}</li>`).join('')}
-              </ul>
-            </div>
+            ${Array.isArray(data.weakPoints) && data.weakPoints.length > 0 ? `
+              <div class="p-3 rounded-xl bg-rose-950/20 border border-rose-900/50 space-y-1.5">
+                <span class="text-[11px] font-bold text-rose-300 uppercase font-mono">Weak Areas Identified:</span>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                  ${data.weakPoints.map((wp) => `<li>${escapeHtml(wp)}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            ${Array.isArray(data.continuousRecommendations) && data.continuousRecommendations.length > 0 ? `
+              <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5">
+                <span class="text-[11px] font-bold text-sky-400 uppercase font-mono">Continuous Recommendations:</span>
+                <ul class="list-disc list-inside space-y-1 text-slate-300">
+                  ${data.continuousRecommendations.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
           </div>
         `;
       }
@@ -4348,7 +4482,7 @@ ${item.formula}
           state.weakAreas.unshift({
             id: 'mock_weak_' + Date.now() + '_' + i,
             subject: 'Mock',
-            topic: wp.slice(0, 60),
+            topic: String(wp).slice(0, 60),
             advice: 'Auto-extracted from latest Mock Diagnostic. Solve 50 PYQ drills.',
             resolved: false
           });
@@ -4361,7 +4495,16 @@ ${item.formula}
 
     } catch (err) {
       if (statusPill) statusPill.textContent = 'Analysis Failed';
-      if (outputBox) outputBox.innerHTML = `<p class="text-rose-400 font-mono text-xs">Error: ${err.message}</p>`;
+      if (outputBox) {
+        outputBox.innerHTML = `
+          <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-800 text-rose-300 font-mono text-xs space-y-1.5">
+            <div class="font-bold flex items-center gap-1.5 text-rose-400">
+              <span>⚠️</span> Mock Diagnostic Error
+            </div>
+            <p class="text-slate-300 leading-relaxed">${escapeHtml(err.message || String(err))}</p>
+          </div>
+        `;
+      }
     }
   }
 
@@ -4788,6 +4931,11 @@ ${item.formula}
           const m = parseInt(document.getElementById('edit-subject-mins').value, 10) || 0;
           const sec = parseInt(document.getElementById('edit-subject-secs').value, 10) || 0;
           s.seconds = (h * 3600) + (m * 60) + sec;
+          if (s.isRunning) {
+            const now = Date.now();
+            s.lastStartTime = now;
+            state.activeSubjectStartTime = now;
+          }
           saveState();
           closeModal('modal-edit-subject-time');
           updateUI();
@@ -4818,7 +4966,13 @@ ${item.formula}
     if (resetSubjectsAll) {
       resetSubjectsAll.addEventListener('click', () => {
         if (confirm("Reset ALL subject stopwatches to 0?")) {
-          state.subjects.forEach(s => { s.seconds = 0; s.isRunning = false; });
+          state.subjects.forEach(s => {
+            s.seconds = 0;
+            s.isRunning = false;
+            s.lastStartTime = null;
+          });
+          state.activeSubjectId = null;
+          state.activeSubjectStartTime = null;
           saveState();
           updateUI();
         }
@@ -5107,7 +5261,13 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     if (btnSecResetSubjects) {
       btnSecResetSubjects.addEventListener('click', () => {
         if (confirm("Reset today's subject timers?")) {
-          state.subjects.forEach(s => { s.seconds = 0; s.isRunning = false; });
+          state.subjects.forEach(s => {
+            s.seconds = 0;
+            s.isRunning = false;
+            s.lastStartTime = null;
+          });
+          state.activeSubjectId = null;
+          state.activeSubjectStartTime = null;
           saveState();
           updateUI();
         }
@@ -5799,13 +5959,25 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
                 totalSeconds: calculateTotalStudySeconds(),
                 breakSeconds: state.todayBreakSeconds,
                 mathsDone: state.mathsQuestionsDone,
-                subjects: state.subjects.map(s => ({ name: s.name, seconds: s.seconds }))
+                subjects: state.subjects.map((s) => ({ name: s.name, seconds: s.seconds }))
               },
-              historyData: state.history.slice(0, 14)
+              historyData: (state.history || []).slice(0, 14)
             })
           });
 
-          const data = await res.json();
+          const rawResText = await res.text();
+          let data;
+          try {
+            data = JSON.parse(rawResText);
+          } catch (parseErr) {
+            if (res.ok && rawResText && !rawResText.trim().startsWith('<')) {
+              data = { analysis: rawResText };
+            } else {
+              const cleanErr = rawResText.replace(/<[^>]*>?/gm, '').trim();
+              throw new Error(cleanErr.slice(0, 300) || `Server returned HTTP ${res.status}`);
+            }
+          }
+
           if (!res.ok || data.error) {
             throw new Error(data.error || 'Failed to fetch analytics');
           }
@@ -5815,7 +5987,7 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
           }
         } catch (err) {
           if (contentBox) {
-            contentBox.innerHTML = `<p class="text-rose-400 font-mono text-xs">Analytics Error: ${err.message}</p>`;
+            contentBox.innerHTML = `<div class="p-3 rounded-xl bg-rose-950/30 border border-rose-800 text-rose-300 font-mono text-xs"><p class="font-bold">Analytics Error:</p><p class="text-slate-300 mt-1">${escapeHtml(err.message || String(err))}</p></div>`;
           }
         }
       });
@@ -5896,15 +6068,8 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     if (globalTickInterval) clearInterval(globalTickInterval);
 
     globalTickInterval = setInterval(() => {
-      let stateChanged = false;
-
-      // 1. Tick active running subjects
-      state.subjects.forEach(s => {
-        if (s.isRunning) {
-          s.seconds = (s.seconds || 0) + 1;
-          stateChanged = true;
-        }
-      });
+      // 1. Synchronize real elapsed time via timestamps (resilient to tab throttling)
+      syncElapsedActiveTime();
 
       // 2. Check 5:00 AM cycle transition
       check5amDailyCycleReset();
@@ -5916,9 +6081,9 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
         renderSubjectCards();
       }
 
-      // Periodically persist running seconds (every 10s or when stopped)
+      // Periodically persist running seconds to localStorage
       const nowSec = Math.floor(Date.now() / 1000);
-      if (nowSec % 10 === 0 && stateChanged) {
+      if (nowSec % 5 === 0) {
         saveState();
       }
     }, 1000);
@@ -5931,13 +6096,44 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     }, 2 * 60 * 60 * 1000);
   }
 
+  // Page Visibility API & Lifecycle Synchronization
+  // Ensures 100% time accuracy when switching browser tabs, minimizing windows, or waking from sleep
+  function handleVisibilityOrFocusChange() {
+    syncElapsedActiveTime();
+    saveState();
+    check5amDailyCycleReset();
+    updateCountdownTicker();
+    renderHomeView();
+    if (!document.getElementById('section-subjects').classList.contains('hidden')) {
+      renderSubjectCards();
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    handleVisibilityOrFocusChange();
+  });
+
+  window.addEventListener('focus', () => {
+    handleVisibilityOrFocusChange();
+  });
+
+  window.addEventListener('blur', () => {
+    syncElapsedActiveTime();
+    saveState();
+  });
+
+  window.addEventListener('beforeunload', () => {
+    syncElapsedActiveTime();
+    saveState();
+  });
+
   // Application Entry Point
   function init() {
     loadState();
     bindEvents();
     updateUI();
     startTickEngine();
-    console.log('Mission CGL 2027 & Railway Tracker initialized successfully.');
+    console.log('Mission CGL 2027 & Railway Tracker initialized successfully with background active tracking.');
   }
 
   if (document.readyState === 'loading') {
