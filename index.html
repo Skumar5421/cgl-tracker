@@ -116,16 +116,16 @@
         <span id="top-streak-count">0 Days</span>
       </div>
 
-      <!-- Cloud Sync & Authentication Status Pill / Button -->
+      <!-- Data & Storage Hub Status Pill / Button -->
       <button
         id="btn-top-auth"
-        class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/40 text-[11px] sm:text-xs font-mono text-slate-200 transition shadow-sm"
-        title="Firebase Cloud Sync & Account Login"
-        aria-label="Account Login and Cloud Sync"
+        class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/30 hover:border-emerald-500/60 text-[11px] sm:text-xs font-mono text-slate-200 transition shadow-sm cursor-pointer"
+        title="Data & Storage Hub: Local Storage & Cloud Backup"
+        aria-label="Data and Storage Manager"
       >
-        <span id="auth-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-        <span id="auth-status-label" class="hidden sm:inline">Guest (Local)</span>
-        <span class="text-xs">☁️</span>
+        <span id="auth-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="auth-status-label" class="hidden sm:inline">Local (Saved)</span>
+        <span class="text-xs">💾</span>
       </button>
     </div>
   </header>
@@ -3058,18 +3058,18 @@
     </div>
   </div>
 
-  <!-- 17. User Authentication & Cloud Data Sync Modal -->
+  <!-- 17. User Data, Storage & Cloud Sync Modal -->
   <div id="modal-auth-sync" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-content w-full max-w-md p-6 space-y-4">
+    <div class="modal-content w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <!-- Modal Header -->
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-base">
-            ☁️
+            💾
           </div>
           <div>
-            <h3 class="text-sm font-extrabold text-white font-mono uppercase tracking-wide">Cloud Account & Sync</h3>
-            <p class="text-[11px] text-slate-400">Firebase Firestore Realtime Cloud Backup</p>
+            <h3 class="text-sm font-extrabold text-white font-mono uppercase tracking-wide">Data & Storage Hub</h3>
+            <p class="text-[11px] text-slate-400">Local Browser Storage & Cloud Sync</p>
           </div>
         </div>
         <button class="modal-close-btn w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
@@ -3077,11 +3077,90 @@
         </button>
       </div>
 
+      <!-- LOCAL STORAGE MODE (Primary & Active) -->
+      <div class="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3 shadow-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🛡️</span>
+            <div>
+              <h4 class="text-xs font-bold text-white font-mono uppercase tracking-wide">Local Storage Mode</h4>
+              <p class="text-[11px] text-slate-400">Continuous Auto-Save on this Device</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono font-bold flex items-center gap-1.5 shadow-sm">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>100% Active & Safe</span>
+          </span>
+        </div>
+
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          All your 320 Maths questions, subject stopwatches, break durations, syllabus checkboxes, mock test diagnoses, and journal entries are <strong>automatically saved</strong> in this browser without requiring any login or cloud permissions.
+        </p>
+
+        <!-- Quick Summary Stats -->
+        <div class="grid grid-cols-3 gap-2 pt-1 font-mono text-center">
+          <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-[10px] text-slate-400">History Days</div>
+            <div id="local-stat-days" class="text-xs font-bold text-emerald-400 mt-0.5">0</div>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-[10px] text-slate-400">Maths Solved</div>
+            <div id="local-stat-maths" class="text-xs font-bold text-sky-400 mt-0.5">0 / 320</div>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div class="text-[10px] text-slate-400">Mock Tests</div>
+            <div id="local-stat-mocks" class="text-xs font-bold text-amber-400 mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Local Backup & Restore Actions -->
+        <div class="pt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            id="btn-export-backup-json"
+            class="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-mono transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer"
+          >
+            <span>📥</span>
+            <span>Export Backup (JSON)</span>
+          </button>
+          <label
+            for="input-restore-backup"
+            class="flex-1 min-w-[140px] py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 text-xs font-bold font-mono transition flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer text-center"
+          >
+            <span>📤</span>
+            <span>Restore Backup</span>
+          </label>
+          <input type="file" id="input-restore-backup" accept=".json" class="hidden" />
+          
+          <button
+            type="button"
+            id="btn-copy-backup-json"
+            class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-mono transition flex items-center justify-center gap-1 cursor-pointer"
+            title="Copy state JSON to clipboard"
+          >
+            <span>📋</span>
+            <span>Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Divider for Cloud Sync Option -->
+      <div class="relative py-1">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-slate-800"></div>
+        </div>
+        <div class="relative flex justify-center text-xs">
+          <span class="bg-slate-900 px-3 text-[10px] font-mono text-slate-500 uppercase tracking-wider">
+            Optional: Google Cloud Sync
+          </span>
+        </div>
+      </div>
+
       <!-- Logged-in View (Shown when user is authenticated) -->
-      <div id="auth-view-logged-in" class="hidden space-y-4">
+      <div id="auth-view-logged-in" class="hidden space-y-3">
         <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-base flex items-center justify-center">
+            <div class="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-sm flex items-center justify-center">
               👤
             </div>
             <div>
@@ -3094,25 +3173,11 @@
           </span>
         </div>
 
-        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs text-slate-300">
-          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
-            <span>Last Cloud Sync:</span>
-            <span id="auth-last-sync-time" class="text-slate-200">Just now</span>
-          </div>
-          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
-            <span>Cloud Database:</span>
-            <span class="text-emerald-400 font-semibold">Firestore Active</span>
-          </div>
-          <p class="text-[11px] text-slate-400 pt-1">
-            Your study stopwatches, break durations, 320 Maths questions, syllabus progress, mock test diagnostics, and journal entries automatically synchronize across any device when logged in.
-          </p>
-        </div>
-
         <div class="flex items-center gap-2 pt-1">
           <button
             type="button"
             id="btn-auth-manual-sync"
-            class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-mono transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+            class="flex-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold font-mono transition flex items-center justify-center gap-1.5 border border-slate-700"
           >
             <span>🔄</span>
             <span>Sync Cloud Now</span>
@@ -3120,38 +3185,26 @@
           <button
             type="button"
             id="btn-auth-logout"
-            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 border border-slate-700 text-slate-300 text-xs font-bold font-mono transition"
+            class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 border border-slate-700 text-slate-300 text-xs font-bold font-mono transition"
           >
             Log Out
           </button>
         </div>
       </div>
 
-      <!-- Logged-out / Auth Form View (Google Sign In) -->
-      <div id="auth-view-logged-out" class="space-y-4">
+      <!-- Logged-out / Optional Google Sign In View -->
+      <div id="auth-view-logged-out" class="space-y-3">
         <!-- Auth Error Alert Box -->
         <div id="auth-error-alert" class="hidden p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2">
           <span class="text-rose-400 font-bold">⚠️</span>
           <span id="auth-error-message" class="leading-relaxed">Error message</span>
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-center space-y-3">
-          <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-sky-500/20 border border-emerald-500/30 flex items-center justify-center text-xl shadow-inner">
-            ⚡
-          </div>
-          <div>
-            <h4 class="text-xs font-bold text-white font-mono uppercase tracking-wide">Instant One-Click Authentication</h4>
-            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
-              Authenticate securely with your Google account to automatically backup stopwatches, 320 Maths questions, syllabus checklists, mock trends, and daily journals.
-            </p>
-          </div>
-        </div>
-
         <!-- Google Sign In Button -->
         <button
           type="button"
           id="btn-google-signin"
-          class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold font-sans transition-all duration-200 shadow-lg shadow-white/5 hover:shadow-white/10 flex items-center justify-center gap-3 active:scale-[0.99] border border-slate-200 cursor-pointer"
+          class="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold font-sans transition-all duration-200 shadow-sm hover:shadow flex items-center justify-center gap-3 active:scale-[0.99] border border-slate-200 cursor-pointer"
         >
           <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -3160,14 +3213,22 @@
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
           <span id="google-signin-spinner" class="hidden w-3.5 h-3.5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></span>
-          <span id="google-signin-label">Sign in with Google</span>
+          <span id="google-signin-label">Sign in with Google (Cross-Device Sync)</span>
         </button>
 
-        <div class="pt-2 border-t border-slate-800/80 text-center">
-          <p class="text-[10px] text-slate-400 leading-relaxed font-mono">
-            🔒 Secured via Firebase Google Authentication & Firestore ABAC Rules.
-          </p>
-        </div>
+        <p class="text-[10px] text-slate-400 text-center font-mono">
+          Note: Local storage is already active. Google Sign-In is only needed for cross-device cloud sync.
+        </p>
+      </div>
+
+      <!-- Close / Continue Button -->
+      <div class="pt-2 border-t border-slate-800">
+        <button
+          type="button"
+          class="modal-close-btn w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold font-mono transition cursor-pointer"
+        >
+          ✓ Continue Studying in Local Mode
+        </button>
       </div>
     </div>
   </div>

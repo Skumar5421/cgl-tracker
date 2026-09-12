@@ -7737,10 +7737,29 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       });
     }
 
-    // --- CLOUD AUTHENTICATION & FIRESTORE SYNC MODAL BINDINGS ---
+    // --- DATA & STORAGE HUB / CLOUD AUTHENTICATION MODAL BINDINGS ---
+    function updateLocalStorageStatsUI() {
+      const elDays = document.getElementById('local-stat-days');
+      const elMaths = document.getElementById('local-stat-maths');
+      const elMocks = document.getElementById('local-stat-mocks');
+      if (elDays) {
+        const countDays = Object.keys(state.history || {}).length;
+        elDays.textContent = `${countDays} Day${countDays === 1 ? '' : 's'}`;
+      }
+      if (elMaths) {
+        const solved = state.maths320 ? (state.maths320.completedCount || 0) : 0;
+        elMaths.textContent = `${solved} / 320`;
+      }
+      if (elMocks) {
+        const countMocks = Array.isArray(state.mockRecords) ? state.mockRecords.length : 0;
+        elMocks.textContent = `${countMocks} Mock${countMocks === 1 ? '' : 's'}`;
+      }
+    }
+
     const btnTopAuth = document.getElementById('btn-top-auth');
     if (btnTopAuth) {
       btnTopAuth.addEventListener('click', () => {
+        updateLocalStorageStatsUI();
         openModal('modal-auth-sync');
       });
     }
@@ -7749,7 +7768,95 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     if (btnSidebarCloudSync) {
       btnSidebarCloudSync.addEventListener('click', () => {
         closeSidebar();
+        updateLocalStorageStatsUI();
         openModal('modal-auth-sync');
+      });
+    }
+
+    // Local Storage Backup Export (Download JSON)
+    const btnExportBackupJson = document.getElementById('btn-export-backup-json');
+    if (btnExportBackupJson) {
+      btnExportBackupJson.addEventListener('click', () => {
+        try {
+          const backupData = {
+            exportDate: new Date().toISOString(),
+            version: 2,
+            appName: 'Mission SSC CGL 2027 & Railway Tracker',
+            state: state
+          };
+          const jsonStr = JSON.stringify(backupData, null, 2);
+          const blob = new Blob([jsonStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const dateStr = typeof getStudyCycleDate === 'function' ? getStudyCycleDate() : new Date().toISOString().split('T')[0];
+          a.href = url;
+          a.download = `cgl-tracker-backup-${dateStr}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showAuthToast('Backup JSON downloaded! All your timers, 320 Maths questions & mocks are saved.');
+        } catch (err) {
+          console.error('Export backup error:', err);
+          showAuthToast('Failed to generate backup file.');
+        }
+      });
+    }
+
+    // Local Storage Backup Import / Restore (Load JSON File)
+    const inputRestoreBackup = document.getElementById('input-restore-backup');
+    if (inputRestoreBackup) {
+      inputRestoreBackup.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const parsed = JSON.parse(event.target.result);
+            const loadedState = parsed.state || parsed;
+            if (loadedState && typeof loadedState === 'object') {
+              state = Object.assign({}, loadedState);
+              saveState(true);
+              // Re-render core views
+              if (typeof renderTimerDashboard === 'function') renderTimerDashboard();
+              if (typeof renderSubjectGrid === 'function') renderSubjectGrid();
+              if (typeof renderHabitTracker === 'function') renderHabitTracker();
+              if (typeof renderMaths320 === 'function') renderMaths320();
+              if (typeof renderDailyTargetsHub === 'function') renderDailyTargetsHub();
+              if (typeof renderJournal === 'function') renderJournal();
+              if (typeof renderMockAnalytics === 'function') renderMockAnalytics();
+              updateLocalStorageStatsUI();
+              showAuthToast('Study records restored successfully from backup!');
+              closeModal('modal-auth-sync');
+            } else {
+              showAuthToast('Invalid backup file format.');
+            }
+          } catch (err) {
+            console.error('Import parse error:', err);
+            showAuthToast('Failed to read backup JSON file.');
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      });
+    }
+
+    // Copy Backup JSON to Clipboard
+    const btnCopyBackupJson = document.getElementById('btn-copy-backup-json');
+    if (btnCopyBackupJson) {
+      btnCopyBackupJson.addEventListener('click', async () => {
+        try {
+          const backupData = {
+            exportDate: new Date().toISOString(),
+            version: 2,
+            appName: 'Mission SSC CGL 2027 & Railway Tracker',
+            state: state
+          };
+          await navigator.clipboard.writeText(JSON.stringify(backupData, null, 2));
+          showAuthToast('Backup JSON copied to clipboard!');
+        } catch (_err) {
+          showAuthToast('Failed to copy to clipboard.');
+        }
       });
     }
 
@@ -7785,7 +7892,25 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
         } catch (err) {
           console.error('Google Sign-In Error:', err);
           let msg = 'Google authentication failed. Please try again.';
-          if (err.code === 'auth/popup-closed-by-user') {
+          let isHtml = false;
+          if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('auth/unauthorized-domain'))) {
+            const currentHost = window.location.hostname;
+            isHtml = true;
+            msg = `<div>
+              <p class="font-bold text-rose-200">Domain Authorization Required for OAuth:</p>
+              <p class="text-[11px] text-slate-300 mt-1">
+                Your domain <code class="bg-slate-900/90 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">${escapeHtml(currentHost)}</code> must be added to Firebase Authorized Domains.
+              </p>
+              <div class="mt-2 text-[11px] text-slate-300 space-y-1 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                <p class="font-semibold text-emerald-400">Quick 30-second fix:</p>
+                <ol class="list-decimal list-inside space-y-0.5 text-slate-400 font-sans">
+                  <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" class="text-white underline font-semibold">Firebase Console</a> &gt; <strong>Authentication</strong></li>
+                  <li>Click on the <strong>Settings</strong> tab &gt; <strong>Authorized domains</strong></li>
+                  <li>Click <strong>Add domain</strong> &gt; paste <code class="text-amber-300 font-mono font-bold">${escapeHtml(currentHost)}</code> (or <code class="text-amber-300 font-mono">vercel.app</code>)</li>
+                </ol>
+              </div>
+            </div>`;
+          } else if (err.code === 'auth/popup-closed-by-user') {
             msg = 'Google Sign-in window was closed before completing. Please try again.';
           } else if (err.code === 'auth/popup-blocked') {
             msg = 'Sign-in popup was blocked by browser. Please allow popups for this page.';
@@ -7794,7 +7919,7 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
           } else if (err.message) {
             msg = err.message;
           }
-          showAuthError(msg);
+          showAuthError(msg, isHtml);
         } finally {
           if (spinner) spinner.classList.add('hidden');
           if (label) label.textContent = 'Sign in with Google';
@@ -8039,25 +8164,29 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       if (authUserEmail) authUserEmail.textContent = user.email;
     } else {
       if (authStatusDot) {
-        authStatusDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        authStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
       }
       if (authStatusLabel) {
-        authStatusLabel.textContent = 'Guest (Local)';
-        authStatusLabel.title = 'Click to login and sync data';
+        authStatusLabel.textContent = 'Local (Saved)';
+        authStatusLabel.title = 'Local Storage Mode: All study progress is auto-saved on this device';
       }
       if (sidebarAuthStatusText) {
-        sidebarAuthStatusText.textContent = 'Cloud Sync (Guest)';
+        sidebarAuthStatusText.textContent = 'Data Hub (Local Saved)';
       }
       if (authViewLoggedIn) authViewLoggedIn.classList.add('hidden');
       if (authViewLoggedOut) authViewLoggedOut.classList.remove('hidden');
     }
   }
 
-  function showAuthError(msg) {
+  function showAuthError(msg, isHtml = false) {
     const alertBox = document.getElementById('auth-error-alert');
     const msgEl = document.getElementById('auth-error-message');
     if (alertBox && msgEl) {
-      msgEl.textContent = msg;
+      if (isHtml) {
+        msgEl.innerHTML = msg;
+      } else {
+        msgEl.textContent = msg;
+      }
       alertBox.classList.remove('hidden');
     }
   }
