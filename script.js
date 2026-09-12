@@ -937,67 +937,99 @@
     ];
   }
 
+  // Default Initial State Factory for Fresh First-Runs
+  function getInitialDefaultState() {
+    return {
+      activeCycleDate: getStudyCycleDate(),
+      targetHours: 10.0,
+      isBreakDay: false,
+      soundEnabled: true,
+      targetExamTitle: DEFAULT_TARGET_EXAM.title,
+      targetExamDate: DEFAULT_TARGET_EXAM.date,
+      subjects: JSON.parse(JSON.stringify(DEFAULT_SUBJECTS)),
+      todayBreakSeconds: 0,
+      yesterdayBreakSeconds: 4500,
+      isBreakTimerRunning: false,
+      currentBreakSessionStart: null,
+      mathsQuestionsDone: 0,
+      habits: JSON.parse(JSON.stringify(DEFAULT_HABITS)),
+      weakAreas: JSON.parse(JSON.stringify(DEFAULT_WEAK_AREAS)),
+      syllabus: JSON.parse(JSON.stringify(DEFAULT_SYLLABUS)),
+      activeSyllabusSubject: 'all',
+      activeSyllabusStatus: 'all',
+      revisionTopics: JSON.parse(JSON.stringify(DEFAULT_REVISION_TOPICS)),
+      activeRevisionFilter: 'all',
+      energyRatingToday: null,
+      energyHistory: getDefaultEnergyHistory(),
+      vaultItems: JSON.parse(JSON.stringify(DEFAULT_VAULT_ITEMS)),
+      activeVaultFilter: 'all',
+      vaultSearchQuery: '',
+      spacedRepChapters: getDefaultChapters(),
+      consecutiveStreak: 6,
+      claimedMilestones: [],
+      history: getDefaultHistory(),
+      mockAnalysisHistory: [],
+      selectedCalendarDate: getStudyCycleDate(),
+      journalEntries: getDefaultJournalEntries(),
+      selectedJournalDate: getStudyCycleDate(),
+      mockScores: getDefaultMockScores(),
+      mockChartActiveTab: 'full',
+      mockHistoryFilter: 'all',
+      mockSearchQuery: ''
+    };
+  }
+
   // Load from LocalStorage
   function loadState() {
+    let saved = null;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const saved = JSON.parse(raw);
-        state = Object.assign(state, saved);
+        saved = JSON.parse(raw);
       }
     } catch (e) {
       console.error('Error loading state from localStorage:', e);
     }
 
-    // Seed historical data if empty to showcase daily breakdown & green dots
-    if (!state.history || state.history.length === 0) {
-      state.history = getDefaultHistory();
-    }
+    if (saved && typeof saved === 'object') {
+      // User data exists in localStorage: NEVER overwrite user data or empty lists with defaults!
+      state = Object.assign({}, saved);
 
-    if (!state.consecutiveStreak || state.consecutiveStreak === 0) {
-      state.consecutiveStreak = 6;
-    }
-
-    if (!state.yesterdayBreakSeconds && state.history && state.history.length > 0) {
-      state.yesterdayBreakSeconds = state.history[0].breakSeconds || 4500;
+      // Safe fallbacks for older schemas or missing fields without overwriting empty arrays
+      if (!Array.isArray(state.subjects)) state.subjects = JSON.parse(JSON.stringify(DEFAULT_SUBJECTS));
+      if (!Array.isArray(state.habits)) state.habits = JSON.parse(JSON.stringify(DEFAULT_HABITS));
+      if (!Array.isArray(state.history)) state.history = [];
+      if (!Array.isArray(state.syllabus)) state.syllabus = [];
+      if (!Array.isArray(state.revisionTopics)) state.revisionTopics = [];
+      if (!Array.isArray(state.vaultItems)) state.vaultItems = [];
+      if (!Array.isArray(state.spacedRepChapters)) state.spacedRepChapters = [];
+      if (!Array.isArray(state.energyHistory)) state.energyHistory = [];
+      if (!Array.isArray(state.journalEntries)) state.journalEntries = [];
+      if (!Array.isArray(state.mockScores)) state.mockScores = [];
+      if (!Array.isArray(state.weakAreas)) state.weakAreas = [];
+      if (!Array.isArray(state.claimedMilestones)) state.claimedMilestones = [];
+      if (!Array.isArray(state.mockAnalysisHistory)) state.mockAnalysisHistory = [];
+      if (state.targetHours === undefined) state.targetHours = 10.0;
+      if (state.soundEnabled === undefined) state.soundEnabled = true;
+      if (!state.targetExamTitle) state.targetExamTitle = DEFAULT_TARGET_EXAM.title;
+      if (!state.targetExamDate) state.targetExamDate = DEFAULT_TARGET_EXAM.date;
+    } else {
+      // Brand new clean first-run: populate initial defaults & persist
+      state = getInitialDefaultState();
+      saveState();
     }
 
     if (!state.selectedCalendarDate) {
       state.selectedCalendarDate = getStudyCycleDate();
     }
-
-    if (!state.targetExamTitle) {
-      state.targetExamTitle = DEFAULT_TARGET_EXAM.title;
-    }
-    if (!state.targetExamDate) {
-      state.targetExamDate = DEFAULT_TARGET_EXAM.date;
-    }
-    if (!state.syllabus || state.syllabus.length === 0) {
-      state.syllabus = JSON.parse(JSON.stringify(DEFAULT_SYLLABUS));
-    }
-    if (!state.revisionTopics || state.revisionTopics.length === 0) {
-      state.revisionTopics = JSON.parse(JSON.stringify(DEFAULT_REVISION_TOPICS));
-    }
-    if (!state.vaultItems || state.vaultItems.length === 0) {
-      state.vaultItems = JSON.parse(JSON.stringify(DEFAULT_VAULT_ITEMS));
-    }
-    if (!state.energyHistory || state.energyHistory.length === 0) {
-      state.energyHistory = getDefaultEnergyHistory();
+    if (!state.selectedJournalDate) {
+      state.selectedJournalDate = getStudyCycleDate();
     }
     if (!state.activeSyllabusSubject) state.activeSyllabusSubject = 'all';
     if (!state.activeSyllabusStatus) state.activeSyllabusStatus = 'all';
     if (!state.activeRevisionFilter) state.activeRevisionFilter = 'all';
     if (!state.activeVaultFilter) state.activeVaultFilter = 'all';
     if (state.vaultSearchQuery === undefined) state.vaultSearchQuery = '';
-    if (!state.journalEntries || !Array.isArray(state.journalEntries) || state.journalEntries.length === 0) {
-      state.journalEntries = getDefaultJournalEntries();
-    }
-    if (!state.selectedJournalDate) {
-      state.selectedJournalDate = getStudyCycleDate();
-    }
-    if (!state.mockScores || !Array.isArray(state.mockScores) || state.mockScores.length === 0) {
-      state.mockScores = getDefaultMockScores();
-    }
     if (!state.mockChartActiveTab) state.mockChartActiveTab = 'full';
     if (!state.mockHistoryFilter) state.mockHistoryFilter = 'all';
     if (state.mockSearchQuery === undefined) state.mockSearchQuery = '';
@@ -1884,6 +1916,7 @@
     const hoursEl = document.getElementById('ticker-hours');
     const minsEl = document.getElementById('ticker-minutes');
     const secsEl = document.getElementById('ticker-seconds');
+    const inlineDatePicker = document.getElementById('inline-exam-date-picker');
 
     if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
 
@@ -1891,6 +1924,9 @@
     const targetDateStr = state.targetExamDate || DEFAULT_TARGET_EXAM.date;
 
     if (titleEl) titleEl.textContent = examTitle;
+    if (inlineDatePicker && inlineDatePicker.value !== targetDateStr) {
+      inlineDatePicker.value = targetDateStr;
+    }
 
     try {
       const parts = targetDateStr.split('-');
@@ -3152,7 +3188,7 @@ ${item.formula}
     const sectionEl = document.getElementById('section-mock-trends');
     if (!sectionEl) return;
 
-    if (!state.mockScores) state.mockScores = getDefaultMockScores();
+    if (!Array.isArray(state.mockScores)) state.mockScores = [];
     if (!state.mockChartActiveTab) state.mockChartActiveTab = 'full';
     if (!state.mockHistoryFilter) state.mockHistoryFilter = 'all';
 
@@ -4348,14 +4384,58 @@ ${item.formula}
     }
 
     // --- Target Exam Countdown Ticker Controls ---
+    const btnEditDate = document.getElementById('btn-edit-exam-date');
     const btnEditCountdown = document.getElementById('btn-edit-exam-countdown');
-    if (btnEditCountdown) {
-      btnEditCountdown.addEventListener('click', () => {
-        const titleInput = document.getElementById('edit-countdown-title');
+    const openCountdownModal = () => {
+      const titleInput = document.getElementById('edit-countdown-title');
+      const dateInput = document.getElementById('edit-countdown-date');
+      if (titleInput) titleInput.value = state.targetExamTitle || DEFAULT_TARGET_EXAM.title;
+      if (dateInput) dateInput.value = state.targetExamDate || DEFAULT_TARGET_EXAM.date;
+      openModal('modal-edit-countdown');
+    };
+    if (btnEditDate) btnEditDate.addEventListener('click', openCountdownModal);
+    if (btnEditCountdown) btnEditCountdown.addEventListener('click', openCountdownModal);
+
+    // Direct Interactive Calendar Date Picker Listener
+    const inlineDatePicker = document.getElementById('inline-exam-date-picker');
+    if (inlineDatePicker) {
+      inlineDatePicker.addEventListener('change', (e) => {
+        if (e.target.value) {
+          state.targetExamDate = e.target.value;
+          saveState();
+          updateCountdownTicker();
+          playChime('start');
+        }
+      });
+      inlineDatePicker.addEventListener('input', (e) => {
+        if (e.target.value) {
+          state.targetExamDate = e.target.value;
+          saveState();
+          updateCountdownTicker();
+        }
+      });
+    }
+
+    // Modal Preset Buttons
+    const btnPresetDec26 = document.getElementById('btn-preset-dec26');
+    if (btnPresetDec26) {
+      btnPresetDec26.addEventListener('click', () => {
         const dateInput = document.getElementById('edit-countdown-date');
-        if (titleInput) titleInput.value = state.targetExamTitle || DEFAULT_TARGET_EXAM.title;
-        if (dateInput) dateInput.value = state.targetExamDate || DEFAULT_TARGET_EXAM.date;
-        openModal('modal-edit-countdown');
+        if (dateInput) {
+          dateInput.value = '2026-12-26';
+          dateInput.focus();
+        }
+      });
+    }
+
+    const btnPresetSep27 = document.getElementById('btn-preset-sep27');
+    if (btnPresetSep27) {
+      btnPresetSep27.addEventListener('click', () => {
+        const dateInput = document.getElementById('edit-countdown-date');
+        if (dateInput) {
+          dateInput.value = '2027-09-15';
+          dateInput.focus();
+        }
       });
     }
 
@@ -4374,6 +4454,7 @@ ${item.formula}
         saveState();
         closeModal('modal-edit-countdown');
         updateCountdownTicker();
+        playChime('start');
       });
     }
 
@@ -4518,6 +4599,23 @@ ${item.formula}
         renderEnergyRating();
         renderEnergyHistory();
         alert(`Logged focus score: ${selectedEnergyRating}/5 for today's study cycle!`);
+      });
+    }
+
+    const btnResetEnergyToday = document.getElementById('btn-reset-energy-today');
+    if (btnResetEnergyToday) {
+      btnResetEnergyToday.addEventListener('click', () => {
+        if (confirm("Reset today's energy & focus rating?")) {
+          const todayDate = getStudyCycleDate();
+          state.energyRatingToday = null;
+          state.energyHistory = (state.energyHistory || []).filter(e => e.date !== todayDate);
+          selectedEnergyRating = 5;
+          const reflectionInput = document.getElementById('input-energy-reflection');
+          if (reflectionInput) reflectionInput.value = '';
+          saveState();
+          renderEnergyRating();
+          renderEnergyHistory();
+        }
       });
     }
 
@@ -5706,14 +5804,19 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     const btnMasterReset = document.getElementById('btn-master-factory-reset');
     if (btnMasterReset) {
       btnMasterReset.addEventListener('click', () => {
-        const confirm1 = confirm("⚠️ CRITICAL WARNING: You are about to execute a Master Factory Reset.\n\nThis will completely wipe all logged study hours, break records, custom habits, mock history, and streak milestones from localStorage.\n\nAre you absolutely sure?");
-        if (confirm1) {
-          const confirm2 = confirm("Confirm once more: Erase all data and reload pristine defaults?");
-          if (confirm2) {
-            localStorage.removeItem(STORAGE_KEY);
-            window.location.reload();
-          }
+        openModal('modal-confirm-factory-reset');
+      });
+    }
+
+    const btnConfirmFactoryResetYes = document.getElementById('btn-confirm-factory-reset-yes');
+    if (btnConfirmFactoryResetYes) {
+      btnConfirmFactoryResetYes.addEventListener('click', () => {
+        try {
+          localStorage.clear();
+        } catch (e) {
+          localStorage.removeItem(STORAGE_KEY);
         }
+        window.location.reload();
       });
     }
 
