@@ -49,6 +49,11 @@
   <!-- Chart.js Library CDN for Hardware-Accelerated Trends -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Firebase Web SDKs (Auth & Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -85,7 +90,14 @@
     </div>
 
     <!-- Top Status Badges -->
-    <div class="flex items-center gap-2 sm:gap-3">
+    <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+      <!-- Live Digital Clock & Date -->
+      <div class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/70 text-[11px] sm:text-xs text-slate-200 font-mono shadow-sm" title="Real-Time System Clock">
+        <span class="text-emerald-400">🕒</span>
+        <span id="top-live-clock" class="font-bold text-emerald-300">--:--:--</span>
+        <span id="top-live-date" class="text-slate-400 hidden md:inline text-[10px] pl-1 border-l border-slate-700">---</span>
+      </div>
+
       <!-- Live Break Status Pill (Shown when on Break) -->
       <div id="top-break-active-pill" class="hidden items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] sm:text-xs font-mono break-active-pulse">
         <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
@@ -93,9 +105,9 @@
       </div>
 
       <!-- 5:00 AM Cycle Countdown -->
-      <div class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] sm:text-xs text-slate-300 font-mono" title="Daily study cycle resets at 5:00 AM">
+      <div class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] sm:text-xs text-slate-300 font-mono" title="Daily study cycle & benchmark archival strictly at 5:00:00 AM">
         <span class="text-emerald-400">⏳</span>
-        <span id="top-5am-countdown">5 AM in --:--</span>
+        <span id="top-5am-countdown">5 AM in --:--:--</span>
       </div>
 
       <!-- Streak Flame Badge -->
@@ -103,6 +115,18 @@
         <span>🔥</span>
         <span id="top-streak-count">0 Days</span>
       </div>
+
+      <!-- Cloud Sync & Authentication Status Pill / Button -->
+      <button
+        id="btn-top-auth"
+        class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/40 text-[11px] sm:text-xs font-mono text-slate-200 transition shadow-sm"
+        title="Firebase Cloud Sync & Account Login"
+        aria-label="Account Login and Cloud Sync"
+      >
+        <span id="auth-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+        <span id="auth-status-label" class="hidden sm:inline">Guest (Local)</span>
+        <span class="text-xs">☁️</span>
+      </button>
     </div>
   </header>
 
@@ -177,15 +201,15 @@
           </div>
         </button>
 
-        <!-- 4. Subject-Wise Revision System (Interval Tracking) -->
+        <!-- 4. Daily Targets & Revision Hub -->
         <button
           data-nav="revision"
           class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
         >
-          <span class="text-lg">🔄</span>
+          <span class="text-lg">🎯</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Subject-Wise Revision System</div>
-            <div class="text-[11px] text-slate-400 font-normal">Interval Tracking (R1: 3d, R2: 7d, R3: 15d, R4: 30d)</div>
+            <div class="text-slate-100 font-medium">Daily Targets & Revision Hub</div>
+            <div class="text-[11px] text-slate-400 font-normal">Date-wise Targets, 320 Maths Qs & Future Planner</div>
           </div>
         </button>
 
@@ -292,6 +316,18 @@
         </div>
       </div>
 
+      <!-- Cloud Backup Quick Trigger in Sidebar -->
+      <button
+        id="btn-sidebar-cloud-sync"
+        class="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-emerald-400 flex items-center justify-between transition font-mono"
+      >
+        <span class="flex items-center gap-2">
+          <span>☁️</span>
+          <span id="sidebar-auth-status-text">Cloud Sync (Guest)</span>
+        </span>
+        <span class="text-[10px] text-emerald-400">Open &rarr;</span>
+      </button>
+
       <div class="flex items-center justify-between pt-1">
         <button
           id="btn-sidebar-sound"
@@ -373,6 +409,20 @@
           <div class="countdown-digit-box p-4 rounded-2xl">
             <div id="ticker-seconds" class="text-3xl sm:text-5xl font-black font-mono text-teal-300 tracking-tight">--</div>
             <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">SECONDS</div>
+          </div>
+        </div>
+
+        <!-- Live Clock & Cycle Synchronizer Sub-Bar -->
+        <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-400">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-slate-300">Live Precision Time: <strong id="ticker-current-time" class="text-emerald-300 font-bold">--:--:--</strong></span>
+            <span id="ticker-current-date" class="text-slate-500 hidden md:inline">(--)</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="flex items-center gap-1.5 text-slate-300 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
+              <span>🌅</span> Next 5:00 AM Reset: <strong id="ticker-5am-countdown-sub" class="text-amber-300 font-bold">--:--:--</strong>
+            </span>
           </div>
         </div>
       </div>
@@ -914,44 +964,299 @@
 
 
     <!-- ========================================================
-         SECTION 4: SUBJECT-WISE REVISION SYSTEM (INTERVAL TRACKING)
+         SECTION 4: DAILY TARGETS & REVISION HUB (DATE-WISE NAVIGATION & MULTI-STAGE REVISION)
          (Hidden inside Hamburger Sidebar, opened via navigation)
          ======================================================== -->
     <section id="section-revision" class="hidden space-y-6">
+      <!-- Section Header -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div>
           <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
-            <span>🔄</span> Subject-Wise Revision System
+            <span>🎯</span> Daily Targets & Revision Hub
           </h2>
           <p class="text-xs text-slate-400">
-            Multi-stage revision interval engine: <strong>R1 (Day 3)</strong>, <strong>R2 (Day 7)</strong>, <strong>R3 (Day 15)</strong>, and <strong>R4 (Day 30)</strong>.
+            Date-wise daily goals, customizable 320-Question Maths tracker, future planning (e.g., Sunday mocks), and multi-stage revision intervals (R1-R4).
           </p>
         </div>
-        <div class="flex items-center gap-2">
-          <button id="btn-add-revision-topic" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition">
-            + Add Revision Topic
+        <div class="flex items-center gap-2 flex-wrap">
+          <button id="btn-add-daily-target" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition flex items-center gap-1.5">
+            <span>+</span> Add Custom Target
+          </button>
+          <button id="btn-add-revision-topic" class="px-3.5 py-1.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 text-cyan-400 text-xs font-semibold transition flex items-center gap-1.5">
+            <span>🔄</span> + Add Revision Topic
           </button>
           <button id="btn-reset-revision" class="px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold transition">
-            Reset Revision Hub
+            Reset Hub
           </button>
         </div>
       </div>
 
-      <!-- Revision Hub Container -->
-      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
-        <!-- Filter Tabs -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800" id="revision-subject-filter-tabs">
-          <button data-rev-filter="all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap">All Subjects</button>
-          <button data-rev-filter="Maths" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Maths</button>
-          <button data-rev-filter="English" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">English</button>
-          <button data-rev-filter="Reasoning" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Reasoning</button>
-          <button data-rev-filter="GA" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">General Awareness</button>
+      <!-- 1. Date Selector & Calendar Day Navigator Bar -->
+      <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <!-- Stepper & Date Picker Input -->
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button
+              id="btn-target-prev-day"
+              class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-600 hover:bg-slate-800 text-slate-200 text-xs font-bold transition flex items-center gap-1 active:scale-95"
+              title="Previous Day"
+            >
+              <span>◀</span> Prev Day
+            </button>
+
+            <!-- Date Picker Container -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 focus-within:border-emerald-500 transition">
+              <span class="text-sm">📅</span>
+              <input
+                type="date"
+                id="target-hub-date-picker"
+                class="bg-transparent text-xs sm:text-sm font-mono font-bold text-white focus:outline-none cursor-pointer"
+              />
+              <span id="target-hub-date-display" class="hidden sm:inline-block text-xs font-mono font-semibold text-emerald-400 pl-1 border-l border-slate-800">
+                Today
+              </span>
+            </div>
+
+            <button
+              id="btn-target-next-day"
+              class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-slate-600 hover:bg-slate-800 text-slate-200 text-xs font-bold transition flex items-center gap-1 active:scale-95"
+              title="Next Day"
+            >
+              Next Day <span>▶</span>
+            </button>
+          </div>
+
+          <!-- Quick Jump Day Presets -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button
+              id="btn-target-yesterday"
+              class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-900 border border-slate-700 hover:border-slate-600 text-slate-300 transition active:scale-95"
+            >
+              Yesterday
+            </button>
+            <button
+              id="btn-target-today"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20 transition active:scale-95"
+            >
+              Today (Live)
+            </button>
+            <button
+              id="btn-target-tomorrow"
+              class="px-3 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-900 border border-slate-700 hover:border-slate-600 text-slate-300 transition active:scale-95"
+            >
+              Tomorrow
+            </button>
+            <button
+              id="btn-target-sunday-mock"
+              class="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition active:scale-95 flex items-center gap-1"
+            >
+              <span>🏆</span> Sunday Mock
+            </button>
+          </div>
         </div>
 
-        <!-- Revision Topic Cards List -->
-        <div id="revision-topics-list" class="space-y-3 max-h-[580px] overflow-y-auto pr-1">
-          <!-- Dynamically populated via renderRevisionSystem() -->
+        <!-- Date Context Status Banner -->
+        <div id="target-hub-context-banner" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs font-mono">
+          <!-- Dynamic info populated via renderTargetHub() -->
         </div>
+
+        <!-- Multi-Day Timeline Strip -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>7-Day Fast Navigation & Planning Strip:</span>
+            <span class="text-slate-500">Click any day card to inspect or plan</span>
+          </div>
+          <div id="target-hub-timeline-strip" class="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-thin">
+            <!-- Dynamically populated via renderTimelineStrip() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Main Grid: Date-Specific Targets & 320 Maths vs Revision Hub -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Date-Specific 320-Question Maths Target & Custom Targets (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+
+          <!-- A. 320-Question Daily Maths Mission Card -->
+          <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">🎯</span>
+                  <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider">
+                    320-Question Maths Mission for <span id="hub-maths-date-label" class="text-emerald-400">Today</span>
+                  </h3>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Non-negotiable arithmetic & advanced mathematics daily question quota.</p>
+              </div>
+
+              <!-- Conquered Status Toggle -->
+              <button
+                id="btn-toggle-maths-conquered"
+                class="px-3 py-1.5 rounded-xl text-xs font-mono font-bold border transition flex items-center gap-1.5"
+              >
+                <!-- Rendered dynamically -->
+              </button>
+            </div>
+
+            <!-- Questions Stats & Progress Bar -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="text-slate-400">Questions Solved:</span>
+                <span class="text-emerald-400 font-bold text-sm">
+                  <span id="hub-maths-done-count">0</span> / <span id="hub-maths-target-count">320</span> Qs
+                  (<span id="hub-maths-pct">0%</span>)
+                </span>
+              </div>
+              <div class="w-full h-3.5 rounded-full bg-slate-900 overflow-hidden p-0.5 border border-slate-700">
+                <div id="hub-maths-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 transition-all duration-300 w-0"></div>
+              </div>
+            </div>
+
+            <!-- Quick Adjust Input & Step Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <!-- Direct Input -->
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-mono text-slate-400">Set Exact:</span>
+                <input
+                  type="number"
+                  id="input-hub-maths-done"
+                  min="0"
+                  max="1000"
+                  class="w-20 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white text-center focus:outline-none focus:border-emerald-500"
+                />
+                <button
+                  id="btn-apply-hub-maths"
+                  class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-mono font-semibold text-slate-200 border border-slate-700 transition"
+                >
+                  Set
+                </button>
+              </div>
+
+              <!-- Quick Increment Buttons -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button data-maths-step="10" class="btn-maths-step px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold transition active:scale-95">+10</button>
+                <button data-maths-step="25" class="btn-maths-step px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold transition active:scale-95">+25</button>
+                <button data-maths-step="50" class="btn-maths-step px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold transition active:scale-95">+50</button>
+                <button data-maths-step="100" class="btn-maths-step px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:bg-emerald-500/10 text-emerald-400 text-xs font-mono font-bold transition active:scale-95">+100</button>
+                <button data-maths-step="-10" class="btn-maths-step px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-rose-500 hover:bg-rose-500/10 text-rose-400 text-xs font-mono font-bold transition active:scale-95">-10</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- B. Date-Specific Custom Targets & Action Items Card -->
+          <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div>
+                <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider flex items-center gap-2">
+                  <span>📋</span> Custom Daily Targets & Tasks (<span id="hub-tasks-date-label">Today</span>)
+                </h3>
+                <p class="text-[11px] text-slate-400 mt-0.5">Tasks scheduled specifically for this date. Statuses and deletions persist date-wise.</p>
+              </div>
+
+              <!-- Completion Counter Badge -->
+              <div class="px-3 py-1 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono">
+                <span class="text-slate-400">Progress: </span>
+                <span id="hub-date-tasks-progress-badge" class="text-emerald-400 font-bold">0 / 0 (0%)</span>
+              </div>
+            </div>
+
+            <!-- Inline Quick Add Task Form -->
+            <form id="form-inline-add-date-task" class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+              <div class="flex flex-col sm:flex-row items-center gap-2">
+                <input
+                  type="text"
+                  id="input-inline-task-title"
+                  placeholder="e.g. Attempt Full Mock #8, Revise Modern History 50 PYQs..."
+                  class="w-full flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                  required
+                />
+                <button
+                  type="submit"
+                  class="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition active:scale-95 shadow-md shadow-emerald-500/20 whitespace-nowrap flex items-center justify-center gap-1"
+                >
+                  <span>+</span> Add Target
+                </button>
+              </div>
+
+              <!-- Task Options Row -->
+              <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-mono text-slate-400 uppercase">Subject:</span>
+                  <select id="select-inline-task-subject" class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-[11px] text-slate-200">
+                    <option value="Maths">Maths</option>
+                    <option value="English">English</option>
+                    <option value="Reasoning">Reasoning</option>
+                    <option value="GA">General Awareness</option>
+                    <option value="Mock Test">Mock Test</option>
+                    <option value="Revision">Revision</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-mono text-slate-400 uppercase">Quota:</span>
+                  <input
+                    type="text"
+                    id="input-inline-task-quota"
+                    placeholder="e.g. 50 Qs / 2 Hrs"
+                    class="w-24 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-[11px] text-slate-200 placeholder:text-slate-500"
+                  />
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-mono text-slate-400 uppercase">Priority:</span>
+                  <select id="select-inline-task-priority" class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-[11px] text-amber-300 font-bold">
+                    <option value="high">High ⚡</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+
+            <!-- Custom Date Targets List Container -->
+            <div id="date-custom-targets-list" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+              <!-- Dynamically populated via renderDateTasks() -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Subject-Wise Revision Interval Tracker (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+            <div class="border-b border-slate-800 pb-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider flex items-center gap-2">
+                  <span>🔄</span> Multi-Stage Spaced Revision
+                </h3>
+                <span class="text-[11px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-lg border border-cyan-500/30">
+                  R1-R4 Cycles
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">
+                Interval Engine: <strong>R1 (Day 3)</strong>, <strong>R2 (Day 7)</strong>, <strong>R3 (Day 15)</strong>, <strong>R4 (Day 30)</strong>.
+              </p>
+            </div>
+
+            <!-- Subject Filter Tabs -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-800" id="revision-subject-filter-tabs">
+              <button data-rev-filter="all" class="px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap">All</button>
+              <button data-rev-filter="due" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800 text-amber-300 hover:bg-slate-700 transition whitespace-nowrap">⚡ Due On Date</button>
+              <button data-rev-filter="Maths" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Maths</button>
+              <button data-rev-filter="English" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">English</button>
+              <button data-rev-filter="Reasoning" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Reasoning</button>
+              <button data-rev-filter="GA" class="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">GA</button>
+            </div>
+
+            <!-- Revision Topic Cards List -->
+            <div id="revision-topics-list" class="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+              <!-- Dynamically populated via renderRevisionSystem() -->
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -2449,6 +2754,57 @@
     </div>
   </div>
 
+  <!-- Modal: Add Custom Daily Target -->
+  <div id="modal-add-daily-target" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>🎯</span> Add Daily Target
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="form-modal-add-target" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Target Date</label>
+          <input type="date" id="modal-target-date" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono" required />
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Target Description / Title</label>
+          <input type="text" id="modal-target-title" placeholder="e.g. Solve 80 Time & Work PYQs" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" required />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Subject</label>
+            <select id="modal-target-subject" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white">
+              <option value="Maths">Mathematics</option>
+              <option value="English">English</option>
+              <option value="Reasoning">Reasoning</option>
+              <option value="GA">General Awareness</option>
+              <option value="Mock Test">Mock Test</option>
+              <option value="Revision">Revision</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Quota / Metric</label>
+            <input type="text" id="modal-target-quota" placeholder="e.g. 50 Qs / 2 Hrs" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-mono text-slate-400 uppercase mb-1">Priority</label>
+          <select id="modal-target-priority" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-amber-300 font-bold">
+            <option value="high">High Priority ⚡</option>
+            <option value="normal" selected>Normal Priority</option>
+            <option value="low">Low Priority</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+          Schedule Target
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- 12. Add Vault Item Modal -->
   <div id="modal-add-vault-item" class="modal-overlay" role="dialog" aria-modal="true">
     <div class="modal-content w-full max-w-md p-6 space-y-4">
@@ -2698,6 +3054,120 @@
         <button id="btn-confirm-factory-reset-yes" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/30">
           Yes, Wipe Everything
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 17. User Authentication & Cloud Data Sync Modal -->
+  <div id="modal-auth-sync" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-base">
+            ☁️
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold text-white font-mono uppercase tracking-wide">Cloud Account & Sync</h3>
+            <p class="text-[11px] text-slate-400">Firebase Firestore Realtime Cloud Backup</p>
+          </div>
+        </div>
+        <button class="modal-close-btn w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          ✕
+        </button>
+      </div>
+
+      <!-- Logged-in View (Shown when user is authenticated) -->
+      <div id="auth-view-logged-in" class="hidden space-y-4">
+        <div class="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold text-base flex items-center justify-center">
+              👤
+            </div>
+            <div>
+              <div id="auth-user-display-name" class="text-xs font-bold text-white">Aspirant</div>
+              <div id="auth-user-email" class="text-[11px] font-mono text-emerald-400">user@example.com</div>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold">
+            ● Synced
+          </span>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs text-slate-300">
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Last Cloud Sync:</span>
+            <span id="auth-last-sync-time" class="text-slate-200">Just now</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Cloud Database:</span>
+            <span class="text-emerald-400 font-semibold">Firestore Active</span>
+          </div>
+          <p class="text-[11px] text-slate-400 pt-1">
+            Your study stopwatches, break durations, 320 Maths questions, syllabus progress, mock test diagnostics, and journal entries automatically synchronize across any device when logged in.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            id="btn-auth-manual-sync"
+            class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-mono transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5"
+          >
+            <span>🔄</span>
+            <span>Sync Cloud Now</span>
+          </button>
+          <button
+            type="button"
+            id="btn-auth-logout"
+            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 border border-slate-700 text-slate-300 text-xs font-bold font-mono transition"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Logged-out / Auth Form View (Google Sign In) -->
+      <div id="auth-view-logged-out" class="space-y-4">
+        <!-- Auth Error Alert Box -->
+        <div id="auth-error-alert" class="hidden p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2">
+          <span class="text-rose-400 font-bold">⚠️</span>
+          <span id="auth-error-message" class="leading-relaxed">Error message</span>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-center space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500/20 to-sky-500/20 border border-emerald-500/30 flex items-center justify-center text-xl shadow-inner">
+            ⚡
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-white font-mono uppercase tracking-wide">Instant One-Click Authentication</h4>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Authenticate securely with your Google account to automatically backup stopwatches, 320 Maths questions, syllabus checklists, mock trends, and daily journals.
+            </p>
+          </div>
+        </div>
+
+        <!-- Google Sign In Button -->
+        <button
+          type="button"
+          id="btn-google-signin"
+          class="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-bold font-sans transition-all duration-200 shadow-lg shadow-white/5 hover:shadow-white/10 flex items-center justify-center gap-3 active:scale-[0.99] border border-slate-200 cursor-pointer"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span id="google-signin-spinner" class="hidden w-3.5 h-3.5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></span>
+          <span id="google-signin-label">Sign in with Google</span>
+        </button>
+
+        <div class="pt-2 border-t border-slate-800/80 text-center">
+          <p class="text-[10px] text-slate-400 leading-relaxed font-mono">
+            🔒 Secured via Firebase Google Authentication & Firestore ABAC Rules.
+          </p>
+        </div>
       </div>
     </div>
   </div>

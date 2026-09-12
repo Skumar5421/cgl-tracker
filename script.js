@@ -35,6 +35,24 @@
 
   const STORAGE_KEY = 'MISSION_CGL_2027_TRACKER_V4';
 
+  // --- FIREBASE AUTHENTICATION & FIRESTORE CLOUD CONFIGURATION ---
+  const FIREBASE_CONFIG = {
+    projectId: "trusty-province-nvxch",
+    appId: "1:1033535223289:web:30796821a315ab5e13b928",
+    apiKey: "AIzaSyChqbDFD-Ykg0Xov73Du358ph4UinnK4VM",
+    authDomain: "trusty-province-nvxch.firebaseapp.com",
+    firestoreDatabaseId: "ai-studio-ssccgl2027railwa-e9a1048a-ded4-4ad7-a7f7-d97e4ad16b4a",
+    storageBucket: "trusty-province-nvxch.firebasestorage.app",
+    messagingSenderId: "1033535223289"
+  };
+
+  let firebaseAuth = null;
+  let firestoreDb = null;
+  let currentUser = null;
+  let cloudSyncTimeout = null;
+  let isSyncingToCloud = false;
+  let lastCloudSyncTimestamp = null;
+
   // 25+ Hard-Hitting Strict Anti-Procrastination Quotes
   const DISCIPLINE_QUOTES = [
     {
@@ -314,6 +332,133 @@
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  function getFutureCycleDate(daysAhead) {
+    const cycleDateStr = getStudyCycleDate();
+    const d = new Date(cycleDateStr + 'T12:00:00');
+    d.setDate(d.getDate() + daysAhead);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function getNextSundayDate() {
+    const today = new Date(getStudyCycleDate() + 'T12:00:00');
+    const dayOfWeek = today.getDay(); // 0 is Sunday
+    let daysUntilSunday = (7 - dayOfWeek) % 7;
+    if (daysUntilSunday === 0) daysUntilSunday = 7;
+    const nextSunday = new Date(today);
+    nextSunday.setDate(today.getDate() + daysUntilSunday);
+    const y = nextSunday.getFullYear();
+    const m = String(nextSunday.getMonth() + 1).padStart(2, '0');
+    const day = String(nextSunday.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function formatDayOfWeekShort(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'short' });
+    } catch(e) {
+      return '';
+    }
+  }
+
+  function formatMonthDayShort(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch(e) {
+      return dateStr;
+    }
+  }
+
+  // Default Seed Data for Daily Targets & Revision Hub
+  function getDefaultDateTargets() {
+    const today = getStudyCycleDate();
+    const yesterday = getPastCycleDate(1);
+    const twoDaysAgo = getPastCycleDate(2);
+    const threeDaysAgo = getPastCycleDate(3);
+    const tomorrow = getFutureCycleDate(1);
+    const upcomingSunday = getNextSundayDate();
+
+    const targets = {};
+
+    targets[threeDaysAgo] = {
+      mathsDone: 310,
+      mathsTarget: 320,
+      mathsCompleted: false,
+      tasks: [
+        { id: 'dt_3_1', title: 'Mensuration 2D & 3D formulas & 60 PYQs', subject: 'Maths', targetQty: '60 Qs', priority: 'high', status: 'completed', createdAt: threeDaysAgo },
+        { id: 'dt_3_2', title: 'English Reading Comprehension 4 Passages Drill', subject: 'English', targetQty: '4 Passages', priority: 'normal', status: 'completed', createdAt: threeDaysAgo },
+        { id: 'dt_3_3', title: 'Syllogism Only-a-few cases 50 speed questions', subject: 'Reasoning', targetQty: '50 Qs', priority: 'normal', status: 'completed', createdAt: threeDaysAgo }
+      ]
+    };
+
+    targets[twoDaysAgo] = {
+      mathsDone: 320,
+      mathsTarget: 320,
+      mathsCompleted: true,
+      tasks: [
+        { id: 'dt_2_1', title: 'Trigonometry Maxima & Minima 80 Questions', subject: 'Maths', targetQty: '80 Qs', priority: 'high', status: 'completed', createdAt: twoDaysAgo },
+        { id: 'dt_2_2', title: 'Direct & Indirect Speech Narration Rules Drill', subject: 'English', targetQty: '50 Qs', priority: 'normal', status: 'completed', createdAt: twoDaysAgo },
+        { id: 'dt_2_3', title: 'Modern History 1857-1947 Viceroy Timeline Revise', subject: 'GA', targetQty: '2 Hrs', priority: 'normal', status: 'completed', createdAt: twoDaysAgo }
+      ]
+    };
+
+    targets[yesterday] = {
+      mathsDone: 320,
+      mathsTarget: 320,
+      mathsCompleted: true,
+      tasks: [
+        { id: 'dt_1_1', title: 'Geometry Circles & Tangent Theorem 80 PYQs', subject: 'Maths', targetQty: '80 Qs', priority: 'high', status: 'completed', createdAt: yesterday },
+        { id: 'dt_1_2', title: 'Full Length Tier-1 Mock 3 & Detailed Analysis', subject: 'Mock Test', targetQty: '1 Mock + 1.5h Review', priority: 'high', status: 'completed', createdAt: yesterday },
+        { id: 'dt_1_3', title: '100 High-Frequency Blackbook Vocab Flashcards', subject: 'English', targetQty: '100 Words', priority: 'normal', status: 'completed', createdAt: yesterday },
+        { id: 'dt_1_4', title: 'Coded Blood Relations Speed Practice', subject: 'Reasoning', targetQty: '40 Qs', priority: 'low', status: 'completed', createdAt: yesterday }
+      ]
+    };
+
+    targets[today] = {
+      mathsDone: 0,
+      mathsTarget: 320,
+      mathsCompleted: false,
+      tasks: [
+        { id: 'dt_0_1', title: 'Solve 320 Maths questions (Arithmetic + Advanced)', subject: 'Maths', targetQty: '320 Qs', priority: 'high', status: 'inprogress', createdAt: today },
+        { id: 'dt_0_2', title: 'Subject-Verb Agreement Inversion Rules Revision (R1)', subject: 'English', targetQty: '40 Qs', priority: 'high', status: 'pending', createdAt: today },
+        { id: 'dt_0_3', title: 'Articles 12-51A Polity Fundamental Rights active recall', subject: 'GA', targetQty: '1.5 Hrs', priority: 'normal', status: 'pending', createdAt: today },
+        { id: 'dt_0_4', title: 'Coding-Decoding Pattern Matrix Drills', subject: 'Reasoning', targetQty: '50 Qs', priority: 'normal', status: 'pending', createdAt: today }
+      ]
+    };
+
+    targets[tomorrow] = {
+      mathsDone: 0,
+      mathsTarget: 320,
+      mathsCompleted: false,
+      tasks: [
+        { id: 'dt_f1_1', title: 'Time, Speed & Distance Relative Speed Trains 80 Qs', subject: 'Maths', targetQty: '80 Qs', priority: 'high', status: 'pending', createdAt: tomorrow },
+        { id: 'dt_f1_2', title: 'Active/Passive Voice Imperative Sentences Spaced Revise (R3)', subject: 'English', targetQty: '50 Qs', priority: 'normal', status: 'pending', createdAt: tomorrow },
+        { id: 'dt_f1_3', title: 'Ancient History Indus Valley & Vedic Era Short Notes', subject: 'GA', targetQty: '2 Hrs', priority: 'normal', status: 'pending', createdAt: tomorrow }
+      ]
+    };
+
+    if (!targets[upcomingSunday]) {
+      targets[upcomingSunday] = {
+        mathsDone: 0,
+        mathsTarget: 320,
+        mathsCompleted: false,
+        tasks: [
+          { id: 'dt_sun_1', title: '🏆 All-India Live Tier-1 Full Mock Test (Strict 60 Mins Exam Simulation)', subject: 'Mock Test', targetQty: '1 Full Mock', priority: 'high', status: 'pending', createdAt: upcomingSunday },
+          { id: 'dt_sun_2', title: 'Deep 3-Hour Error Diagnostic & Negative Mark Analysis', subject: 'Mock Test', targetQty: '3 Hours', priority: 'high', status: 'pending', createdAt: upcomingSunday },
+          { id: 'dt_sun_3', title: 'Weekly Formula Vault & Spaced Repetition Mega-Revision', subject: 'Revision', targetQty: 'All Topics', priority: 'normal', status: 'pending', createdAt: upcomingSunday }
+        ]
+      };
+    }
+
+    return targets;
   }
 
   function escapeHtml(str) {
@@ -763,6 +908,10 @@
     revisionTopics: JSON.parse(JSON.stringify(DEFAULT_REVISION_TOPICS)),
     activeRevisionFilter: 'all',
 
+    // Daily Targets & Revision Hub
+    selectedTargetDate: getStudyCycleDate(),
+    dateTargets: getDefaultDateTargets(),
+
     // Energy & Focus Rating
     energyRatingToday: null,
     energyHistory: getDefaultEnergyHistory(),
@@ -959,6 +1108,8 @@
       activeSyllabusStatus: 'all',
       revisionTopics: JSON.parse(JSON.stringify(DEFAULT_REVISION_TOPICS)),
       activeRevisionFilter: 'all',
+      selectedTargetDate: getStudyCycleDate(),
+      dateTargets: getDefaultDateTargets(),
       energyRatingToday: null,
       energyHistory: getDefaultEnergyHistory(),
       vaultItems: JSON.parse(JSON.stringify(DEFAULT_VAULT_ITEMS)),
@@ -1026,6 +1177,7 @@
       if (!Array.isArray(state.history)) state.history = [];
       if (!Array.isArray(state.syllabus)) state.syllabus = [];
       if (!Array.isArray(state.revisionTopics)) state.revisionTopics = [];
+      if (!state.dateTargets || typeof state.dateTargets !== 'object') state.dateTargets = getDefaultDateTargets();
       if (!Array.isArray(state.vaultItems)) state.vaultItems = [];
       if (!Array.isArray(state.spacedRepChapters)) state.spacedRepChapters = [];
       if (!Array.isArray(state.energyHistory)) state.energyHistory = [];
@@ -1064,6 +1216,9 @@
     if (!state.selectedJournalDate) {
       state.selectedJournalDate = getStudyCycleDate();
     }
+    if (!state.selectedTargetDate) {
+      state.selectedTargetDate = getStudyCycleDate();
+    }
     if (!state.activeSyllabusSubject) state.activeSyllabusSubject = 'all';
     if (!state.activeSyllabusStatus) state.activeSyllabusStatus = 'all';
     if (!state.activeRevisionFilter) state.activeRevisionFilter = 'all';
@@ -1077,12 +1232,17 @@
     check5amDailyCycleReset();
   }
 
-  // Save to LocalStorage
-  function saveState() {
+  // Save to LocalStorage & Debounced Cloud Sync
+  function saveState(skipCloudSync = false) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       console.error('Error saving state to localStorage:', e);
+    }
+
+    // Trigger debounced cloud synchronization if user is authenticated
+    if (!skipCloudSync && currentUser && firestoreDb) {
+      scheduleCloudSync();
     }
   }
 
@@ -1350,12 +1510,13 @@
 
   function updateUI() {
     updateCountdownTicker();
+    update5amCountdown();
     renderHomeView();
     renderSubjectCards();
     renderHabitsList();
     renderWeakAreas();
     renderSyllabus();
-    renderRevisionSystem();
+    renderTargetHub();
     renderSpacedRepetition();
     renderCalendar();
     renderDayInspectionCard();
@@ -1978,7 +2139,7 @@
     });
   }
 
-  // --- 7F1. TARGET EXAM COUNTDOWN TICKER ---
+  // --- 7F1. TARGET EXAM COUNTDOWN TICKER & LIVE DIGITAL CLOCK ---
   function updateCountdownTicker() {
     const titleEl = document.getElementById('home-exam-title');
     const dateLabel = document.getElementById('home-exam-target-date-label');
@@ -1988,6 +2149,20 @@
     const secsEl = document.getElementById('ticker-seconds');
     const inlineDatePicker = document.getElementById('inline-exam-date-picker');
 
+    const liveClockEl = document.getElementById('top-live-clock');
+    const liveDateEl = document.getElementById('top-live-date');
+    const tickerLiveClockEl = document.getElementById('ticker-current-time');
+    const tickerLiveDateEl = document.getElementById('ticker-current-date');
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+    if (liveClockEl) liveClockEl.textContent = timeStr;
+    if (liveDateEl) liveDateEl.textContent = dateStr;
+    if (tickerLiveClockEl) tickerLiveClockEl.textContent = timeStr;
+    if (tickerLiveDateEl) tickerLiveDateEl.textContent = `(${dateStr})`;
+
     if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
 
     const examTitle = state.targetExamTitle || DEFAULT_TARGET_EXAM.title;
@@ -1995,7 +2170,7 @@
 
     if (titleEl) titleEl.textContent = examTitle;
 
-    // Never overwrite inline input while user is focusing or picking a date
+    // Never overwrite inline input while user is actively interacting with date picker
     if (inlineDatePicker && document.activeElement !== inlineDatePicker) {
       if (inlineDatePicker.value !== targetDateStr) {
         inlineDatePicker.value = targetDateStr;
@@ -2027,8 +2202,7 @@
       targetTime = 0;
     }
 
-    const now = Date.now();
-    const diff = Math.max(0, targetTime - now);
+    const diff = Math.max(0, targetTime - now.getTime());
 
     const totalSecs = Math.floor(diff / 1000);
     const days = Math.floor(totalSecs / 86400);
@@ -2180,12 +2354,458 @@
     });
   }
 
-  // --- 7F3. SUBJECT-WISE MULTI-STAGE REVISION SYSTEM (R1-R4) ---
+  // --- 7F3. DAILY TARGETS & REVISION HUB ENGINE ---
+
+  function getDateTargetEntry(dateStr) {
+    if (!state.dateTargets) state.dateTargets = {};
+    if (!state.dateTargets[dateStr]) {
+      state.dateTargets[dateStr] = {
+        mathsDone: (dateStr === state.activeCycleDate) ? (state.mathsQuestionsDone || 0) : 0,
+        mathsTarget: 320,
+        mathsCompleted: false,
+        tasks: []
+      };
+    }
+    // If viewing active cycle date, synchronize mathsDone with live state
+    if (dateStr === state.activeCycleDate) {
+      state.dateTargets[dateStr].mathsDone = state.mathsQuestionsDone || 0;
+      state.dateTargets[dateStr].mathsCompleted = (state.mathsQuestionsDone || 0) >= (state.dateTargets[dateStr].mathsTarget || 320);
+    }
+    return state.dateTargets[dateStr];
+  }
+
+  function renderTargetHub() {
+    if (!state.selectedTargetDate) state.selectedTargetDate = getStudyCycleDate();
+    const curDate = state.selectedTargetDate;
+    const activeCycle = state.activeCycleDate || getStudyCycleDate();
+
+    // 1. Sync Date Picker Input & Display Label
+    const datePicker = document.getElementById('target-hub-date-picker');
+    if (datePicker && datePicker.value !== curDate) {
+      datePicker.value = curDate;
+    }
+
+    const dateDisplay = document.getElementById('target-hub-date-display');
+    if (dateDisplay) {
+      if (curDate === activeCycle) {
+        dateDisplay.textContent = 'Today (Live)';
+        dateDisplay.className = 'hidden sm:inline-block text-xs font-mono font-bold text-emerald-400 pl-1 border-l border-slate-800';
+      } else if (curDate === getPastCycleDate(1)) {
+        dateDisplay.textContent = 'Yesterday (Log)';
+        dateDisplay.className = 'hidden sm:inline-block text-xs font-mono font-bold text-slate-400 pl-1 border-l border-slate-800';
+      } else if (curDate === getFutureCycleDate(1)) {
+        dateDisplay.textContent = 'Tomorrow (Plan)';
+        dateDisplay.className = 'hidden sm:inline-block text-xs font-mono font-bold text-cyan-400 pl-1 border-l border-slate-800';
+      } else {
+        dateDisplay.textContent = formatMonthDayShort(curDate);
+        dateDisplay.className = 'hidden sm:inline-block text-xs font-mono font-semibold text-slate-300 pl-1 border-l border-slate-800';
+      }
+    }
+
+    // 2. Context Status Banner
+    const contextBanner = document.getElementById('target-hub-context-banner');
+    if (contextBanner) {
+      if (curDate === activeCycle) {
+        contextBanner.className = 'p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono';
+        contextBanner.innerHTML = `
+          <div class="flex items-center gap-2 text-emerald-300">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="font-bold uppercase tracking-wider">ACTIVE STUDY CYCLE (LIVE TODAY):</span>
+            <span class="text-slate-300">${curDate}</span>
+          </div>
+          <div class="text-[11px] text-emerald-400 font-sans">
+            ⚡ Linked to live stopwatches & active 320 Maths questions tracker.
+          </div>
+        `;
+      } else if (curDate < activeCycle) {
+        const dToday = new Date(activeCycle + 'T12:00:00');
+        const dCur = new Date(curDate + 'T12:00:00');
+        const diffDays = Math.round((dToday - dCur) / 86400000);
+        contextBanner.className = 'p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono';
+        contextBanner.innerHTML = `
+          <div class="flex items-center gap-2 text-slate-300">
+            <span class="text-sm">🕒</span>
+            <span class="font-bold text-amber-400 uppercase tracking-wider">PAST DATE ARCHIVE (${diffDays} days ago):</span>
+            <span class="text-white font-bold">${curDate}</span>
+          </div>
+          <div class="text-[11px] text-slate-400 font-sans">
+            📜 Viewing historical targets log. Completed status and notes persist date-wise.
+          </div>
+        `;
+      } else {
+        const dToday = new Date(activeCycle + 'T12:00:00');
+        const dCur = new Date(curDate + 'T12:00:00');
+        const diffDays = Math.round((dCur - dToday) / 86400000);
+        contextBanner.className = 'p-3 rounded-2xl bg-cyan-950/40 border border-cyan-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono';
+        contextBanner.innerHTML = `
+          <div class="flex items-center gap-2 text-cyan-300">
+            <span class="text-sm">📅</span>
+            <span class="font-bold uppercase tracking-wider">FUTURE SCHEDULED TARGET (${diffDays} days ahead):</span>
+            <span class="text-white font-bold">${curDate}</span>
+          </div>
+          <div class="text-[11px] text-cyan-400 font-sans">
+            🚀 Pre-plan upcoming Sunday mocks and study targets. Stays scheduled until this day arrives!
+          </div>
+        `;
+      }
+    }
+
+    // 3. Render Subcomponents
+    renderTargetTimelineStrip();
+    renderDateMathsMission();
+    renderDateTasks();
+    renderRevisionSystem();
+  }
+
+  // --- 7F3.1 TIMELINE STRIP NAVIGATION ---
+  function renderTargetTimelineStrip() {
+    const strip = document.getElementById('target-hub-timeline-strip');
+    if (!strip) return;
+
+    const activeCycle = state.activeCycleDate || getStudyCycleDate();
+    const curSelected = state.selectedTargetDate || activeCycle;
+    const nextSunday = getNextSundayDate();
+
+    // Generate dates: 3 days past, today, 3 days future + Sunday mock if outside range
+    const dateList = [
+      getPastCycleDate(3),
+      getPastCycleDate(2),
+      getPastCycleDate(1),
+      activeCycle,
+      getFutureCycleDate(1),
+      getFutureCycleDate(2),
+      getFutureCycleDate(3)
+    ];
+
+    if (!dateList.includes(nextSunday)) {
+      dateList.push(nextSunday);
+    }
+    // Also ensure currently selected date is present in strip
+    if (!dateList.includes(curSelected)) {
+      dateList.push(curSelected);
+      dateList.sort();
+    }
+
+    strip.innerHTML = dateList.map(dStr => {
+      const isSelected = dStr === curSelected;
+      const isToday = dStr === activeCycle;
+      const isSunday = new Date(dStr + 'T12:00:00').getDay() === 0;
+      const dayOfWeek = formatDayOfWeekShort(dStr);
+      const dayMonth = formatMonthDayShort(dStr);
+
+      const entry = getDateTargetEntry(dStr);
+      const tasks = entry.tasks || [];
+      const completedTasks = tasks.filter(t => t.status === 'completed').length;
+      const totalTasks = tasks.length;
+      const mathsDone = entry.mathsDone || 0;
+      const mathsTarget = entry.mathsTarget || 320;
+      const isMathsConquered = mathsDone >= mathsTarget;
+
+      let cardClasses = 'target-timeline-card min-w-[130px] p-3 rounded-2xl border transition text-left cursor-pointer flex flex-col justify-between select-none ';
+      if (isSelected) {
+        cardClasses += 'bg-emerald-950/60 border-emerald-500 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/30';
+      } else if (isToday) {
+        cardClasses += 'bg-slate-900/90 border-slate-700 hover:border-emerald-500/60';
+      } else if (isSunday) {
+        cardClasses += 'bg-amber-950/20 border-amber-500/30 hover:border-amber-500/60';
+      } else {
+        cardClasses += 'bg-slate-900/60 border-slate-800 hover:border-slate-700';
+      }
+
+      let tagHtml = '';
+      if (isToday) {
+        tagHtml = `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500 text-slate-950">TODAY</span>`;
+      } else if (dStr === getPastCycleDate(1)) {
+        tagHtml = `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono text-slate-400 bg-slate-800">YESTERDAY</span>`;
+      } else if (dStr === getFutureCycleDate(1)) {
+        tagHtml = `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/60">TOMORROW</span>`;
+      } else if (isSunday) {
+        tagHtml = `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold text-amber-300 bg-amber-950/80 border border-amber-800/60">SUNDAY MOCK</span>`;
+      }
+
+      return `
+        <button
+          data-select-target-date="${dStr}"
+          class="${cardClasses}"
+          type="button"
+        >
+          <div class="flex items-center justify-between gap-1 mb-2">
+            <span class="text-xs font-mono font-bold ${isSelected ? 'text-emerald-300' : 'text-white'}">${dayOfWeek}, ${dayMonth}</span>
+            ${tagHtml}
+          </div>
+
+          <div class="space-y-1 text-[11px] font-mono">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Maths:</span>
+              <span class="${isMathsConquered ? 'text-emerald-400 font-bold' : (mathsDone > 0 ? 'text-cyan-400 font-semibold' : 'text-slate-500')}">
+                ${isMathsConquered ? '✓ ' : ''}${mathsDone}/${mathsTarget}
+              </span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Tasks:</span>
+              <span class="${totalTasks > 0 && completedTasks === totalTasks ? 'text-emerald-400 font-bold' : (completedTasks > 0 ? 'text-amber-400' : 'text-slate-500')}">
+                ${completedTasks}/${totalTasks} ${totalTasks > 0 && completedTasks === totalTasks ? '✓' : ''}
+              </span>
+            </div>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    strip.querySelectorAll('[data-select-target-date]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const dateVal = e.currentTarget.getAttribute('data-select-target-date');
+        if (dateVal) {
+          state.selectedTargetDate = dateVal;
+          saveState();
+          renderTargetHub();
+        }
+      });
+    });
+  }
+
+  // --- 7F3.2 DATE-SPECIFIC 320 MATHS MISSION ---
+  function renderDateMathsMission() {
+    const curDate = state.selectedTargetDate || getStudyCycleDate();
+    const activeCycle = state.activeCycleDate || getStudyCycleDate();
+    const entry = getDateTargetEntry(curDate);
+
+    const doneCount = entry.mathsDone || 0;
+    const targetCount = entry.mathsTarget || 320;
+    const isConquered = doneCount >= targetCount;
+    const pct = Math.min(100, Math.round((doneCount / targetCount) * 100));
+
+    // Label
+    const dateLabelEl = document.getElementById('hub-maths-date-label');
+    if (dateLabelEl) {
+      if (curDate === activeCycle) {
+        dateLabelEl.textContent = 'Today (Live)';
+      } else if (curDate === getPastCycleDate(1)) {
+        dateLabelEl.textContent = 'Yesterday (' + formatMonthDayShort(curDate) + ')';
+      } else if (curDate === getFutureCycleDate(1)) {
+        dateLabelEl.textContent = 'Tomorrow (' + formatMonthDayShort(curDate) + ')';
+      } else {
+        dateLabelEl.textContent = formatMonthDayShort(curDate);
+      }
+    }
+
+    // Counts & Percentage
+    const doneEl = document.getElementById('hub-maths-done-count');
+    const targetEl = document.getElementById('hub-maths-target-count');
+    const pctEl = document.getElementById('hub-maths-pct');
+    if (doneEl) doneEl.textContent = doneCount;
+    if (targetEl) targetEl.textContent = targetCount;
+    if (pctEl) pctEl.textContent = `${pct}%`;
+
+    // Progress bar
+    const barEl = document.getElementById('hub-maths-progress-bar');
+    if (barEl) {
+      barEl.style.width = `${pct}%`;
+      if (isConquered) {
+        barEl.className = 'h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-300 transition-all duration-300 shadow-md shadow-emerald-500/30';
+      } else if (pct >= 50) {
+        barEl.className = 'h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-400 transition-all duration-300';
+      } else {
+        barEl.className = 'h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 transition-all duration-300';
+      }
+    }
+
+    // Input
+    const inputEl = document.getElementById('input-hub-maths-done');
+    if (inputEl) inputEl.value = doneCount;
+
+    // Conquered Status Button
+    const btnConquered = document.getElementById('btn-toggle-maths-conquered');
+    if (btnConquered) {
+      if (isConquered) {
+        btnConquered.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-emerald-500 text-slate-950 border border-emerald-400 shadow-md shadow-emerald-500/30 transition flex items-center gap-1.5';
+        btnConquered.innerHTML = `<span>✓</span> 320 Conquered!`;
+      } else {
+        btnConquered.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-slate-800 text-slate-300 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40 border border-slate-700 transition flex items-center gap-1.5';
+        btnConquered.innerHTML = `<span>⚡</span> Mark Conquered`;
+      }
+    }
+  }
+
+  // --- 7F3.3 DATE-SPECIFIC CUSTOM TARGETS & TASKS ---
+  function renderDateTasks() {
+    const curDate = state.selectedTargetDate || getStudyCycleDate();
+    const activeCycle = state.activeCycleDate || getStudyCycleDate();
+    const entry = getDateTargetEntry(curDate);
+    const tasks = entry.tasks || [];
+
+    // Header labels
+    const tasksDateLabel = document.getElementById('hub-tasks-date-label');
+    if (tasksDateLabel) {
+      if (curDate === activeCycle) tasksDateLabel.textContent = 'Today';
+      else if (curDate === getPastCycleDate(1)) tasksDateLabel.textContent = 'Yesterday';
+      else if (curDate === getFutureCycleDate(1)) tasksDateLabel.textContent = 'Tomorrow';
+      else tasksDateLabel.textContent = formatMonthDayShort(curDate);
+    }
+
+    // Progress Badge
+    const completedCount = tasks.filter(t => t.status === 'completed').length;
+    const totalCount = tasks.length;
+    const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    const progressBadge = document.getElementById('hub-date-tasks-progress-badge');
+    if (progressBadge) {
+      progressBadge.textContent = `${completedCount} / ${totalCount} (${pct}%)`;
+      if (totalCount > 0 && completedCount === totalCount) {
+        progressBadge.className = 'text-emerald-400 font-bold';
+      } else if (completedCount > 0) {
+        progressBadge.className = 'text-amber-400 font-bold';
+      } else {
+        progressBadge.className = 'text-slate-400 font-bold';
+      }
+    }
+
+    // List container
+    const list = document.getElementById('date-custom-targets-list');
+    if (!list) return;
+
+    if (tasks.length === 0) {
+      list.innerHTML = `
+        <div class="p-8 text-center rounded-2xl bg-slate-900/40 border border-dashed border-slate-800 space-y-2">
+          <span class="text-2xl">📋</span>
+          <p class="text-xs font-semibold text-slate-300">No custom targets scheduled for this date.</p>
+          <p class="text-[11px] text-slate-500 font-sans">
+            Use the quick input above or click "+ Add Custom Target" to assign mock drills, chapter revisions, or problem sets for ${curDate}.
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    list.innerHTML = tasks.map(t => {
+      const status = t.status || 'pending';
+      let statusBtnHtml = '';
+      let itemBg = 'bg-slate-900/90 border-slate-800';
+
+      if (status === 'completed') {
+        itemBg = 'bg-emerald-950/20 border-emerald-500/40';
+        statusBtnHtml = `
+          <button
+            data-cycle-task-status="${t.id}"
+            class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/30 transition flex items-center gap-1"
+            title="Click to change status"
+          >
+            <span>✓</span> Done
+          </button>
+        `;
+      } else if (status === 'inprogress') {
+        itemBg = 'bg-cyan-950/20 border-cyan-500/40';
+        statusBtnHtml = `
+          <button
+            data-cycle-task-status="${t.id}"
+            class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/30 transition flex items-center gap-1"
+            title="Click to change status"
+          >
+            <span>⚡</span> In Progress
+          </button>
+        `;
+      } else if (status === 'missed') {
+        itemBg = 'bg-rose-950/20 border-rose-500/40';
+        statusBtnHtml = `
+          <button
+            data-cycle-task-status="${t.id}"
+            class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50 hover:bg-rose-500/30 transition flex items-center gap-1"
+            title="Click to change status"
+          >
+            <span>✕</span> Missed
+          </button>
+        `;
+      } else {
+        // Pending
+        statusBtnHtml = `
+          <button
+            data-cycle-task-status="${t.id}"
+            class="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600 hover:bg-slate-700 transition flex items-center gap-1"
+            title="Click to change status"
+          >
+            <span>⏳</span> Pending
+          </button>
+        `;
+      }
+
+      // Priority badge
+      let priorityBadge = '';
+      if (t.priority === 'high') {
+        priorityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">High ⚡</span>`;
+      } else if (t.priority === 'low') {
+        priorityBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-800">Low</span>`;
+      }
+
+      return `
+        <div class="p-3.5 rounded-2xl border ${itemBg} transition flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-slate-700">
+          <div class="space-y-1.5 flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">${escapeHtml(t.subject || 'General')}</span>
+              ${priorityBadge}
+              ${t.targetQty ? `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-cyan-300 bg-cyan-950/80 border border-cyan-800/60">${escapeHtml(t.targetQty)}</span>` : ''}
+            </div>
+            <h4 class="text-xs sm:text-sm font-semibold text-white leading-snug break-words ${status === 'completed' ? 'line-through text-slate-400' : ''}">
+              ${escapeHtml(t.title)}
+            </h4>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+            ${statusBtnHtml}
+            <button
+              data-delete-task="${t.id}"
+              class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition text-xs"
+              title="Delete target"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Status toggle listeners: pending -> inprogress -> completed -> missed -> pending
+    list.querySelectorAll('[data-cycle-task-status]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-cycle-task-status');
+        const task = tasks.find(t => t.id === id);
+        if (task) {
+          const current = task.status || 'pending';
+          if (current === 'pending') task.status = 'inprogress';
+          else if (current === 'inprogress') {
+            task.status = 'completed';
+            playChime('start');
+          } else if (current === 'completed') task.status = 'missed';
+          else task.status = 'pending';
+
+          saveState();
+          renderDateTasks();
+          renderTargetTimelineStrip();
+        }
+      });
+    });
+
+    // Delete task listener
+    list.querySelectorAll('[data-delete-task]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-delete-task');
+        if (confirm('Delete this target from this date?')) {
+          entry.tasks = entry.tasks.filter(t => t.id !== id);
+          saveState();
+          renderDateTasks();
+          renderTargetTimelineStrip();
+        }
+      });
+    });
+  }
+
+  // --- 7F3.4 MULTI-STAGE REVISION ENGINE (R1-R4) ---
   function renderRevisionSystem() {
     const list = document.getElementById('revision-topics-list');
     if (!list) return;
 
-    // Filter tabs
+    const curSelectedDate = state.selectedTargetDate || getStudyCycleDate();
+
+    // Update filter tabs styling
     document.querySelectorAll('#revision-subject-filter-tabs button').forEach(btn => {
       const filter = btn.getAttribute('data-rev-filter');
       if (filter === state.activeRevisionFilter) {
@@ -2196,12 +2816,36 @@
     });
 
     let items = state.revisionTopics || [];
-    if (state.activeRevisionFilter !== 'all') {
-      items = items.filter(t => t.subject.toLowerCase() === state.activeRevisionFilter.toLowerCase());
+    
+    // Support filtering by "Due on Selected Date"
+    if (state.activeRevisionFilter === 'due') {
+      items = items.filter(t => {
+        const daysElapsed = getDaysAgo(t.completedDate);
+        let nextStage = null;
+        let targetDays = 0;
+        if (!t.r1Done) { nextStage = 'R1'; targetDays = 3; }
+        else if (!t.r2Done) { nextStage = 'R2'; targetDays = 7; }
+        else if (!t.r3Done) { nextStage = 'R3'; targetDays = 15; }
+        else if (!t.r4Done) { nextStage = 'R4'; targetDays = 30; }
+
+        if (!nextStage) return false;
+        
+        // Calculate the specific calendar date this stage is due
+        const compDateObj = new Date(t.completedDate + 'T12:00:00');
+        compDateObj.setDate(compDateObj.getDate() + targetDays);
+        const y = compDateObj.getFullYear();
+        const m = String(compDateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(compDateObj.getDate()).padStart(2, '0');
+        const dueDateStr = `${y}-${m}-${day}`;
+
+        return dueDateStr === curSelectedDate || targetDays <= daysElapsed;
+      });
+    } else if (state.activeRevisionFilter !== 'all') {
+      items = items.filter(t => (t.subject || '').toLowerCase() === state.activeRevisionFilter.toLowerCase());
     }
 
     if (items.length === 0) {
-      list.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">No revision topics in this category. Click "+ Add Revision Topic" above.</div>`;
+      list.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">No revision topics match this filter. Click "+ Add Revision Topic" above.</div>`;
       return;
     }
 
@@ -2227,7 +2871,7 @@
 
       let dueBadgeHtml = '';
       if (!nextStage) {
-        dueBadgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">✓ Fully Mastered</span>`;
+        dueBadgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40">✓ Mastered</span>`;
       } else {
         const daysLeft = targetDays - daysElapsed;
         if (daysLeft < 0) {
@@ -2235,7 +2879,7 @@
         } else if (daysLeft === 0) {
           dueBadgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">⚡ ${nextStage} DUE TODAY!</span>`;
         } else {
-          dueBadgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">${nextStage} in ${daysLeft} days</span>`;
+          dueBadgeHtml = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">${nextStage} in ${daysLeft}d</span>`;
         }
       }
 
@@ -2244,7 +2888,7 @@
           <button
             data-toggle-stage="${t.id}"
             data-stage="${stageKey}"
-            class="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold border transition ${isDone ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:border-slate-600'}"
+            class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition ${isDone ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:border-slate-600'}"
             title="Click to toggle ${label} completed"
           >
             ${isDone ? '✓ ' : ''}${label}
@@ -2253,18 +2897,18 @@
       };
 
       return `
-        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 hover:border-slate-700 transition">
+        <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5 hover:border-slate-700 transition">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">${t.subject}</span>
-                <h4 class="text-sm font-bold text-white">${t.title}</h4>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">${escapeHtml(t.subject)}</span>
+                <h4 class="text-xs sm:text-sm font-bold text-white">${escapeHtml(t.title)}</h4>
               </div>
-              <p class="text-[11px] text-slate-400 mt-1 font-mono">
-                Initial Completion: ${t.completedDate} • Elapsed: <strong>${daysElapsed} days</strong>
+              <p class="text-[10px] text-slate-400 mt-0.5 font-mono">
+                Learned: ${t.completedDate} • Elapsed: <strong>${daysElapsed} days</strong>
               </p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 self-end sm:self-center">
               ${dueBadgeHtml}
               <button
                 data-delete-revision-topic="${t.id}"
@@ -2277,12 +2921,12 @@
           </div>
 
           <!-- Interval Stages: R1 (Day 3), R2 (Day 7), R3 (Day 15), R4 (Day 30) -->
-          <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
-            <span class="text-[11px] text-slate-500 font-mono">Intervals:</span>
-            ${renderStagePill('R1 (Day 3)', t.r1Done, 'r1Done')}
-            ${renderStagePill('R2 (Day 7)', t.r2Done, 'r2Done')}
-            ${renderStagePill('R3 (Day 15)', t.r3Done, 'r3Done')}
-            ${renderStagePill('R4 (Day 30)', t.r4Done, 'r4Done')}
+          <div class="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-800/80">
+            <span class="text-[10px] text-slate-500 font-mono">Stages:</span>
+            ${renderStagePill('R1 (3d)', t.r1Done, 'r1Done')}
+            ${renderStagePill('R2 (7d)', t.r2Done, 'r2Done')}
+            ${renderStagePill('R3 (15d)', t.r3Done, 'r3Done')}
+            ${renderStagePill('R4 (30d)', t.r4Done, 'r4Done')}
           </div>
         </div>
       `;
@@ -4093,7 +4737,8 @@ ${item.formula}
 
   function update5amCountdown() {
     const el = document.getElementById('top-5am-countdown');
-    if (!el) return;
+    const subEl = document.getElementById('ticker-5am-countdown-sub');
+    if (!el && !subEl) return;
 
     const now = new Date();
     const next5am = new Date(now);
@@ -4103,10 +4748,19 @@ ${item.formula}
     next5am.setHours(5, 0, 0, 0);
 
     const diff = Math.max(0, next5am.getTime() - now.getTime());
-    const hrs = Math.floor(diff / (1000 * 60 * 60));
-    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const totalSecs = Math.floor(diff / 1000);
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
 
-    el.textContent = `5 AM in ${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    const formattedTime = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    if (el) {
+      el.textContent = `5 AM in ${formattedTime}`;
+    }
+    if (subEl) {
+      subEl.textContent = formattedTime;
+    }
   }
 
   // ==========================================================================
@@ -5490,12 +6144,251 @@ ${item.formula}
       });
     }
 
+    // --- Daily Targets & Revision Hub Listeners ---
+    function shiftTargetDate(offsetDays) {
+      if (!state.selectedTargetDate) state.selectedTargetDate = getStudyCycleDate();
+      const d = new Date(state.selectedTargetDate + 'T12:00:00');
+      d.setDate(d.getDate() + offsetDays);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      state.selectedTargetDate = `${y}-${m}-${day}`;
+      saveState();
+      renderTargetHub();
+    }
+
+    const btnPrevDay = document.getElementById('btn-target-prev-day');
+    if (btnPrevDay) {
+      btnPrevDay.addEventListener('click', () => shiftTargetDate(-1));
+    }
+
+    const btnNextDay = document.getElementById('btn-target-next-day');
+    if (btnNextDay) {
+      btnNextDay.addEventListener('click', () => shiftTargetDate(1));
+    }
+
+    const targetDatePicker = document.getElementById('target-hub-date-picker');
+    if (targetDatePicker) {
+      targetDatePicker.addEventListener('change', (e) => {
+        if (e.target.value) {
+          state.selectedTargetDate = e.target.value;
+          saveState();
+          renderTargetHub();
+        }
+      });
+    }
+
+    const btnTargetYesterday = document.getElementById('btn-target-yesterday');
+    if (btnTargetYesterday) {
+      btnTargetYesterday.addEventListener('click', () => {
+        state.selectedTargetDate = getPastCycleDate(1);
+        saveState();
+        renderTargetHub();
+      });
+    }
+
+    const btnTargetToday = document.getElementById('btn-target-today');
+    if (btnTargetToday) {
+      btnTargetToday.addEventListener('click', () => {
+        state.selectedTargetDate = getStudyCycleDate();
+        saveState();
+        renderTargetHub();
+      });
+    }
+
+    const btnTargetTomorrow = document.getElementById('btn-target-tomorrow');
+    if (btnTargetTomorrow) {
+      btnTargetTomorrow.addEventListener('click', () => {
+        state.selectedTargetDate = getFutureCycleDate(1);
+        saveState();
+        renderTargetHub();
+      });
+    }
+
+    const btnTargetSundayMock = document.getElementById('btn-target-sunday-mock');
+    if (btnTargetSundayMock) {
+      btnTargetSundayMock.addEventListener('click', () => {
+        state.selectedTargetDate = getNextSundayDate();
+        saveState();
+        renderTargetHub();
+      });
+    }
+
+    // 320-Maths Controls for Selected Date
+    const btnToggleMaths = document.getElementById('btn-toggle-maths-conquered');
+    if (btnToggleMaths) {
+      btnToggleMaths.addEventListener('click', () => {
+        const curDate = state.selectedTargetDate || getStudyCycleDate();
+        const entry = getDateTargetEntry(curDate);
+        const targetVal = entry.mathsTarget || 320;
+        if (entry.mathsDone >= targetVal) {
+          entry.mathsDone = 0;
+          entry.mathsCompleted = false;
+        } else {
+          entry.mathsDone = targetVal;
+          entry.mathsCompleted = true;
+          playChime('start');
+        }
+
+        if (curDate === state.activeCycleDate) {
+          state.mathsQuestionsDone = entry.mathsDone;
+        }
+
+        saveState();
+        renderDateMathsMission();
+        renderTargetTimelineStrip();
+        if (curDate === state.activeCycleDate) renderHomeView();
+      });
+    }
+
+    const btnApplyMaths = document.getElementById('btn-apply-hub-maths');
+    const inputMathsDone = document.getElementById('input-hub-maths-done');
+    function applyCustomMathsDone() {
+      if (!inputMathsDone) return;
+      const val = Math.max(0, parseInt(inputMathsDone.value, 10) || 0);
+      const curDate = state.selectedTargetDate || getStudyCycleDate();
+      const entry = getDateTargetEntry(curDate);
+      entry.mathsDone = val;
+      entry.mathsCompleted = val >= (entry.mathsTarget || 320);
+
+      if (curDate === state.activeCycleDate) {
+        state.mathsQuestionsDone = val;
+      }
+
+      if (entry.mathsCompleted) playChime('start');
+      saveState();
+      renderDateMathsMission();
+      renderTargetTimelineStrip();
+      if (curDate === state.activeCycleDate) renderHomeView();
+    }
+
+    if (btnApplyMaths) btnApplyMaths.addEventListener('click', applyCustomMathsDone);
+    if (inputMathsDone) {
+      inputMathsDone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyCustomMathsDone();
+        }
+      });
+    }
+
+    document.querySelectorAll('.btn-maths-step').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const step = parseInt(e.currentTarget.getAttribute('data-maths-step'), 10) || 0;
+        const curDate = state.selectedTargetDate || getStudyCycleDate();
+        const entry = getDateTargetEntry(curDate);
+        entry.mathsDone = Math.max(0, (entry.mathsDone || 0) + step);
+        entry.mathsCompleted = entry.mathsDone >= (entry.mathsTarget || 320);
+
+        if (curDate === state.activeCycleDate) {
+          state.mathsQuestionsDone = entry.mathsDone;
+        }
+
+        if (entry.mathsCompleted) playChime('start');
+        saveState();
+        renderDateMathsMission();
+        renderTargetTimelineStrip();
+        if (curDate === state.activeCycleDate) renderHomeView();
+      });
+    });
+
+    // Inline Task Form for Selected Date
+    const formInlineTask = document.getElementById('form-inline-add-date-task');
+    if (formInlineTask) {
+      formInlineTask.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const titleInput = document.getElementById('input-inline-task-title');
+        const subjectSelect = document.getElementById('select-inline-task-subject');
+        const quotaInput = document.getElementById('input-inline-task-quota');
+        const prioritySelect = document.getElementById('select-inline-task-priority');
+
+        const title = titleInput ? titleInput.value.trim() : '';
+        const subject = subjectSelect ? subjectSelect.value : 'General';
+        const quota = quotaInput ? quotaInput.value.trim() : '';
+        const priority = prioritySelect ? prioritySelect.value : 'normal';
+
+        if (title) {
+          const curDate = state.selectedTargetDate || getStudyCycleDate();
+          const entry = getDateTargetEntry(curDate);
+          if (!entry.tasks) entry.tasks = [];
+
+          entry.tasks.push({
+            id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            title,
+            subject,
+            targetQty: quota,
+            priority,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          });
+
+          playChime('start');
+          saveState();
+          formInlineTask.reset();
+          renderDateTasks();
+          renderTargetTimelineStrip();
+        }
+      });
+    }
+
+    // Modal: Add Daily Target Button & Form
+    const btnAddDailyTarget = document.getElementById('btn-add-daily-target');
+    if (btnAddDailyTarget) {
+      btnAddDailyTarget.addEventListener('click', () => {
+        const modalDateInput = document.getElementById('modal-target-date');
+        if (modalDateInput) modalDateInput.value = state.selectedTargetDate || getStudyCycleDate();
+        openModal('modal-add-daily-target');
+      });
+    }
+
+    const formModalAddTarget = document.getElementById('form-modal-add-target');
+    if (formModalAddTarget) {
+      formModalAddTarget.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const dateInput = document.getElementById('modal-target-date');
+        const titleInput = document.getElementById('modal-target-title');
+        const subjectSelect = document.getElementById('modal-target-subject');
+        const quotaInput = document.getElementById('modal-target-quota');
+        const prioritySelect = document.getElementById('modal-target-priority');
+
+        const targetDate = dateInput ? dateInput.value : (state.selectedTargetDate || getStudyCycleDate());
+        const title = titleInput ? titleInput.value.trim() : '';
+        const subject = subjectSelect ? subjectSelect.value : 'General';
+        const quota = quotaInput ? quotaInput.value.trim() : '';
+        const priority = prioritySelect ? prioritySelect.value : 'normal';
+
+        if (title && targetDate) {
+          const entry = getDateTargetEntry(targetDate);
+          if (!entry.tasks) entry.tasks = [];
+
+          entry.tasks.push({
+            id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            title,
+            subject,
+            targetQty: quota,
+            priority,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+          });
+
+          // If target is scheduled for currently viewed date, switch to that date or stay
+          state.selectedTargetDate = targetDate;
+
+          playChime('start');
+          saveState();
+          closeModal('modal-add-daily-target');
+          formModalAddTarget.reset();
+          renderTargetHub();
+        }
+      });
+    }
+
     // --- Subject-Wise Revision System Listeners ---
     const btnAddRevision = document.getElementById('btn-add-revision-topic');
     if (btnAddRevision) {
       btnAddRevision.addEventListener('click', () => {
-        const dateInput = document.getElementById('rev-completion-date');
-        if (dateInput) dateInput.value = getStudyCycleDate();
+        const dateInput = document.getElementById('rev-topic-date') || document.getElementById('rev-completion-date');
+        if (dateInput) dateInput.value = state.selectedTargetDate || getStudyCycleDate();
         openModal('modal-add-revision-topic');
       });
     }
@@ -5504,9 +6397,13 @@ ${item.formula}
     if (formAddRevision) {
       formAddRevision.addEventListener('submit', (e) => {
         e.preventDefault();
-        const sub = document.getElementById('rev-subject').value;
-        const title = document.getElementById('rev-topic-title').value.trim();
-        const date = document.getElementById('rev-completion-date').value || getStudyCycleDate();
+        const subEl = document.getElementById('rev-topic-subject') || document.getElementById('rev-subject');
+        const titleEl = document.getElementById('rev-topic-title');
+        const dateEl = document.getElementById('rev-topic-date') || document.getElementById('rev-completion-date');
+        
+        const sub = subEl ? subEl.value : 'Maths';
+        const title = titleEl ? titleEl.value.trim() : '';
+        const date = (dateEl && dateEl.value) ? dateEl.value : getStudyCycleDate();
         if (title) {
           state.revisionTopics.unshift({
             id: 'rev_' + Date.now(),
@@ -5518,6 +6415,7 @@ ${item.formula}
             r3Done: false,
             r4Done: false
           });
+          playChime('start');
           saveState();
           closeModal('modal-add-revision-topic');
           formAddRevision.reset();
@@ -5536,10 +6434,12 @@ ${item.formula}
     const btnResetRevision = document.getElementById('btn-reset-revision');
     if (btnResetRevision) {
       btnResetRevision.addEventListener('click', () => {
-        if (confirm('Restore default revision topics and intervals?')) {
+        if (confirm('Reset Daily Targets & Revision Hub to standard default schedule?')) {
           state.revisionTopics = JSON.parse(JSON.stringify(DEFAULT_REVISION_TOPICS));
+          state.dateTargets = getDefaultDateTargets();
+          state.selectedTargetDate = getStudyCycleDate();
           saveState();
-          renderRevisionSystem();
+          renderTargetHub();
         }
       });
     }
@@ -6837,6 +7737,105 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       });
     }
 
+    // --- CLOUD AUTHENTICATION & FIRESTORE SYNC MODAL BINDINGS ---
+    const btnTopAuth = document.getElementById('btn-top-auth');
+    if (btnTopAuth) {
+      btnTopAuth.addEventListener('click', () => {
+        openModal('modal-auth-sync');
+      });
+    }
+
+    const btnSidebarCloudSync = document.getElementById('btn-sidebar-cloud-sync');
+    if (btnSidebarCloudSync) {
+      btnSidebarCloudSync.addEventListener('click', () => {
+        closeSidebar();
+        openModal('modal-auth-sync');
+      });
+    }
+
+    // Google Sign-In Button Handler
+    const btnGoogleSignIn = document.getElementById('btn-google-signin');
+    if (btnGoogleSignIn) {
+      btnGoogleSignIn.addEventListener('click', async () => {
+        hideAuthError();
+
+        const spinner = document.getElementById('google-signin-spinner');
+        const label = document.getElementById('google-signin-label');
+
+        if (!firebaseAuth) {
+          showAuthError('Firebase Authentication service is initializing. Please try again.');
+          return;
+        }
+
+        if (spinner) spinner.classList.remove('hidden');
+        if (label) label.textContent = 'Connecting to Google...';
+        btnGoogleSignIn.disabled = true;
+
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({
+            prompt: 'select_account'
+          });
+
+          const result = await firebaseAuth.signInWithPopup(provider);
+          if (result && result.user) {
+            showAuthToast(`Welcome ${result.user.displayName || result.user.email}! Study progress synced.`);
+            closeModal('modal-auth-sync');
+          }
+        } catch (err) {
+          console.error('Google Sign-In Error:', err);
+          let msg = 'Google authentication failed. Please try again.';
+          if (err.code === 'auth/popup-closed-by-user') {
+            msg = 'Google Sign-in window was closed before completing. Please try again.';
+          } else if (err.code === 'auth/popup-blocked') {
+            msg = 'Sign-in popup was blocked by browser. Please allow popups for this page.';
+          } else if (err.code === 'auth/network-request-failed') {
+            msg = 'Network connection failed. Please check your internet connection.';
+          } else if (err.message) {
+            msg = err.message;
+          }
+          showAuthError(msg);
+        } finally {
+          if (spinner) spinner.classList.add('hidden');
+          if (label) label.textContent = 'Sign in with Google';
+          btnGoogleSignIn.disabled = false;
+        }
+      });
+    }
+
+    // Manual Cloud Sync Button
+    const btnManualSync = document.getElementById('btn-auth-manual-sync');
+    if (btnManualSync) {
+      btnManualSync.addEventListener('click', async () => {
+        if (!currentUser || !firestoreDb) {
+          showAuthToast('Please sign in to sync with cloud.');
+          return;
+        }
+        btnManualSync.disabled = true;
+        btnManualSync.innerHTML = '<span class="cloud-syncing-spin">🔄</span> Syncing...';
+        await performCloudSync();
+        btnManualSync.disabled = false;
+        btnManualSync.innerHTML = '<span>🔄</span> Sync Cloud Now';
+        showAuthToast('Cloud sync completed! All study progress backed up.');
+      });
+    }
+
+    // Logout Button
+    const btnLogout = document.getElementById('btn-auth-logout');
+    if (btnLogout) {
+      btnLogout.addEventListener('click', async () => {
+        if (!firebaseAuth) return;
+        try {
+          await firebaseAuth.signOut();
+          showAuthToast('Logged out. Switched to local offline mode.');
+          closeModal('modal-auth-sync');
+        } catch (err) {
+          console.error('Logout error:', err);
+          alert('Error logging out: ' + err.message);
+        }
+      });
+    }
+
     // --- GUARANTEED BUG-FREE REWARD MODAL CLOSE LISTENERS ---
     const btnCloseRewardX = document.getElementById('btn-close-reward-x');
     const btnCloseRewardAction = document.getElementById('btn-close-reward-action');
@@ -6888,8 +7887,9 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       // 2. Check 5:00 AM cycle transition
       check5amDailyCycleReset();
 
-      // 3. Fast UI refresh for smooth gauges & counters
+      // 3. Fast UI refresh for smooth gauges, live digital clock & counters
       updateCountdownTicker();
+      update5amCountdown();
       renderHomeView();
       if (!document.getElementById('section-subjects').classList.contains('hidden')) {
         renderSubjectCards();
@@ -6917,6 +7917,7 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     saveState();
     check5amDailyCycleReset();
     updateCountdownTicker();
+    update5amCountdown();
     renderHomeView();
     if (!document.getElementById('section-subjects').classList.contains('hidden')) {
       renderSubjectCards();
@@ -6944,10 +7945,264 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
   // Application Entry Point
   function init() {
     loadState();
+    initFirebaseService();
     bindEvents();
     updateUI();
     startTickEngine();
     console.log('Mission CGL 2027 & Railway Tracker initialized successfully with background active tracking.');
+  }
+
+  // ==========================================================================
+  // 13. FIREBASE AUTHENTICATION & FIRESTORE CLOUD PERSISTENCE ENGINE
+  // ==========================================================================
+
+  function handleFirestoreError(error, operationType, path) {
+    const errInfo = {
+      error: error instanceof Error ? error.message : String(error),
+      authInfo: {
+        userId: currentUser?.uid || null,
+        email: currentUser?.email || null,
+        emailVerified: currentUser?.emailVerified || null,
+        isAnonymous: currentUser?.isAnonymous || null,
+        tenantId: currentUser?.tenantId || null,
+        providerInfo: currentUser?.providerData?.map((p) => ({
+          providerId: p.providerId,
+          email: p.email,
+        })) || []
+      },
+      operationType: operationType,
+      path: path
+    };
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+  }
+
+  function initFirebaseService() {
+    try {
+      if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
+        }
+        firebaseAuth = firebase.auth();
+        firestoreDb = firebase.firestore();
+
+        // Connect to the specific named Firestore database
+        if (FIREBASE_CONFIG.firestoreDatabaseId && firestoreDb) {
+          if (firestoreDb._delegate && firestoreDb._delegate._databaseId) {
+            firestoreDb._delegate._databaseId.database = FIREBASE_CONFIG.firestoreDatabaseId;
+          }
+        }
+
+        // Listen to Auth State Changes
+        firebaseAuth.onAuthStateChanged(async (user) => {
+          currentUser = user;
+          updateAuthUI(user);
+
+          if (user) {
+            console.log('Firebase user logged in:', user.email, user.uid);
+            await restoreStateFromCloud(user.uid);
+          } else {
+            console.log('Firebase user logged out / guest mode.');
+          }
+        });
+      } else {
+        console.warn('Firebase SDK not loaded on window.');
+      }
+    } catch (e) {
+      console.error('Failed to initialize Firebase service:', e);
+    }
+  }
+
+  function updateAuthUI(user) {
+    const authStatusDot = document.getElementById('auth-status-dot');
+    const authStatusLabel = document.getElementById('auth-status-label');
+    const sidebarAuthStatusText = document.getElementById('sidebar-auth-status-text');
+    const authViewLoggedIn = document.getElementById('auth-view-logged-in');
+    const authViewLoggedOut = document.getElementById('auth-view-logged-out');
+    const authUserDisplayName = document.getElementById('auth-user-display-name');
+    const authUserEmail = document.getElementById('auth-user-email');
+
+    if (user) {
+      if (authStatusDot) {
+        authStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      }
+      if (authStatusLabel) {
+        const shortName = user.displayName || user.email.split('@')[0];
+        authStatusLabel.textContent = shortName.length > 12 ? shortName.slice(0, 10) + '...' : shortName;
+        authStatusLabel.title = user.email;
+      }
+      if (sidebarAuthStatusText) {
+        sidebarAuthStatusText.textContent = `Cloud: ${user.email.split('@')[0]}`;
+      }
+      if (authViewLoggedIn) authViewLoggedIn.classList.remove('hidden');
+      if (authViewLoggedOut) authViewLoggedOut.classList.add('hidden');
+      if (authUserDisplayName) authUserDisplayName.textContent = user.displayName || 'SSC CGL Aspirant';
+      if (authUserEmail) authUserEmail.textContent = user.email;
+    } else {
+      if (authStatusDot) {
+        authStatusDot.className = 'w-2 h-2 rounded-full bg-slate-500';
+      }
+      if (authStatusLabel) {
+        authStatusLabel.textContent = 'Guest (Local)';
+        authStatusLabel.title = 'Click to login and sync data';
+      }
+      if (sidebarAuthStatusText) {
+        sidebarAuthStatusText.textContent = 'Cloud Sync (Guest)';
+      }
+      if (authViewLoggedIn) authViewLoggedIn.classList.add('hidden');
+      if (authViewLoggedOut) authViewLoggedOut.classList.remove('hidden');
+    }
+  }
+
+  function showAuthError(msg) {
+    const alertBox = document.getElementById('auth-error-alert');
+    const msgEl = document.getElementById('auth-error-message');
+    if (alertBox && msgEl) {
+      msgEl.textContent = msg;
+      alertBox.classList.remove('hidden');
+    }
+  }
+
+  function hideAuthError() {
+    const alertBox = document.getElementById('auth-error-alert');
+    if (alertBox) {
+      alertBox.classList.add('hidden');
+    }
+  }
+
+  function showAuthToast(message) {
+    let toast = document.getElementById('app-auth-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-auth-toast';
+      toast.className = 'auth-toast';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span class="text-base">☁️</span> <span>${escapeHtml(message)}</span>`;
+    toast.classList.add('show');
+    setTimeout(() => {
+      if (toast) toast.classList.remove('show');
+    }, 4000);
+  }
+
+  function scheduleCloudSync() {
+    if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+    cloudSyncTimeout = setTimeout(() => {
+      performCloudSync();
+    }, 2500); // 2.5 second debounce
+  }
+
+  async function performCloudSync() {
+    if (!currentUser || !firestoreDb || isSyncingToCloud) return;
+    isSyncingToCloud = true;
+
+    try {
+      const payload = {
+        userId: currentUser.uid,
+        email: currentUser.email,
+        activeCycleDate: state.activeCycleDate || getStudyCycleDate(),
+        targetHours: state.targetHours || 10.0,
+        isBreakDay: !!state.isBreakDay,
+        soundEnabled: state.soundEnabled !== false,
+        targetExamTitle: state.targetExamTitle || DEFAULT_TARGET_EXAM.title,
+        targetExamDate: state.targetExamDate || DEFAULT_TARGET_EXAM.date,
+        subjects: state.subjects || [],
+        todayBreakSeconds: state.todayBreakSeconds || 0,
+        yesterdayBreakSeconds: state.yesterdayBreakSeconds || 0,
+        mathsQuestionsDone: state.mathsQuestionsDone || 0,
+        habits: state.habits || [],
+        weakAreas: state.weakAreas || [],
+        syllabus: state.syllabus || [],
+        revisionTopics: state.revisionTopics || [],
+        dateTargets: state.dateTargets || {},
+        energyRatingToday: state.energyRatingToday,
+        energyHistory: state.energyHistory || [],
+        vaultItems: state.vaultItems || [],
+        spacedRepChapters: state.spacedRepChapters || [],
+        consecutiveStreak: state.consecutiveStreak || 0,
+        claimedMilestones: state.claimedMilestones || [],
+        history: state.history || [],
+        mockAnalysisHistory: state.mockAnalysisHistory || [],
+        journalEntries: state.journalEntries || [],
+        mockScores: state.mockScores || [],
+        updatedAt: new Date().toISOString()
+      };
+
+      await firestoreDb.collection('study_data').doc(currentUser.uid).set(payload, { merge: true });
+      lastCloudSyncTimestamp = Date.now();
+      const lastSyncEl = document.getElementById('auth-last-sync-time');
+      if (lastSyncEl) {
+        lastSyncEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+      console.log('Cloud sync to Firestore succeeded for user:', currentUser.uid);
+    } catch (e) {
+      console.error('Cloud sync failed:', e);
+      handleFirestoreError(e, 'write', `study_data/${currentUser?.uid}`);
+    } finally {
+      isSyncingToCloud = false;
+    }
+  }
+
+  async function restoreStateFromCloud(userId) {
+    if (!firestoreDb || !userId) return;
+    try {
+      const docSnap = await firestoreDb.collection('study_data').doc(userId).get();
+      if (docSnap.exists) {
+        const cloudData = docSnap.data();
+        if (cloudData && typeof cloudData === 'object') {
+          console.log('Restoring user profile and study data from Firestore Cloud Snapshot...');
+          
+          // Reconcile and merge Cloud State into current app state
+          if (cloudData.activeCycleDate) state.activeCycleDate = cloudData.activeCycleDate;
+          if (cloudData.targetHours !== undefined) state.targetHours = cloudData.targetHours;
+          if (cloudData.isBreakDay !== undefined) state.isBreakDay = cloudData.isBreakDay;
+          if (cloudData.soundEnabled !== undefined) state.soundEnabled = cloudData.soundEnabled;
+          if (cloudData.targetExamTitle) state.targetExamTitle = cloudData.targetExamTitle;
+          if (cloudData.targetExamDate) state.targetExamDate = cloudData.targetExamDate;
+          if (Array.isArray(cloudData.subjects)) state.subjects = cloudData.subjects;
+          if (cloudData.todayBreakSeconds !== undefined) state.todayBreakSeconds = cloudData.todayBreakSeconds;
+          if (cloudData.yesterdayBreakSeconds !== undefined) state.yesterdayBreakSeconds = cloudData.yesterdayBreakSeconds;
+          if (cloudData.mathsQuestionsDone !== undefined) state.mathsQuestionsDone = cloudData.mathsQuestionsDone;
+          if (Array.isArray(cloudData.habits)) state.habits = cloudData.habits;
+          if (Array.isArray(cloudData.weakAreas)) state.weakAreas = cloudData.weakAreas;
+          if (Array.isArray(cloudData.syllabus)) state.syllabus = cloudData.syllabus;
+          if (Array.isArray(cloudData.revisionTopics)) state.revisionTopics = cloudData.revisionTopics;
+          if (cloudData.dateTargets && typeof cloudData.dateTargets === 'object') state.dateTargets = cloudData.dateTargets;
+          if (cloudData.energyRatingToday !== undefined) state.energyRatingToday = cloudData.energyRatingToday;
+          if (Array.isArray(cloudData.energyHistory)) state.energyHistory = cloudData.energyHistory;
+          if (Array.isArray(cloudData.vaultItems)) state.vaultItems = cloudData.vaultItems;
+          if (Array.isArray(cloudData.spacedRepChapters)) state.spacedRepChapters = cloudData.spacedRepChapters;
+          if (cloudData.consecutiveStreak !== undefined) state.consecutiveStreak = cloudData.consecutiveStreak;
+          if (Array.isArray(cloudData.claimedMilestones)) state.claimedMilestones = cloudData.claimedMilestones;
+          if (Array.isArray(cloudData.history)) state.history = cloudData.history;
+          if (Array.isArray(cloudData.mockAnalysisHistory)) state.mockAnalysisHistory = cloudData.mockAnalysisHistory;
+          if (Array.isArray(cloudData.journalEntries)) state.journalEntries = cloudData.journalEntries;
+          if (Array.isArray(cloudData.mockScores)) state.mockScores = cloudData.mockScores;
+
+          // Reconcile 5 AM reset & refresh UI
+          check5amDailyCycleReset();
+          saveState(true); // Persist restored data locally without triggering immediately another cloud write
+          updateUI();
+          showAuthToast('Cloud data loaded! Your exact progress was restored.');
+
+          const lastSyncEl = document.getElementById('auth-last-sync-time');
+          if (lastSyncEl && cloudData.updatedAt) {
+            try {
+              lastSyncEl.textContent = new Date(cloudData.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+              lastSyncEl.textContent = 'Synced';
+            }
+          }
+        }
+      } else {
+        // User's first cloud login: upload their local study progress to Firestore
+        console.log('No existing cloud snapshot found for this user. Seeding local state to Firestore...');
+        await performCloudSync();
+        showAuthToast('Welcome! Your existing progress has been backed up to the cloud.');
+      }
+    } catch (e) {
+      console.error('Error restoring state from cloud:', e);
+      handleFirestoreError(e, 'get', `study_data/${userId}`);
+    }
   }
 
   if (document.readyState === 'loading') {
