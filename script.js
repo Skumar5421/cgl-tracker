@@ -1924,20 +1924,39 @@
     const targetDateStr = state.targetExamDate || DEFAULT_TARGET_EXAM.date;
 
     if (titleEl) titleEl.textContent = examTitle;
-    if (inlineDatePicker && inlineDatePicker.value !== targetDateStr) {
-      inlineDatePicker.value = targetDateStr;
+
+    // Never overwrite inline input while user is focusing or picking a date
+    if (inlineDatePicker && document.activeElement !== inlineDatePicker) {
+      if (inlineDatePicker.value !== targetDateStr) {
+        inlineDatePicker.value = targetDateStr;
+      }
     }
 
     try {
-      const parts = targetDateStr.split('-');
-      const dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      const formatted = dObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      if (dateLabel) dateLabel.textContent = `Target: ${formatted}`;
+      if (targetDateStr && targetDateStr.includes('-')) {
+        const parts = targetDateStr.split('-');
+        const dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const formatted = dObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        if (dateLabel) dateLabel.textContent = `Target: ${formatted}`;
+      } else if (dateLabel) {
+        dateLabel.textContent = `Target: ${targetDateStr}`;
+      }
     } catch (e) {
       if (dateLabel) dateLabel.textContent = `Target: ${targetDateStr}`;
     }
 
-    const targetTime = new Date(`${targetDateStr}T09:00:00`).getTime();
+    let targetTime = 0;
+    try {
+      if (targetDateStr && targetDateStr.includes('-')) {
+        const parts = targetDateStr.split('-');
+        targetTime = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 9, 0, 0).getTime();
+      } else if (targetDateStr) {
+        targetTime = new Date(targetDateStr).getTime();
+      }
+    } catch (e) {
+      targetTime = 0;
+    }
+
     const now = Date.now();
     const diff = Math.max(0, targetTime - now);
 
@@ -4399,20 +4418,22 @@ ${item.formula}
     // Direct Interactive Calendar Date Picker Listener
     const inlineDatePicker = document.getElementById('inline-exam-date-picker');
     if (inlineDatePicker) {
-      inlineDatePicker.addEventListener('change', (e) => {
-        if (e.target.value) {
-          state.targetExamDate = e.target.value;
+      const applyInlineDate = (val) => {
+        if (!val) return;
+        const cleanVal = val.trim();
+        if (/^\d{4}-\d{2}-\d{2}$/.test(cleanVal)) {
+          state.targetExamDate = cleanVal;
           saveState();
           updateCountdownTicker();
-          playChime('start');
         }
+      };
+
+      inlineDatePicker.addEventListener('change', (e) => {
+        applyInlineDate(e.target.value);
+        playChime('start');
       });
       inlineDatePicker.addEventListener('input', (e) => {
-        if (e.target.value) {
-          state.targetExamDate = e.target.value;
-          saveState();
-          updateCountdownTicker();
-        }
+        applyInlineDate(e.target.value);
       });
     }
 
@@ -4448,8 +4469,8 @@ ${item.formula}
         if (titleInput && titleInput.value.trim()) {
           state.targetExamTitle = titleInput.value.trim();
         }
-        if (dateInput && dateInput.value) {
-          state.targetExamDate = dateInput.value;
+        if (dateInput && dateInput.value && /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value.trim())) {
+          state.targetExamDate = dateInput.value.trim();
         }
         saveState();
         closeModal('modal-edit-countdown');
