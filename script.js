@@ -4302,14 +4302,89 @@ ${item.formula}
   }
 
   // ==========================================================================
-  // 10. MOZILLA PDF.JS & MOCK ANALYSIS INTEGRATION
+  // 10. MOZILLA PDF.JS & TESSERACT CLIENT-SIDE OCR & MOCK ANALYSIS INTEGRATION
   // ==========================================================================
 
-  async function extractTextFromPDF(file) {
+  // Perform client-side OCR recognition on an HTMLCanvasElement, Blob, or File
+  async function runOcrOnImageSource(imageSource, onProgress) {
+    // @ts-ignore
+    if (typeof window === 'undefined' || !window.Tesseract) {
+      throw new Error('Tesseract OCR engine is not loaded. Please verify your internet connection.');
+    }
+
+    try {
+      // @ts-ignore
+      const result = await window.Tesseract.recognize(imageSource, 'eng', {
+        logger: (m) => {
+          if (onProgress && m && typeof m.progress === 'number') {
+            const statusLabel = m.status === 'recognizing text' ? 'Recognizing text' : (m.status || 'Processing');
+            onProgress(statusLabel, Math.min(1, Math.max(0, m.progress)));
+          }
+        }
+      });
+      return (result && result.data && result.data.text) ? String(result.data.text).trim() : '';
+    } catch (ocrErr) {
+      console.warn('Tesseract recognition warning:', ocrErr);
+      throw ocrErr;
+    }
+  }
+
+  // Render PDF pages to high-resolution canvases and perform OCR fallback
+  async function extractOcrFromPdfDocument(pdf, onProgress) {
+    let fullOcrText = '';
+    const maxPages = Math.min(pdf.numPages || 1, 5);
+
+    for (let i = 1; i <= maxPages; i++) {
+      if (onProgress) {
+        onProgress(`Rendering Page ${i} of ${maxPages} for OCR...`, 0.1 + (i - 1) / maxPages * 0.8);
+      }
+
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.8 }); // 1.8x scale for sharp text readability
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      if (!ctx) continue;
+
+      // Render PDF page to canvas
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      // Run OCR on rendered canvas
+      const pageText = await runOcrOnImageSource(canvas, (status, pct) => {
+        if (onProgress) {
+          const overallPct = ((i - 1) + pct) / maxPages;
+          onProgress(`OCR Page ${i}/${maxPages}: ${status} (${Math.round(pct * 100)}%)`, overallPct);
+        }
+      });
+
+      if (pageText) {
+        fullOcrText += `\n--- PAGE ${i} (OCR Extracted) ---\n` + pageText;
+      }
+    }
+
+    return fullOcrText.trim();
+  }
+
+  // Unified extractor: Supports native text PDFs, scanned/image-based PDFs via OCR fallback, and screenshot image files
+  async function extractTextFromUploadedFile(file, onProgress) {
+    const fileNameLower = (file.name || '').toLowerCase();
+    const isImageFile = file.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif)$/i.test(fileNameLower);
+
+    // 1. Direct Image File (Screenshot of scorecard)
+    if (isImageFile) {
+      if (onProgress) onProgress('Scanning scorecard screenshot via OCR engine...', 0.2);
+      const ocrText = await runOcrOnImageSource(file, onProgress);
+      return { text: ocrText, method: 'ocr_image' };
+    }
+
+    // 2. PDF Document
     // @ts-ignore
     if (typeof window === 'undefined' || !window.pdfjsLib) {
-      throw new Error('PDF.js library is not available. Please verify your internet connection.');
+      throw new Error('PDF.js library is not available. Please check your network.');
     }
+
     try {
       // @ts-ignore
       if (window.pdfjsLib.GlobalWorkerOptions && !window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -4326,6 +4401,8 @@ ${item.formula}
     const pdf = await loadingTask.promise;
     let fullText = '';
 
+    // Step A: Attempt fast native PDF vector text layer extraction
+    if (onProgress) onProgress('Checking PDF text stream...', 0.1);
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
@@ -4345,7 +4422,18 @@ ${item.formula}
       fullText += `\n--- PAGE ${i} ---\n` + pageText;
     }
 
-    return String(fullText || '').trim();
+    const cleanNativeText = fullText.replace(/---\s*PAGE\s*\d+\s*---/gi, '').trim();
+    const alphaNumCount = (cleanNativeText.match(/[a-zA-Z0-9]/g) || []).length;
+
+    // If native text is found with sufficient content, return immediately!
+    if (alphaNumCount >= 25) {
+      return { text: fullText.trim(), method: 'native_pdf' };
+    }
+
+    // Step B: Scanned / Image-based PDF detected -> Trigger OCR Fallback!
+    if (onProgress) onProgress('Scanned PDF detected. Starting automatic client-side OCR fallback...', 0.15);
+    const ocrExtracted = await extractOcrFromPdfDocument(pdf, onProgress);
+    return { text: ocrExtracted, method: 'ocr_pdf' };
   }
 
   async function runMockAnalysis() {
@@ -4358,30 +4446,128 @@ ${item.formula}
 
     let textToAnalyze = '';
     let fileName = '';
+    let extractionMethod = 'manual';
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
       const file = fileInput.files[0];
       fileName = file.name;
-      if (statusPill) statusPill.textContent = 'Parsing PDF Pages...';
-      if (outputBox) outputBox.innerHTML = '<p class="text-emerald-400 animate-pulse font-mono">Extracting text from PDF via PDF.js...</p>';
+      if (statusPill) statusPill.textContent = 'Reading Document...';
+      if (outputBox) {
+        outputBox.innerHTML = `
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 font-mono text-xs">
+            <div class="flex items-center gap-2 text-emerald-400 font-bold">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="mock-extract-status-text">Extracting text & checking for scanned images...</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div id="mock-extract-progress-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300 w-1/4 animate-pulse"></div>
+            </div>
+            <p class="text-[11px] text-slate-400">Processing ${escapeHtml(fileName)} (PDF.js + OCR Engine)</p>
+          </div>
+        `;
+      }
+
+      const updateProgressUI = (msg, pct) => {
+        const textEl = document.getElementById('mock-extract-status-text');
+        const barEl = document.getElementById('mock-extract-progress-bar');
+        if (textEl) textEl.textContent = msg;
+        if (barEl && typeof pct === 'number') {
+          barEl.style.width = `${Math.min(100, Math.max(10, Math.round(pct * 100)))}%`;
+        }
+        if (statusPill) {
+          statusPill.textContent = msg.length > 25 ? msg.slice(0, 25) + '...' : msg;
+        }
+      };
+
       try {
-        textToAnalyze = await extractTextFromPDF(file);
+        const result = await extractTextFromUploadedFile(file, updateProgressUI);
+        textToAnalyze = result.text || '';
+        extractionMethod = result.method;
+
+        // Populate raw text area so the user can inspect what OCR/PDF.js extracted
+        if (rawTextArea && (!rawTextArea.value || !rawTextArea.value.trim())) {
+          rawTextArea.value = textToAnalyze;
+        }
       } catch (err) {
-        if (statusPill) statusPill.textContent = 'PDF Parse Error';
-        if (outputBox) outputBox.innerHTML = `<div class="p-3 rounded-xl bg-rose-950/30 border border-rose-800 text-rose-300 font-mono text-xs"><p class="font-bold">PDF Parse Error:</p><p class="text-slate-300 mt-1">${escapeHtml(err.message || String(err))}</p></div>`;
+        console.error('File text extraction error:', err);
+        if (statusPill) statusPill.textContent = 'Scanned PDF Detected';
+        if (outputBox) {
+          outputBox.innerHTML = `
+            <div class="p-4 rounded-2xl bg-amber-950/40 border border-amber-800/80 text-amber-200 text-xs space-y-2.5">
+              <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                <span>⚠️</span>
+                <span>Scanned PDF or Image Detected</span>
+              </div>
+              <p class="text-slate-300 leading-relaxed">
+                Could not automatically OCR text from this file (${escapeHtml(err.message || String(err))}).
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+                <p class="text-amber-400 font-semibold text-xs">
+                  👉 Scanned PDF detected. Please paste raw scorecard text in <strong>Mode 2 (Direct Text Input)</strong> instead.
+                </p>
+                <button type="button" id="btn-switch-to-mode2" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-semibold border border-amber-500/40 transition">
+                  ✏️ Jump to Mode 2 Text Area
+                </button>
+              </div>
+            </div>
+          `;
+          const switchBtn = document.getElementById('btn-switch-to-mode2');
+          if (switchBtn) {
+            switchBtn.addEventListener('click', () => {
+              const rawArea = document.getElementById('mock-raw-text');
+              if (rawArea) {
+                rawArea.focus();
+                rawArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            });
+          }
+        }
         return;
       }
     } else if (rawTextArea && rawTextArea.value.trim()) {
       textToAnalyze = rawTextArea.value.trim();
+      extractionMethod = 'direct_text';
     } else {
-      alert('Please upload a PDF scorecard or paste mock results text.');
+      alert('Please upload a PDF scorecard / screenshot or paste mock results text.');
       return;
     }
 
-    if (!textToAnalyze || typeof textToAnalyze !== 'string' || !textToAnalyze.trim()) {
-      if (statusPill) statusPill.textContent = 'No Text Found';
+    // Check if the extracted text contains meaningful alphanumeric characters
+    const meaningfulText = textToAnalyze.replace(/---\s*PAGE\s*\d+.*---\s*/gi, '').trim();
+    const alphaNumCount = (meaningfulText.match(/[a-zA-Z0-9]/g) || []).length;
+
+    if (!meaningfulText || alphaNumCount < 15) {
+      if (statusPill) statusPill.textContent = 'Scanned PDF Detected';
       if (outputBox) {
-        outputBox.innerHTML = '<div class="p-3 rounded-xl bg-amber-950/30 border border-amber-800 text-amber-300 font-mono text-xs"><p class="font-bold">⚠️ No Text Extracted</p><p class="text-slate-300 mt-1">No readable text found in this PDF (it might contain scanned images or screenshots). Please paste the mock scorecard text manually in the text area below.</p></div>';
+        outputBox.innerHTML = `
+          <div class="p-4 rounded-2xl bg-amber-950/40 border border-amber-800/80 text-amber-200 text-xs space-y-2.5">
+            <div class="flex items-center gap-2 font-bold text-amber-300 text-sm">
+              <span>⚠️</span>
+              <span>Scanned PDF / Screenshot Detected</span>
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              No readable text could be recognized from this document. It may be too low resolution or a blank page.
+            </p>
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+              <p class="text-amber-400 font-semibold text-xs">
+                👉 Scanned PDF detected. Please paste raw scorecard text in <strong>Mode 2 (Direct Text Input)</strong> instead.
+              </p>
+              <button type="button" id="btn-switch-to-mode2" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-semibold border border-amber-500/40 transition">
+                ✏️ Jump to Mode 2 Text Area
+              </button>
+            </div>
+          </div>
+        `;
+        const switchBtn = document.getElementById('btn-switch-to-mode2');
+        if (switchBtn) {
+          switchBtn.addEventListener('click', () => {
+            const rawArea = document.getElementById('mock-raw-text');
+            if (rawArea) {
+              rawArea.focus();
+              rawArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        }
       }
       return;
     }
@@ -4389,8 +4575,19 @@ ${item.formula}
     // Ensure textToAnalyze is a clean plain text string and limit payload size safely
     textToAnalyze = String(textToAnalyze).trim().slice(0, 100000);
 
-    if (statusPill) statusPill.textContent = 'Analyzing with Gemini AI...';
-    if (outputBox) outputBox.innerHTML = '<p class="text-emerald-400 animate-pulse font-mono">Querying Gemini AI mock diagnostic model...</p>';
+    const isOcrUsed = extractionMethod.startsWith('ocr');
+    if (statusPill) statusPill.textContent = isOcrUsed ? 'OCR Complete • Analyzing...' : 'Analyzing with Gemini AI...';
+    if (outputBox) {
+      outputBox.innerHTML = `
+        <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2 font-mono text-xs">
+          <div class="flex items-center gap-2 text-emerald-400 font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Querying Gemini AI mock diagnostic model...</span>
+          </div>
+          ${isOcrUsed ? '<p class="text-[11px] text-sky-400">✓ OCR successfully recognized text from image/scanned scorecard</p>' : ''}
+        </div>
+      `;
+    }
 
     try {
       const endpoint = fileName ? '/api/gemini/analyze-pdf-mock' : '/api/gemini/analyze-mock';
@@ -4423,69 +4620,33 @@ ${item.formula}
       if (statusPill) statusPill.textContent = 'Analysis Complete';
       playChime('reward');
 
-      // Render response
-      if (data.analysis) {
-        // Markdown format response
-        outputBox.innerHTML = `<div class="prose prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap">${data.analysis}</div>`;
-      } else {
-        // Structured JSON format
-        outputBox.innerHTML = `
-          <div class="space-y-3">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-mono">
-              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <div class="text-[10px] text-slate-400">SCORE</div>
-                <div class="text-base font-extrabold text-emerald-400">${data.score || 0} / ${data.totalMarks || 200}</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <div class="text-[10px] text-slate-400">ACCURACY</div>
-                <div class="text-base font-extrabold text-white">${data.accuracyPercent || 0}%</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <div class="text-[10px] text-slate-400">CORRECT</div>
-                <div class="text-base font-bold text-emerald-400">${data.correct || 0}</div>
-              </div>
-              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-                <div class="text-[10px] text-slate-400">WRONG</div>
-                <div class="text-base font-bold text-rose-400">${data.wrong || 0}</div>
-              </div>
-            </div>
-
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-              <span class="text-[11px] font-bold text-white uppercase font-mono">Mentor Verdict:</span>
-              <p class="text-slate-300">${escapeHtml(data.overallVerdict || 'Good attempt. Focus on negative marking prevention.')}</p>
-            </div>
-
-            ${Array.isArray(data.weakPoints) && data.weakPoints.length > 0 ? `
-              <div class="p-3 rounded-xl bg-rose-950/20 border border-rose-900/50 space-y-1.5">
-                <span class="text-[11px] font-bold text-rose-300 uppercase font-mono">Weak Areas Identified:</span>
-                <ul class="list-disc list-inside space-y-1 text-slate-300">
-                  ${data.weakPoints.map((wp) => `<li>${escapeHtml(wp)}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
-
-            ${Array.isArray(data.continuousRecommendations) && data.continuousRecommendations.length > 0 ? `
-              <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5">
-                <span class="text-[11px] font-bold text-sky-400 uppercase font-mono">Continuous Recommendations:</span>
-                <ul class="list-disc list-inside space-y-1 text-slate-300">
-                  ${data.continuousRecommendations.map((r) => `<li>${escapeHtml(r)}</li>`).join('')}
-                </ul>
-              </div>
-            ` : ''}
-          </div>
-        `;
+      // Normalize data response
+      let parsedData = data;
+      if (data.analysis && typeof data.analysis === 'string') {
+        try {
+          const cleaned = data.analysis.replace(/```json/g, '').replace(/```/g, '').trim();
+          parsedData = JSON.parse(cleaned);
+        } catch (_e) {
+          parsedData = { overallVerdict: data.analysis, rawMarkdown: data.analysis };
+        }
       }
 
+      // Render comprehensive structured diagnostic report
+      renderMockDiagnosticReport(parsedData, outputBox);
+
       // Automatically populate or enrich Weak Areas Radar on homepage!
-      if (data.weakPoints && Array.isArray(data.weakPoints)) {
-        data.weakPoints.slice(0, 3).forEach((wp, i) => {
-          state.weakAreas.unshift({
-            id: 'mock_weak_' + Date.now() + '_' + i,
-            subject: 'Mock',
-            topic: String(wp).slice(0, 60),
-            advice: 'Auto-extracted from latest Mock Diagnostic. Solve 50 PYQ drills.',
-            resolved: false
-          });
+      if (parsedData.weakPoints && Array.isArray(parsedData.weakPoints)) {
+        parsedData.weakPoints.slice(0, 3).forEach((wp, i) => {
+          const topicStr = String(wp).slice(0, 60);
+          if (!state.weakAreas.some(w => w.topic.toLowerCase() === topicStr.toLowerCase())) {
+            state.weakAreas.unshift({
+              id: 'mock_weak_' + Date.now() + '_' + i,
+              subject: 'Mock',
+              topic: topicStr,
+              advice: 'Auto-extracted from latest Mock Diagnostic. Solve 50 PYQ drills.',
+              resolved: false
+            });
+          }
         });
         // Limit to 8 radar items
         state.weakAreas = state.weakAreas.slice(0, 8);
@@ -4496,16 +4657,669 @@ ${item.formula}
     } catch (err) {
       if (statusPill) statusPill.textContent = 'Analysis Failed';
       if (outputBox) {
+        let cleanMsg = err.message || String(err);
+        try {
+          const parsed = JSON.parse(cleanMsg);
+          if (parsed && parsed.error && parsed.error.message) {
+            cleanMsg = parsed.error.message;
+          }
+        } catch (_e) {}
+
+        const isBusy = cleanMsg.includes('503') || cleanMsg.includes('UNAVAILABLE') || cleanMsg.includes('high demand') || cleanMsg.includes('busy');
+
         outputBox.innerHTML = `
-          <div class="p-3.5 rounded-xl bg-rose-950/30 border border-rose-800 text-rose-300 font-mono text-xs space-y-1.5">
-            <div class="font-bold flex items-center gap-1.5 text-rose-400">
-              <span>⚠️</span> Mock Diagnostic Error
+          <div class="p-4 rounded-2xl bg-rose-950/30 border border-rose-800/80 text-rose-200 text-xs space-y-3">
+            <div class="flex items-center gap-2 font-bold text-rose-300 text-sm">
+              <span>⚠️</span>
+              <span>${isBusy ? 'AI Model Temporarily Busy' : 'Mock Diagnostic Error'}</span>
             </div>
-            <p class="text-slate-300 leading-relaxed">${escapeHtml(err.message || String(err))}</p>
+            <p class="text-slate-300 leading-relaxed font-sans">
+              ${isBusy 
+                ? 'The Gemini AI model is currently experiencing high temporary demand spikes. Your scorecard text is safely saved above.' 
+                : escapeHtml(cleanMsg)}
+            </p>
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <button type="button" id="btn-retry-mock-analysis" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-lg shadow-emerald-950/40">
+                <span>🔄</span>
+                <span>Retry AI Diagnostic Now</span>
+              </button>
+              <button type="button" id="btn-offline-mock-parse" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition flex items-center gap-1.5">
+                <span>⚡</span>
+                <span>Instant Rule-Based Score Parse</span>
+              </button>
+            </div>
+          </div>
+        `;
+
+        const retryBtn = document.getElementById('btn-retry-mock-analysis');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', () => {
+            runMockAnalysis();
+          });
+        }
+
+        const offlineBtn = document.getElementById('btn-offline-mock-parse');
+        if (offlineBtn) {
+          offlineBtn.addEventListener('click', () => {
+            const raw = rawTextArea ? rawTextArea.value : textToAnalyze;
+            if (!raw || !raw.trim()) {
+              alert('No scorecard text available to parse.');
+              return;
+            }
+            const fallbackResult = parseMockLocally(raw, mockType);
+            if (statusPill) statusPill.textContent = 'Offline Analysis Done';
+            renderMockDiagnosticReport(fallbackResult, outputBox, true);
+          });
+        }
+      }
+    }
+  }
+
+  // Helper to determine subject CSS badge class
+  function getSubjectBadgeClass(subj) {
+    const s = String(subj || '').toLowerCase();
+    if (s.includes('quant') || s.includes('math')) return 'subj-badge-quant';
+    if (s.includes('reason') || s.includes('intel')) return 'subj-badge-reasoning';
+    if (s.includes('eng')) return 'subj-badge-english';
+    if (s.includes('ga') || s.includes('gk') || s.includes('aware') || s.includes('general')) return 'subj-badge-ga';
+    return 'bg-slate-800 text-slate-300 border border-slate-700';
+  }
+
+  // Render the Enhanced AI Diagnostic Output Report in Clean Card & Table Formats
+  function renderMockDiagnosticReport(data, outputBox, isOfflineFallback = false) {
+    if (!outputBox) return;
+
+    // Handle pure raw markdown fallback if JSON couldn't be formed
+    if (data.rawMarkdown && !data.questionAnalysis) {
+      outputBox.innerHTML = `
+        <div class="space-y-4">
+          <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+            <span>✨ AI Performance Diagnostic Report</span>
+            <span class="font-mono text-[11px] text-slate-400">SSC CGL 2027 Diagnostic</span>
+          </div>
+          <div class="prose prose-invert max-w-none text-xs leading-relaxed whitespace-pre-wrap p-4 rounded-xl bg-slate-900 border border-slate-800">${escapeHtml(data.rawMarkdown)}</div>
+        </div>
+      `;
+      return;
+    }
+
+    const totalMarks = data.totalMarks || 200;
+    const score = typeof data.score === 'number' ? data.score : 0;
+    const accuracy = typeof data.accuracyPercent === 'number' ? data.accuracyPercent : 0;
+    const correct = data.correct || 0;
+    const wrong = data.wrong || 0;
+    const attempted = data.attempted || (correct + wrong);
+    const unattempted = typeof data.unattempted === 'number' ? data.unattempted : Math.max(0, (data.totalQuestions || 100) - attempted);
+    const negativeLost = typeof data.negativeMarksLost === 'number' ? data.negativeMarksLost : (wrong * 0.5);
+
+    const questions = Array.isArray(data.questionAnalysis) ? data.questionAnalysis : [];
+    const sections = Array.isArray(data.sectionBreakdown) ? data.sectionBreakdown : [];
+
+    // Construct Question Cards HTML
+    const renderQuestionCardsHtml = (filteredQuestions) => {
+      if (!filteredQuestions || filteredQuestions.length === 0) {
+        return `
+          <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+            <span class="text-2xl">🎉</span>
+            <p class="text-slate-300 text-xs font-semibold">No negative marks or errors recorded for this filter.</p>
+            <p class="text-slate-500 text-[11px]">All attempted questions in this subject met accuracy benchmarks.</p>
           </div>
         `;
       }
+
+      return `
+        <div class="space-y-4">
+          ${filteredQuestions.map((q, idx) => {
+            const subjBadge = getSubjectBadgeClass(q.subject);
+            const qNum = escapeHtml(q.questionNumber || `Q.${idx + 1}`);
+            const qSubj = escapeHtml(q.subject || 'General');
+            const qTopic = escapeHtml(q.topic || 'Core Concept');
+            const qError = escapeHtml(q.userError || 'Conceptual error or hasty calculation slip.');
+            const qSol = escapeHtml(q.correctAnswerAndExplanation || 'Review core step-by-step logic and formula.');
+            const qTrick = escapeHtml(q.shortcutTrick || 'Use option elimination or standard shortcut formula.');
+            const qFix = escapeHtml(q.actionableFix || 'Solve 10 similar PYQ drill questions before next mock.');
+
+            return `
+              <div class="diagnostic-q-card p-4 space-y-3.5" data-subject="${qSubj}">
+                <!-- Card Header -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800/80">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-md font-mono text-[11px] font-bold ${subjBadge}">
+                      ${qSubj}
+                    </span>
+                    <span class="font-mono font-extrabold text-sm text-white">${qNum}</span>
+                    <span class="text-slate-500 font-mono text-xs">•</span>
+                    <span class="text-xs font-bold text-slate-200 tracking-wide">${qTopic}</span>
+                  </div>
+                  <button type="button" class="btn-track-mock-weak px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 hover:text-rose-200 font-mono text-[10.5px] font-semibold transition flex items-center gap-1" data-topic="${qTopic}" data-subject="${qSubj}" data-fix="${qFix}">
+                    <span>+</span>
+                    <span>Track in Radar</span>
+                  </button>
+                </div>
+
+                <!-- 4 Structural Diagnostic Quadrants -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  <!-- 1. Your Error / What Went Wrong -->
+                  <div class="diagnostic-box-error p-3 space-y-1">
+                    <div class="text-[11px] font-bold font-mono text-rose-400 flex items-center gap-1.5">
+                      <span>❌</span>
+                      <span>1. YOUR ERROR / WHAT WENT WRONG</span>
+                    </div>
+                    <p class="text-xs text-rose-100/90 leading-relaxed font-sans">${qError}</p>
+                  </div>
+
+                  <!-- 2. Correct Answer & Detailed Explanation -->
+                  <div class="diagnostic-box-solution p-3 space-y-1">
+                    <div class="text-[11px] font-bold font-mono text-emerald-400 flex items-center gap-1.5">
+                      <span>✅</span>
+                      <span>2. CORRECT ANSWER & EXPLANATION</span>
+                    </div>
+                    <p class="text-xs text-emerald-100/90 leading-relaxed font-sans">${qSol}</p>
+                  </div>
+
+                  <!-- 3. Shortcut Trick / 10-Second Method -->
+                  <div class="diagnostic-box-trick p-3 space-y-1">
+                    <div class="text-[11px] font-bold font-mono text-cyan-400 flex items-center gap-1.5">
+                      <span>⚡</span>
+                      <span>3. SHORTCUT TRICK / EXAM TECHNIQUE</span>
+                    </div>
+                    <p class="text-xs text-cyan-100/90 leading-relaxed font-sans">${qTrick}</p>
+                  </div>
+
+                  <!-- 4. Actionable Fix For Next Mock -->
+                  <div class="diagnostic-box-fix p-3 space-y-1">
+                    <div class="text-[11px] font-bold font-mono text-amber-400 flex items-center gap-1.5">
+                      <span>🎯</span>
+                      <span>4. ACTIONABLE FIX FOR NEXT MOCK</span>
+                    </div>
+                    <p class="text-xs text-amber-100/90 leading-relaxed font-sans">${qFix}</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    };
+
+    // Construct Comparative Table HTML
+    const renderQuestionTableHtml = (filteredQuestions) => {
+      if (!filteredQuestions || filteredQuestions.length === 0) {
+        return `
+          <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 text-center text-xs text-slate-400 font-mono">
+            No questions to display for this filter.
+          </div>
+        `;
+      }
+
+      return `
+        <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 shadow-inner">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 bg-slate-900/90 text-slate-400 font-mono text-[11px] uppercase">
+                <th class="py-2.5 px-3 whitespace-nowrap">Q# & Subject</th>
+                <th class="py-2.5 px-3">Topic / Concept</th>
+                <th class="py-2.5 px-3 text-rose-300">1. What Went Wrong</th>
+                <th class="py-2.5 px-3 text-emerald-300">2. Correct Solution</th>
+                <th class="py-2.5 px-3 text-cyan-300">3. Shortcut Trick</th>
+                <th class="py-2.5 px-3 text-amber-300">4. Actionable Fix</th>
+                <th class="py-2.5 px-3 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              ${filteredQuestions.map((q, idx) => {
+                const subjBadge = getSubjectBadgeClass(q.subject);
+                const qNum = escapeHtml(q.questionNumber || `Q.${idx + 1}`);
+                const qSubj = escapeHtml(q.subject || 'General');
+                const qTopic = escapeHtml(q.topic || 'Core Concept');
+                const qError = escapeHtml(q.userError || 'Conceptual error or calculation slip.');
+                const qSol = escapeHtml(q.correctAnswerAndExplanation || 'Review core step-by-step logic.');
+                const qTrick = escapeHtml(q.shortcutTrick || 'Option elimination / formula trick.');
+                const qFix = escapeHtml(q.actionableFix || 'Solve 10 similar PYQs.');
+
+                return `
+                  <tr class="hover:bg-slate-900/40 transition">
+                    <td class="py-3 px-3 align-top whitespace-nowrap font-mono">
+                      <div class="font-bold text-white">${qNum}</div>
+                      <span class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ${subjBadge}">${qSubj}</span>
+                    </td>
+                    <td class="py-3 px-3 align-top font-semibold text-slate-200 min-w-[140px]">${qTopic}</td>
+                    <td class="py-3 px-3 align-top text-rose-200/90 bg-rose-950/10 min-w-[180px]">${qError}</td>
+                    <td class="py-3 px-3 align-top text-emerald-200/90 bg-emerald-950/10 min-w-[190px]">${qSol}</td>
+                    <td class="py-3 px-3 align-top text-cyan-200/90 bg-cyan-950/10 min-w-[180px]">${qTrick}</td>
+                    <td class="py-3 px-3 align-top text-amber-200/90 bg-amber-950/10 min-w-[180px]">${qFix}</td>
+                    <td class="py-3 px-3 align-top text-center">
+                      <button type="button" class="btn-track-mock-weak p-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 text-xs font-mono transition" title="Add topic to Radar" data-topic="${qTopic}" data-subject="${qSubj}" data-fix="${qFix}">
+                        + Radar
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    };
+
+    // Calculate subject counts for filter tabs
+    const quantCount = questions.filter(q => (q.subject || '').toLowerCase().includes('quant') || (q.subject || '').toLowerCase().includes('math')).length;
+    const reasoningCount = questions.filter(q => (q.subject || '').toLowerCase().includes('reason') || (q.subject || '').toLowerCase().includes('intel')).length;
+    const englishCount = questions.filter(q => (q.subject || '').toLowerCase().includes('eng')).length;
+    const gaCount = questions.filter(q => (q.subject || '').toLowerCase().includes('ga') || (q.subject || '').toLowerCase().includes('gk') || (q.subject || '').toLowerCase().includes('aware')).length;
+
+    outputBox.innerHTML = `
+      <div class="space-y-5">
+        <!-- Top Status Banner -->
+        <div class="p-3 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-sky-950/40 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">${isOfflineFallback ? '⚡' : '✨'}</span>
+            <div>
+              <span class="text-xs font-bold text-emerald-300 font-mono">
+                ${isOfflineFallback ? 'Instant Rule-Based Scorecard Diagnostic' : 'Gemini AI Deep Forensic Mock Report'}
+              </span>
+              <p class="text-[11px] text-slate-400">SSC CGL 2027 • Negative Penalty: -0.5 Tier 1</p>
+            </div>
+          </div>
+          ${isOfflineFallback ? `
+            <button type="button" id="btn-re-ai-parse-top" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold border border-emerald-500/40 transition flex items-center gap-1.5">
+              <span>🤖</span>
+              <span>Run Full AI Diagnostic</span>
+            </button>
+          ` : `
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[11px] font-bold">
+              ✓ AI Model Verified
+            </span>
+          `}
+        </div>
+
+        <!-- 1. Executive Performance Metrics Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center font-mono">
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">AGGREGATE SCORE</div>
+            <div class="text-lg font-extrabold ${score >= 130 ? 'text-emerald-400' : (score >= 100 ? 'text-amber-400' : 'text-rose-400')} mt-0.5">
+              ${score} <span class="text-xs text-slate-500 font-normal">/ ${totalMarks}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">${Math.round((score / totalMarks) * 100)}% of Max Marks</div>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ACCURACY</div>
+            <div class="text-lg font-extrabold ${accuracy >= 85 ? 'text-emerald-400' : (accuracy >= 70 ? 'text-white' : 'text-rose-400')} mt-0.5">
+              ${accuracy}%
+            </div>
+            <div class="text-[10px] ${accuracy >= 85 ? 'text-emerald-400' : 'text-amber-400'} mt-0.5">
+              ${accuracy >= 85 ? 'High Precision' : 'Accuracy Risk'}
+            </div>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">CORRECT</div>
+            <div class="text-lg font-extrabold text-emerald-400 mt-0.5">${correct}</div>
+            <div class="text-[10px] text-emerald-400/80 mt-0.5">+${correct * 2} Marks Gained</div>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">WRONG</div>
+            <div class="text-lg font-extrabold text-rose-400 mt-0.5">${wrong}</div>
+            <div class="text-[10px] text-rose-400/80 mt-0.5">-${negativeLost} Negative Penalty</div>
+          </div>
+
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-sm col-span-2 sm:col-span-1">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ATTEMPTED</div>
+            <div class="text-lg font-extrabold text-sky-400 mt-0.5">${attempted}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">${unattempted} Skipped</div>
+          </div>
+        </div>
+
+        <!-- 2. Sectional Breakdown Cards (if available) -->
+        ${sections.length > 0 ? `
+          <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold font-mono text-slate-300 uppercase">📊 Sectional Score & Accuracy Matrix</span>
+              <span class="text-[11px] font-mono text-slate-500">Tier 1 Benchmarks</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              ${sections.map(sec => {
+                const badge = getSubjectBadgeClass(sec.name);
+                const sScore = typeof sec.score === 'number' ? sec.score : 0;
+                const sMax = sec.totalMarks || 50;
+                const sAcc = typeof sec.accuracy === 'number' ? sec.accuracy : 0;
+                return `
+                  <div class="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[11px] font-bold px-2 py-0.5 rounded font-mono ${badge}">${escapeHtml(sec.name)}</span>
+                      <span class="font-mono text-xs font-bold text-white">${sScore} / ${sMax}</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div class="h-full ${sAcc >= 80 ? 'bg-emerald-500' : (sAcc >= 65 ? 'bg-amber-500' : 'bg-rose-500')}" style="width: ${Math.min(100, Math.max(5, sAcc))}%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>Acc: <strong class="text-slate-200">${sAcc}%</strong></span>
+                      <span>✓ ${sec.correct || 0} | ✗ ${sec.wrong || 0}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- 3. Question-by-Question Deep Diagnostic Section -->
+        <div class="space-y-3.5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-base">📋</span>
+                <h4 class="text-sm font-bold text-white font-mono uppercase tracking-wide">Question-by-Question Forensic Analysis</h4>
+                <span class="px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-300 font-mono text-[10px] font-bold">
+                  ${questions.length} Diagnostic Cards
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5">Post-mortem of errors, correct explanations, shortcut tricks, and next-mock action fixes.</p>
+            </div>
+
+            <!-- View Switcher (Card vs Table) -->
+            <div class="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-xs font-mono self-start sm:self-auto">
+              <button type="button" id="diag-view-cards" class="px-3 py-1 rounded-lg transition font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                📇 Card View
+              </button>
+              <button type="button" id="diag-view-table" class="px-3 py-1 rounded-lg transition font-bold text-slate-400 hover:text-white">
+                📊 Table View
+              </button>
+            </div>
+          </div>
+
+          <!-- Subject Filter Pills -->
+          <div class="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+            <button type="button" class="diag-filter-tab active px-3 py-1 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 transition" data-filter="all">
+              All Questions (${questions.length})
+            </button>
+            <button type="button" class="diag-filter-tab px-3 py-1 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 transition" data-filter="quant">
+              Maths / Quant (${quantCount})
+            </button>
+            <button type="button" class="diag-filter-tab px-3 py-1 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 transition" data-filter="reasoning">
+              Reasoning (${reasoningCount})
+            </button>
+            <button type="button" class="diag-filter-tab px-3 py-1 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 transition" data-filter="english">
+              English (${englishCount})
+            </button>
+            <button type="button" class="diag-filter-tab px-3 py-1 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 transition" data-filter="ga">
+              General Awareness (${gaCount})
+            </button>
+          </div>
+
+          <!-- Dynamic Questions Output Container (Cards or Table) -->
+          <div id="diag-questions-container">
+            ${renderQuestionCardsHtml(questions)}
+          </div>
+        </div>
+
+        <!-- 4. Strategic Highlights & Continuous Recommendations -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          <!-- Strong Points -->
+          ${Array.isArray(data.strongPoints) && data.strongPoints.length > 0 ? `
+            <div class="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-800/40 space-y-2">
+              <span class="text-xs font-bold text-emerald-300 uppercase font-mono flex items-center gap-1.5">
+                <span>🌟</span> Strong & High-Speed Areas
+              </span>
+              <ul class="space-y-1 text-xs text-slate-300">
+                ${data.strongPoints.map(sp => `<li class="flex items-start gap-1.5"><span class="text-emerald-400 font-bold">✓</span><span>${escapeHtml(sp)}</span></li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          <!-- Weak Points -->
+          ${Array.isArray(data.weakPoints) && data.weakPoints.length > 0 ? `
+            <div class="p-3.5 rounded-2xl bg-rose-950/20 border border-rose-800/40 space-y-2">
+              <span class="text-xs font-bold text-rose-300 uppercase font-mono flex items-center gap-1.5">
+                <span>⚠️</span> High-Risk Concepts (Negative Traps)
+              </span>
+              <ul class="space-y-1 text-xs text-slate-300">
+                ${data.weakPoints.map(wp => `<li class="flex items-start gap-1.5"><span class="text-rose-400 font-bold">✗</span><span>${escapeHtml(wp)}</span></li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Continuous Recommendations & Mentor Verdict -->
+        <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-sky-400 uppercase font-mono flex items-center gap-1.5">
+              <span>🎯</span> Mentor Verdict & Immediate Action Plan
+            </span>
+            <p class="text-slate-200 text-xs leading-relaxed font-sans font-medium">${escapeHtml(data.overallVerdict || 'Maintain regular mock cadence and revise all error cards before the next test.')}</p>
+          </div>
+
+          ${Array.isArray(data.continuousRecommendations) && data.continuousRecommendations.length > 0 ? `
+            <div class="pt-2 border-t border-slate-800 space-y-1.5">
+              <span class="text-[11px] font-bold text-slate-400 uppercase font-mono">Continuous Directives:</span>
+              <ul class="space-y-1 text-xs text-slate-300">
+                ${data.continuousRecommendations.map(r => `<li class="flex items-start gap-1.5"><span class="text-sky-400">⚡</span><span>${escapeHtml(r)}</span></li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    // Bind Question Filter Tabs and View Switcher
+    let currentFilter = 'all';
+    let currentViewMode = 'cards'; // 'cards' | 'table'
+
+    const filterQuestions = () => {
+      if (currentFilter === 'all') return questions;
+      return questions.filter(q => {
+        const s = (q.subject || '').toLowerCase();
+        if (currentFilter === 'quant') return s.includes('quant') || s.includes('math');
+        if (currentFilter === 'reasoning') return s.includes('reason') || s.includes('intel');
+        if (currentFilter === 'english') return s.includes('eng');
+        if (currentFilter === 'ga') return s.includes('ga') || s.includes('gk') || s.includes('aware');
+        return true;
+      });
+    };
+
+    const updateQuestionsDisplay = () => {
+      const qContainer = document.getElementById('diag-questions-container');
+      if (!qContainer) return;
+      const filtered = filterQuestions();
+      if (currentViewMode === 'cards') {
+        qContainer.innerHTML = renderQuestionCardsHtml(filtered);
+      } else {
+        qContainer.innerHTML = renderQuestionTableHtml(filtered);
+      }
+      bindTrackButtons();
+    };
+
+    // Filter tab events
+    outputBox.querySelectorAll('.diag-filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        outputBox.querySelectorAll('.diag-filter-tab').forEach(t => t.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        currentFilter = e.currentTarget.getAttribute('data-filter') || 'all';
+        updateQuestionsDisplay();
+      });
+    });
+
+    // View switcher events
+    const btnCards = document.getElementById('diag-view-cards');
+    const btnTable = document.getElementById('diag-view-table');
+
+    if (btnCards && btnTable) {
+      btnCards.addEventListener('click', () => {
+        currentViewMode = 'cards';
+        btnCards.className = 'px-3 py-1 rounded-lg transition font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40';
+        btnTable.className = 'px-3 py-1 rounded-lg transition font-bold text-slate-400 hover:text-white';
+        updateQuestionsDisplay();
+      });
+
+      btnTable.addEventListener('click', () => {
+        currentViewMode = 'table';
+        btnTable.className = 'px-3 py-1 rounded-lg transition font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40';
+        btnCards.className = 'px-3 py-1 rounded-lg transition font-bold text-slate-400 hover:text-white';
+        updateQuestionsDisplay();
+      });
     }
+
+    // Top retry AI button if offline
+    const reAiTopBtn = document.getElementById('btn-re-ai-parse-top');
+    if (reAiTopBtn) {
+      reAiTopBtn.addEventListener('click', runMockAnalysis);
+    }
+
+    // Bind "+ Track in Radar" buttons
+    const bindTrackButtons = () => {
+      outputBox.querySelectorAll('.btn-track-mock-weak').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const topic = e.currentTarget.getAttribute('data-topic');
+          const subject = e.currentTarget.getAttribute('data-subject') || 'Mock';
+          const fix = e.currentTarget.getAttribute('data-fix') || 'Revise key concepts and solve 30 PYQs.';
+
+          if (!topic) return;
+
+          const exists = state.weakAreas.some(w => w.topic.toLowerCase() === topic.toLowerCase());
+          if (exists) {
+            e.currentTarget.textContent = '✓ Already in Radar';
+            e.currentTarget.classList.replace('text-rose-300', 'text-emerald-400');
+            return;
+          }
+
+          state.weakAreas.unshift({
+            id: 'mock_weak_' + Date.now(),
+            subject: subject.slice(0, 20),
+            topic: topic.slice(0, 60),
+            advice: fix.slice(0, 100),
+            resolved: false
+          });
+          state.weakAreas = state.weakAreas.slice(0, 10);
+          saveState();
+          renderWeakAreas();
+          playChime('reward');
+
+          e.currentTarget.textContent = '✓ Added to Radar';
+          e.currentTarget.classList.replace('text-rose-300', 'text-emerald-400');
+        });
+      });
+    };
+
+    bindTrackButtons();
+  }
+
+  // Instant Rule-Based Local Scorecard Parser (Heuristic Fallback)
+  function parseMockLocally(rawText, mockType) {
+    const isSectional = mockType === 'sectional';
+    const totalQuestions = isSectional ? 25 : 100;
+    const totalMarks = isSectional ? 50 : 200;
+
+    let score = null;
+    let correct = null;
+    let wrong = null;
+    let attempted = null;
+    let accuracy = null;
+
+    const scoreMatch = rawText.match(/(?:Score|Marks Obtained|Total Score|Marks|Marks:)\s*[:=-]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    if (scoreMatch) score = parseFloat(scoreMatch[1]);
+
+    const correctMatch = rawText.match(/(?:Correct|Right|Correct Questions)\s*[:=-]?\s*([0-9]+)/i);
+    if (correctMatch) correct = parseInt(correctMatch[1], 10);
+
+    const wrongMatch = rawText.match(/(?:Wrong|Incorrect|Incorrect Questions|Negative)\s*[:=-]?\s*([0-9]+)/i);
+    if (wrongMatch) wrong = parseInt(wrongMatch[1], 10);
+
+    const attemptedMatch = rawText.match(/(?:Attempted|Questions Attempted)\s*[:=-]?\s*([0-9]+)/i);
+    if (attemptedMatch) attempted = parseInt(attemptedMatch[1], 10);
+
+    const accMatch = rawText.match(/(?:Accuracy|Accuracy %)\s*[:=-]?\s*([0-9]+(?:\.[0-9]+)?)/i);
+    if (accMatch) accuracy = parseFloat(accMatch[1]);
+
+    if (correct !== null && wrong !== null) {
+      if (attempted === null) attempted = correct + wrong;
+      if (score === null) score = Math.max(0, (correct * 2) - (wrong * 0.5));
+      if (accuracy === null && attempted > 0) accuracy = Math.round((correct / attempted) * 100);
+    } else if (score !== null && correct === null) {
+      correct = Math.round(score / 2);
+    }
+
+    // Construct heuristic topic cards for any wrong answers or detected subjects
+    const questionAnalysis = [];
+    const lowerRaw = rawText.toLowerCase();
+
+    if (lowerRaw.includes('math') || lowerRaw.includes('quant') || lowerRaw.includes('algebra') || lowerRaw.includes('trigo') || lowerRaw.includes('arithmetic')) {
+      questionAnalysis.push({
+        questionNumber: 'Maths Concept Drill',
+        subject: 'Quantitative Aptitude',
+        topic: 'Speed Maths & Arithmetic Application',
+        userError: 'Calculation slip or excessive time spent on multistep equations under exam timer.',
+        correctAnswerAndExplanation: 'Focus on digital sum, unit digit checks, and LCM efficiency methods to bypass heavy arithmetic.',
+        shortcutTrick: 'Use Digital Root / Remainder method to eliminate 3 out of 4 options in < 15 seconds.',
+        actionableFix: 'Practice 20 speed calculation drills on squaring and cube roots daily.'
+      });
+    }
+
+    if (lowerRaw.includes('reason') || lowerRaw.includes('syllogism') || lowerRaw.includes('coding') || lowerRaw.includes('series')) {
+      questionAnalysis.push({
+        questionNumber: 'Reasoning Concept Drill',
+        subject: 'General Intelligence & Reasoning',
+        topic: 'Syllogism & Logical Deduction',
+        userError: 'Confused "Only a Few" with "Some" leading to incorrect conclusion validation.',
+        correctAnswerAndExplanation: '"Only a few A are B" implies both "Some A are B" AND "Some A are not B".',
+        shortcutTrick: 'Draw Venn diagrams with dotted boundary for the "Only a few" restriction.',
+        actionableFix: 'Solve 15 Pyq Syllogism questions specifically focusing on possibility cases.'
+      });
+    }
+
+    if (lowerRaw.includes('eng') || lowerRaw.includes('error') || lowerRaw.includes('grammar') || lowerRaw.includes('vocab')) {
+      questionAnalysis.push({
+        questionNumber: 'English Concept Drill',
+        subject: 'English Comprehension',
+        topic: 'Error Spotting (Subject-Verb Agreement)',
+        userError: 'Overlooked intervening prepositional phrase and matched verb to incorrect noun.',
+        correctAnswerAndExplanation: 'Subject separated by "as well as / along with / together with" takes the verb according to the first subject.',
+        shortcutTrick: 'Cross out parenthetical phrases (e.g., [as well as his friends]) to see the true singular/plural core subject.',
+        actionableFix: 'Revise 12 Golden Rules of Subject-Verb Agreement in SP Bakshi / Neetu Singh Vol 1.'
+      });
+    }
+
+    if (lowerRaw.includes('ga') || lowerRaw.includes('gk') || lowerRaw.includes('polity') || lowerRaw.includes('history')) {
+      questionAnalysis.push({
+        questionNumber: 'GA Concept Drill',
+        subject: 'General Awareness',
+        topic: 'Constitutional Articles & Amendments',
+        userError: 'Rushed guess on Article numbers leading to -0.5 negative penalty.',
+        correctAnswerAndExplanation: 'Tier 1 frequently asks Articles 12-51A (Fundamental Rights & DPSP).',
+        shortcutTrick: 'Group Articles into thematic clusters: Rights (14-32), DPSP (36-51), President (52-62).',
+        actionableFix: 'Review the 1-page Polity Quick Reference Chart and avoid low-probability guesses.'
+      });
+    }
+
+    // Default fallback question card if text had no subject keywords
+    if (questionAnalysis.length === 0 && (wrong || 0) > 0) {
+      questionAnalysis.push({
+        questionNumber: 'Negative Mark Diagnosis',
+        subject: 'Quantitative Aptitude',
+        topic: 'Speed & Accuracy Balance',
+        userError: `${wrong} questions answered incorrectly resulted in -${(wrong * 0.5)} negative marks lost.`,
+        correctAnswerAndExplanation: 'In SSC CGL Tier 1, skipping doubtful questions is better than random guesses due to -0.5 penalty.',
+        shortcutTrick: 'Use 2-Round Test Taking Strategy: Round 1 for 100% certain items; Round 2 for calculated eliminations.',
+        actionableFix: 'Implement strict 50-50 elimination rule before making any calculated guess.'
+      });
+    }
+
+    return {
+      totalQuestions,
+      totalMarks,
+      attempted: attempted !== null ? attempted : (correct || 0) + (wrong || 0),
+      unattempted: Math.max(0, totalQuestions - (attempted || 0)),
+      correct: correct !== null ? correct : 0,
+      wrong: wrong !== null ? wrong : 0,
+      score: score !== null ? score : 0,
+      negativeMarksLost: (wrong || 0) * 0.5,
+      accuracyPercent: accuracy !== null ? accuracy : (attempted && attempted > 0 ? Math.round(((correct || 0) / attempted) * 100) : 0),
+      overallVerdict: `Parsed from document text: ${correct || 0} Correct, ${wrong || 0} Wrong • ${accuracy || 0}% Accuracy.`,
+      questionAnalysis,
+      strongPoints: (correct || 0) > 0 ? ['Scorecard data imported successfully', 'Consistent attempt volume'] : [],
+      weakPoints: (wrong || 0) > 0 ? [`${wrong} negative marks recorded - review error cards below`] : []
+    };
   }
 
   // ==========================================================================

@@ -43,6 +43,9 @@
   <!-- Mozilla PDF.js Library CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
+  <!-- Tesseract.js Client-Side OCR CDN for Scanned PDFs and Screenshot Scorecards -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <!-- Chart.js Library CDN for Hardware-Accelerated Trends -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -771,15 +774,18 @@
 
           <!-- Drag and Drop PDF File Upload Zone -->
           <div>
-            <label class="block text-xs font-mono uppercase text-slate-400 mb-1.5">Mode 1: Upload PDF Scorecard (Mozilla pdf.js)</label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-mono uppercase text-slate-400">Mode 1: Upload PDF / Scorecard Screenshot (PDF.js + OCR)</label>
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/30">Auto-OCR Supported</span>
+            </div>
             <div
               id="mock-pdf-dropzone"
               class="border-2 border-dashed border-slate-700 hover:border-emerald-500/70 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-900/50 hover:bg-slate-900"
             >
-              <input type="file" id="mock-pdf-file-input" accept="application/pdf" class="hidden" />
+              <input type="file" id="mock-pdf-file-input" accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp" class="hidden" />
               <div class="text-3xl mb-2">📑</div>
-              <p class="text-sm font-semibold text-slate-200">Click to upload or drag & drop PDF</p>
-              <p class="text-xs text-slate-400 mt-1">Testbook, Oliveboard, Supercoaching, Adda247</p>
+              <p class="text-sm font-semibold text-slate-200">Click to upload or drag & drop PDF / Screenshot</p>
+              <p class="text-xs text-slate-400 mt-1">PDFs, Scanned Scorecards, PNG, JPG (Testbook, Oliveboard, Supercoaching, Adda247)</p>
               <p id="mock-pdf-file-name" class="text-xs text-emerald-400 font-mono mt-2 font-bold"></p>
             </div>
           </div>
@@ -2697,10 +2703,6 @@
   </div>
 
   <!-- Vanilla JavaScript Application Engine -->
-  <script src="./script.js"></script>
-</body>
-</html>
-
   <script src="./script.js"></script>
 </body>
 </html>
