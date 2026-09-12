@@ -8408,9 +8408,9 @@ ${item.formula}
     if (formAddSyllabus) {
       formAddSyllabus.addEventListener('submit', (e) => {
         e.preventDefault();
-        const sub = document.getElementById('syl-subject').value;
-        const title = document.getElementById('syl-topic-title').value.trim();
-        const weightage = document.getElementById('syl-weightage').value;
+        const sub = document.getElementById('syllabus-topic-subject')?.value || 'maths';
+        const title = (document.getElementById('syllabus-topic-title')?.value || '').trim();
+        const weightage = document.getElementById('syllabus-topic-weightage')?.value || 'High (3-4 Qs)';
         if (title) {
           state.syllabus.push({
             id: 'syl_' + Date.now(),
@@ -8815,10 +8815,10 @@ ${item.formula}
     if (formAddVault) {
       formAddVault.addEventListener('submit', (e) => {
         e.preventDefault();
-        const sub = document.getElementById('vault-subject').value;
-        const title = document.getElementById('vault-title').value.trim();
-        const formula = document.getElementById('vault-formula').value.trim();
-        const tip = document.getElementById('vault-tip').value.trim();
+        const sub = document.getElementById('vault-item-subject')?.value || 'maths';
+        const title = (document.getElementById('vault-item-title')?.value || '').trim();
+        const formula = (document.getElementById('vault-item-formula')?.value || '').trim();
+        const tip = (document.getElementById('vault-item-tip')?.value || '').trim();
 
         if (title && formula) {
           state.vaultItems.unshift({
