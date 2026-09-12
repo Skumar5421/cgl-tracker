@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mission CGL 2027 & Railway Tracker</title>
-  <meta name="description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
+  <meta name="description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, calendar-connected weekly & monthly to-do hub, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
   <meta property="og:title" content="Mission CGL 2027 & Railway Tracker" />
-  <meta property="og:description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
+  <meta property="og:description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, calendar-connected weekly & monthly to-do hub, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
   <meta name="theme-color" content="#060911" />
 
   <!-- Fonts -->
@@ -222,6 +222,18 @@
           <div class="flex-1">
             <div class="text-slate-100 font-medium">Gamified Habits & Calendar</div>
             <div class="text-[11px] text-slate-400 font-normal">Dynamic Habits, Green Dots & Day Inspector</div>
+          </div>
+        </button>
+
+        <!-- 6. Calendar-Connected Weekly & Monthly To-Do Hub -->
+        <button
+          data-nav="todo-hub"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">📅</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Weekly & Monthly To-Do Hub</div>
+            <div class="text-[11px] text-slate-400 font-normal">Mon–Sun Planner, Monthly Milestones & Sync</div>
           </div>
         </button>
 
@@ -991,7 +1003,53 @@
         </div>
       </div>
 
-      <!-- 1. Date Selector & Calendar Day Navigator Bar -->
+      <!-- Master View Switcher Tabs: [Daily Hub] [Weekly Planner (Mon-Sun)] [Monthly Milestones] -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-2 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-md">
+        <div class="flex items-center gap-1.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            id="tab-btn-hub-daily"
+            data-hub-tab="daily"
+            class="hub-view-tab active flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>🎯</span> Daily Hub
+          </button>
+          <button
+            type="button"
+            id="tab-btn-hub-weekly"
+            data-hub-tab="weekly"
+            class="hub-view-tab flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>📅</span> Weekly Planner (Mon-Sun)
+          </button>
+          <button
+            type="button"
+            id="tab-btn-hub-monthly"
+            data-hub-tab="monthly"
+            class="hub-view-tab flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>🏆</span> Monthly Milestones
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs font-mono text-slate-400 px-2 flex-wrap">
+          <button
+            type="button"
+            id="btn-open-subject-manager-hub"
+            class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-emerald-500/50 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>📚</span> Manage Custom Subjects
+          </button>
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="hub-active-tab-indicator">Daily View Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 1: DAILY TARGETS & REVISION SUBVIEW -->
+      <div id="hub-view-daily" class="space-y-6">
+        <!-- 1. Date Selector & Calendar Day Navigator Bar -->
       <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <!-- Stepper & Date Picker Input -->
@@ -1258,6 +1316,331 @@
         </div>
 
       </div>
+      <!-- END VIEW 1: DAILY TARGETS & REVISION SUBVIEW (#hub-view-daily) -->
+
+      <!-- VIEW 2: WEEKLY PLANNER (MON-SUN) SUBVIEW -->
+      <div id="hub-view-weekly" class="hidden space-y-6">
+        <!-- Navigation & Analytics Bar for Selected Week -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <!-- Date Navigator Controls -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              id="btn-todo-prev"
+              class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer active:scale-95"
+              title="Previous week"
+            >
+              ◀
+            </button>
+            <div class="px-4 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-center min-w-[210px]">
+              <div id="todo-hub-period-label" class="text-sm font-extrabold text-white font-mono">--</div>
+              <div id="todo-hub-sub-period-label" class="text-[10px] text-slate-400 font-mono">Monday to Sunday Sync • 5:00 AM Cycle</div>
+            </div>
+            <button
+              type="button"
+              id="btn-todo-next"
+              class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer active:scale-95"
+              title="Next week"
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              id="btn-todo-today"
+              class="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold transition cursor-pointer active:scale-95"
+              title="Jump to Current Week"
+            >
+              Jump to This Week
+            </button>
+            <!-- Date Jump Selector -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
+              <span class="text-slate-400 text-xs">Jump:</span>
+              <input
+                type="date"
+                id="todo-hub-jump-date-picker"
+                class="bg-transparent text-xs font-mono text-emerald-400 font-bold outline-none cursor-pointer"
+                title="Jump to any date's week"
+              />
+            </div>
+          </div>
+
+          <!-- Weekly Progress Stats Badge -->
+          <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <div class="text-right">
+              <div class="text-[11px] text-slate-400 font-mono">Weekly Targets Done:</div>
+              <div class="text-xs font-bold font-mono text-slate-200">
+                <span id="todo-hub-stat-completed" class="text-emerald-400 font-extrabold">0</span> /
+                <span id="todo-hub-stat-total">0</span> (<span id="todo-hub-stat-pct" class="text-emerald-400">0%</span>)
+              </div>
+            </div>
+            <!-- Mini Progress Bar -->
+            <div class="w-32 sm:w-44 h-2.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden relative">
+              <div id="todo-hub-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explicit "+ Add Weekly Task" Form Card -->
+        <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <span>📋</span> Add Weekly Task
+              </h3>
+              <p class="text-[11px] text-slate-400">Map concrete study goals and missions into any day of the selected week cycle.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-slate-400">Selected Week:</span>
+              <span id="weekly-active-date-range-badge" class="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono font-bold">
+                --
+              </span>
+            </div>
+          </div>
+
+          <!-- Explicit Add Weekly Task Form -->
+          <form id="form-add-weekly-task" action="javascript:void(0);" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            <input
+              type="text"
+              id="input-weekly-task-title"
+              placeholder="e.g. 100 Geometry PYQs, Complete Vocab Revision, 1 Full Tier-1 Mock..."
+              class="sm:col-span-6 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              required
+            />
+            <select
+              id="select-weekly-task-day"
+              class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+            >
+              <!-- Dynamically populated with 7 days of the active week -->
+            </select>
+            <select
+              id="select-weekly-task-subject"
+              class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+            >
+              <!-- Dynamically populated from state.subjects -->
+            </select>
+            <button
+              type="submit"
+              id="btn-submit-weekly-task"
+              class="sm:col-span-2 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono transition active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <span>+ Add Weekly Task</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Active Week Date Range Banner (Right Above Task List) -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg font-bold shrink-0">
+              📅
+            </div>
+            <div>
+              <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Active Week Date Range</div>
+              <div class="text-base sm:text-lg font-extrabold text-white font-mono flex items-center gap-2">
+                <span id="weekly-active-date-range-text" class="text-emerald-400">--</span>
+                <span id="weekly-active-date-range-year" class="text-xs text-slate-400 font-normal">--</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-mono">
+            <span class="text-slate-400">Week Goals Completed:</span>
+            <span id="weekly-range-stats-summary" class="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400 font-bold">
+              0 / 0 Done (0%)
+            </span>
+          </div>
+        </div>
+
+        <!-- Weekly Subject-Wise Filter Tabs & Subject Manager Strip -->
+        <div class="p-3.5 rounded-2xl bg-[#0b1120] border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-md">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-slate-400 text-[11px] font-bold">Subject Filter:</span>
+            <div class="flex flex-wrap items-center gap-1.5" id="weekly-subject-filters-bar">
+              <!-- Dynamically populated via renderWeeklyView() -->
+            </div>
+          </div>
+          <button
+            type="button"
+            id="btn-manage-subjects-weekly"
+            class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-white text-xs font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer ml-auto"
+          >
+            <span>⚙️</span> Manage Custom Subjects
+          </button>
+        </div>
+
+        <!-- Weekday Cards Grid (Mon to Sun: 7 Days) -->
+        <div id="todo-weekly-days-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+          <!-- Dynamically populated via renderWeeklyView() -->
+        </div>
+      </div>
+      <!-- END VIEW 2: WEEKLY PLANNER (#hub-view-weekly) -->
+
+      <!-- VIEW 3: MONTHLY MILESTONES SUBVIEW -->
+      <div id="hub-view-monthly" class="hidden space-y-6">
+        <!-- Navigation & Analytics Bar for Selected Month -->
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              id="btn-monthly-prev"
+              class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer active:scale-95"
+              title="Previous month"
+            >
+              ◀
+            </button>
+            <div class="px-4 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-center min-w-[210px]">
+              <div id="monthly-period-label" class="text-sm font-extrabold text-white font-mono">--</div>
+              <div class="text-[10px] text-slate-400 font-mono">Monthly Target Milestones</div>
+            </div>
+            <button
+              type="button"
+              id="btn-monthly-next"
+              class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer active:scale-95"
+              title="Next month"
+            >
+              ▶
+            </button>
+            <button
+              type="button"
+              id="btn-monthly-today"
+              class="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold transition cursor-pointer active:scale-95"
+              title="Jump to Current Month"
+            >
+              This Month
+            </button>
+            <!-- Month Jump Selector -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300">
+              <span class="text-slate-400 text-xs">Jump:</span>
+              <input
+                type="month"
+                id="monthly-jump-date-picker"
+                class="bg-transparent text-xs font-mono text-emerald-400 font-bold outline-none cursor-pointer"
+                title="Jump to any month"
+              />
+            </div>
+          </div>
+
+          <!-- Monthly Progress Stats Badge -->
+          <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <div class="text-right">
+              <div class="text-[11px] text-slate-400 font-mono">Monthly Milestones Done:</div>
+              <div class="text-xs font-bold font-mono text-slate-200">
+                <span id="monthly-stat-completed" class="text-emerald-400 font-extrabold">0</span> /
+                <span id="monthly-stat-total">0</span> (<span id="monthly-stat-pct" class="text-emerald-400">0%</span>)
+              </div>
+            </div>
+            <div class="w-32 sm:w-44 h-2.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden relative">
+              <div id="monthly-progress-bar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month & Year Heading Banner (Right Above Milestones) -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 rounded-2xl bg-[#0b1120] border border-slate-800 shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center text-xl font-bold shrink-0">
+              🎯
+            </div>
+            <div>
+              <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold">Monthly Strategy & High-Impact Goals</div>
+              <h2 id="monthly-milestones-main-heading" class="text-lg sm:text-xl font-extrabold text-white font-mono flex items-center gap-2">
+                <span id="monthly-heading-title-text" class="text-sky-400">September 2026 Milestones</span>
+              </h2>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-mono">
+            <span class="text-slate-400">Milestone Progress:</span>
+            <span id="monthly-heading-stats-summary" class="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-sky-400 font-bold">
+              0 / 0 Done (0%)
+            </span>
+          </div>
+        </div>
+
+        <!-- Explicit "+ Add Monthly Milestone" Form Card & Category Filters -->
+        <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                <span>🎯</span> Add Monthly Milestone
+              </h3>
+              <p class="text-[11px] text-slate-400">Plan monthly targets across syllabus completion, full mocks, speed drills, and personal disciplines.</p>
+            </div>
+            <div class="text-xs font-mono text-slate-400">
+              Month: <strong id="monthly-badge-label" class="text-sky-400">--</strong>
+            </div>
+          </div>
+
+          <!-- Add Monthly Milestone Form -->
+          <form id="form-add-monthly-milestone" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+            <input
+              type="text"
+              id="input-monthly-milestone-title"
+              placeholder="e.g. Attempt 12 Full-Length Tier-1 Mocks, Complete Modern History Revision..."
+              class="sm:col-span-5 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              required
+            />
+            <select
+              id="select-monthly-milestone-subject"
+              class="sm:col-span-3 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+            >
+              <!-- Dynamically populated from state.subjects -->
+            </select>
+            <select
+              id="select-monthly-milestone-category"
+              class="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
+            >
+              <option value="Syllabus">📚 Core Syllabus</option>
+              <option value="Mocks">📊 Mocks & Scores</option>
+              <option value="Revision">🔄 Speed & Revision</option>
+              <option value="Discipline">⚡ Discipline & Routine</option>
+              <option value="Custom">✨ Custom Milestone</option>
+            </select>
+            <button
+              type="submit"
+              id="btn-add-monthly-milestone"
+              class="sm:col-span-2 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs font-mono transition active:scale-95 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+            >
+              <span>+ Add Milestone</span>
+            </button>
+          </form>
+
+          <!-- Monthly Filter Bars: Subject Filters + Category Filters -->
+          <div class="pt-3 border-t border-slate-800/80 space-y-2 text-xs font-mono">
+            <!-- Subject-Wise Filter Strip -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-slate-400 text-[11px] font-bold">Subject:</span>
+                <div class="flex flex-wrap items-center gap-1.5" id="monthly-subject-filters-bar">
+                  <!-- Dynamically populated via renderMonthlyView() -->
+                </div>
+              </div>
+              <button
+                type="button"
+                id="btn-manage-subjects-monthly"
+                class="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-white text-[11px] font-mono font-semibold transition flex items-center gap-1.5 cursor-pointer ml-auto"
+              >
+                <span>⚙️</span> Manage Custom Subjects
+              </button>
+            </div>
+
+            <!-- Category Filter Strip -->
+            <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/50">
+              <span class="text-slate-400 text-[11px] font-bold">Category:</span>
+              <button type="button" class="todo-monthly-filter px-3 py-1 rounded-lg transition font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-pointer" data-filter="all">All Targets</button>
+              <button type="button" class="todo-monthly-filter px-3 py-1 rounded-lg transition text-slate-400 hover:text-white cursor-pointer" data-filter="Syllabus">📚 Syllabus</button>
+              <button type="button" class="todo-monthly-filter px-3 py-1 rounded-lg transition text-slate-400 hover:text-white cursor-pointer" data-filter="Mocks">📊 Mocks</button>
+              <button type="button" class="todo-monthly-filter px-3 py-1 rounded-lg transition text-slate-400 hover:text-white cursor-pointer" data-filter="Revision">🔄 Revision</button>
+              <button type="button" class="todo-monthly-filter px-3 py-1 rounded-lg transition text-slate-400 hover:text-white cursor-pointer" data-filter="Discipline">⚡ Discipline</button>
+              <button type="button" class="todo-monthly-filter px-3 py-1 rounded-lg transition text-slate-400 hover:text-white cursor-pointer" data-filter="Custom">✨ Custom</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Targets List Container -->
+        <div id="monthly-targets-list-container" class="space-y-3">
+          <!-- Dynamically populated via renderMonthlyView() -->
+        </div>
+      </div>
+      <!-- END VIEW 3: MONTHLY MILESTONES (#hub-view-monthly) -->
     </section>
 
 
@@ -1279,6 +1662,14 @@
         </div>
 
         <div class="flex items-center gap-2">
+          <button
+            id="btn-goto-todo-hub"
+            class="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+            title="Open Calendar-Connected Weekly & Monthly To-Do Hub"
+          >
+            <span>📅</span>
+            <span>Weekly & Monthly Hub</span>
+          </button>
           <button
             id="btn-reset-habits-today"
             class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
@@ -2397,18 +2788,24 @@
       </div>
 
       <!-- MASTER FACTORY RESET ZONE -->
-      <div class="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/50 shadow-xl space-y-3">
-        <div class="flex items-center gap-2 text-rose-400 font-bold font-mono text-sm">
-          <span>⚠️</span> DANGER ZONE: MASTER FACTORY RESET
+      <div id="settings-master-factory-reset-zone" class="p-6 rounded-3xl bg-rose-950/20 border border-rose-900/50 shadow-xl space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2 text-rose-400 font-bold font-mono text-sm">
+            <span>⚠️</span> DANGER ZONE: MASTER FACTORY RESET
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-[10px] font-mono font-bold text-rose-300 uppercase tracking-wider">
+            Zero Data Hard Reset
+          </span>
         </div>
-        <p class="text-xs text-slate-300">
-          This will completely wipe all local storage data, resetting subjects, timers, break logs, custom habits, mock history, and gamified streaks to the pristine default state.
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Completely wipes and clears all browser localStorage keys associated with study hours, 320 Maths targets, Daily Hub items, Weekly &amp; Monthly planners, custom journal logs, and mock scorecards. Instantly hard refreshes the entire UI into a pristine blank canvas with zero data.
         </p>
         <button
           id="btn-master-factory-reset"
-          class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition active:scale-95 shadow-lg shadow-rose-600/30"
+          class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition active:scale-95 shadow-lg shadow-rose-600/30 cursor-pointer flex items-center gap-2"
         >
-          💥 Complete Master Factory Reset (Wipe All Data)
+          <span>💥</span>
+          <span>Complete Master Factory Reset (Wipe All Data)</span>
         </button>
       </div>
 
@@ -2457,6 +2854,114 @@
           class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition active:scale-95 shadow-lg shadow-emerald-500/20"
         >
           Awesome! Back to Mission
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Subject Manager Modal -->
+  <div id="modal-manage-subjects" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>📚</span> Custom Subject & Curriculum Manager
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">Add, edit, or delete custom subjects across Stopwatches, Weekly Planner, and Monthly Milestones.</p>
+        </div>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer">✕</button>
+      </div>
+
+      <!-- Add New Custom Subject Form -->
+      <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-inner">
+        <h4 class="text-xs font-bold font-mono text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>+</span> Add New Custom Subject
+        </h4>
+        <form id="form-create-custom-subject" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div class="sm:col-span-6">
+              <label class="block text-[11px] font-mono text-slate-400 uppercase mb-1">Subject Full Name *</label>
+              <input
+                type="text"
+                id="input-new-subject-name"
+                placeholder="e.g. Computer Knowledge, Current Affairs 2026..."
+                class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-[11px] font-mono text-slate-400 uppercase mb-1">Short Tag</label>
+              <input
+                type="text"
+                id="input-new-subject-short"
+                placeholder="e.g. Computer, CA"
+                class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+              />
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-[11px] font-mono text-slate-400 uppercase mb-1">Color Theme</label>
+              <select id="select-new-subject-color" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200 font-mono focus:outline-none focus:border-emerald-500">
+                <option value="emerald">🟢 Emerald</option>
+                <option value="sky">🔵 Sky Blue</option>
+                <option value="violet">🟣 Violet</option>
+                <option value="amber">🟠 Amber</option>
+                <option value="rose">🔴 Rose</option>
+                <option value="cyan">🩵 Cyan</option>
+                <option value="fuchsia">🌸 Fuchsia</option>
+                <option value="teal">🌊 Teal</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-mono text-slate-400 uppercase mb-1">Pick Icon / Emoji</label>
+            <div class="flex items-center gap-1.5 flex-wrap" id="subject-icon-picker-chips">
+              <button type="button" data-icon="📐" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">📐</button>
+              <button type="button" data-icon="📖" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">📖</button>
+              <button type="button" data-icon="🧩" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">🧩</button>
+              <button type="button" data-icon="🏛️" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">🏛️</button>
+              <button type="button" data-icon="📊" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">📊</button>
+              <button type="button" data-icon="💻" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">💻</button>
+              <button type="button" data-icon="⌨️" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">⌨️</button>
+              <button type="button" data-icon="🧪" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">🧪</button>
+              <button type="button" data-icon="🌍" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">🌍</button>
+              <button type="button" data-icon="⚡" class="subj-icon-chip active px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">⚡</button>
+              <button type="button" data-icon="🎯" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">🎯</button>
+              <button type="button" data-icon="📚" class="subj-icon-chip px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-sm">📚</button>
+              <input type="text" id="input-new-subject-icon" value="⚡" maxlength="4" class="w-12 px-2 py-1 rounded-lg bg-slate-950 border border-slate-700 text-center text-sm text-white font-mono" title="Custom icon" />
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button
+              type="submit"
+              class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono transition active:scale-95 shadow-lg shadow-emerald-500/20 cursor-pointer"
+            >
+              + Create Custom Subject
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Active Subjects List -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold font-mono text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span>📋</span> All Active Subjects (<span id="subject-manager-count" class="text-emerald-400">0</span>)
+          </h4>
+          <button id="btn-restore-default-subjects" type="button" class="text-[11px] font-mono text-slate-500 hover:text-amber-400 transition cursor-pointer">
+            ↺ Restore Core Subjects
+          </button>
+        </div>
+
+        <div id="subject-manager-list" class="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+          <!-- Dynamically populated via renderSubjectManagerList() -->
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end">
+        <button type="button" class="modal-close-btn px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-mono font-bold transition cursor-pointer">
+          Done & Close
         </button>
       </div>
     </div>
@@ -3045,14 +3550,15 @@
       <div class="text-4xl text-rose-500 font-bold">⚠️</div>
       <h3 class="text-base font-bold text-white">Confirm Master Factory Reset?</h3>
       <p class="text-xs text-slate-300 leading-relaxed">
-        This action is permanent and cannot be undone. All your subject study timers, break logs, custom habits, syllabus checklist, revision intervals, and mock analysis history will be completely erased.
+        This action is permanent and cannot be undone. All study hours, 320 Maths targets, Daily Hub items, Weekly/Monthly planners, break timers, habit streaks, mock test analyses, and custom logs will be completely erased from browser localStorage. All dashboard sections will immediately reset to zero.
       </p>
       <div class="flex items-center justify-center gap-3 pt-2">
-        <button class="modal-close-btn px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+        <button class="modal-close-btn px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
           Cancel (Keep My Data)
         </button>
-        <button id="btn-confirm-factory-reset-yes" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/30">
-          Yes, Wipe Everything
+        <button id="btn-confirm-factory-reset-yes" type="button" onclick="window.performMasterFactoryReset ? window.performMasterFactoryReset() : null" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-lg shadow-rose-600/30 cursor-pointer flex items-center gap-1.5">
+          <span>💥</span>
+          <span>Yes, Wipe Everything to Zero</span>
         </button>
       </div>
     </div>
@@ -3140,6 +3646,15 @@
           >
             <span>📋</span>
             <span>Copy</span>
+          </button>
+          <button
+            type="button"
+            id="btn-auth-open-factory-reset"
+            class="py-2.5 px-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-mono transition flex items-center justify-center gap-1 cursor-pointer"
+            title="Wipe all local storage and perform Master Factory Reset"
+          >
+            <span>💥</span>
+            <span>Reset All</span>
           </button>
         </div>
       </div>

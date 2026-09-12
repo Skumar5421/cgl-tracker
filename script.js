@@ -34,6 +34,7 @@
   // ==========================================================================
 
   const STORAGE_KEY = 'MISSION_CGL_2027_TRACKER_V4';
+  const WEEKLY_TASKS_STORAGE_KEY = 'cgl_weekly_tasks';
 
   // --- FIREBASE AUTHENTICATION & FIRESTORE CLOUD CONFIGURATION ---
   const FIREBASE_CONFIG = {
@@ -52,6 +53,7 @@
   let cloudSyncTimeout = null;
   let isSyncingToCloud = false;
   let lastCloudSyncTimestamp = null;
+  let cloudQuotaExceeded = false;
 
   // 25+ Hard-Hitting Strict Anti-Procrastination Quotes
   const DISCIPLINE_QUOTES = [
@@ -141,11 +143,11 @@
 
   // Default Core Subjects
   const DEFAULT_SUBJECTS = [
-    { id: 'maths', name: 'Mathematics (Quantitative Aptitude)', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'english', name: 'English Language & Comprehension', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'reasoning', name: 'Reasoning & General Intelligence', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'ga', name: 'General Awareness (GK & GS)', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'mocks', name: 'Full Mock & Sectional Analysis', seconds: 0, isRunning: false, isDefault: true }
+    { id: 'maths', name: 'Mathematics (Quantitative Aptitude)', shortName: 'Maths', icon: '📐', color: 'emerald', seconds: 0, isRunning: false, isDefault: true },
+    { id: 'english', name: 'English Language & Comprehension', shortName: 'English', icon: '📖', color: 'sky', seconds: 0, isRunning: false, isDefault: true },
+    { id: 'reasoning', name: 'Reasoning & General Intelligence', shortName: 'Reasoning', icon: '🧩', color: 'violet', seconds: 0, isRunning: false, isDefault: true },
+    { id: 'ga', name: 'General Awareness (GK & GS)', shortName: 'General Awareness', icon: '🏛️', color: 'amber', seconds: 0, isRunning: false, isDefault: true },
+    { id: 'mocks', name: 'Full Mock & Sectional Analysis', shortName: 'Mock Tests', icon: '📊', color: 'rose', seconds: 0, isRunning: false, isDefault: true }
   ];
 
   // Default Daily Habits
@@ -251,6 +253,120 @@
       console.warn('Date formatting error:', e);
     }
     return String(dateStr);
+  }
+
+  // ==========================================================================
+  // WEEKLY & MONTHLY CALENDAR SYNCHRONIZATION HELPERS
+  // ==========================================================================
+
+  // Returns the Monday (YYYY-MM-DD) for any given date string or Date object
+  function getMondayOfWeek(inputDate = new Date()) {
+    let d;
+    if (typeof inputDate === 'string') {
+      const parts = inputDate.split('T')[0].split('-');
+      if (parts.length === 3) {
+        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      } else {
+        d = new Date(inputDate);
+      }
+    } else {
+      d = new Date(inputDate);
+    }
+    if (isNaN(d.getTime())) d = new Date();
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay(); // 0 is Sunday, 1 is Monday ... 6 is Saturday
+    const diff = d.getDate() - (day === 0 ? 6 : day - 1);
+    const monday = new Date(d.setDate(diff));
+    const year = monday.getFullYear();
+    const month = String(monday.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(monday.getDate()).padStart(2, '0');
+    return `${year}-${month}-${dayStr}`;
+  }
+
+  // Returns Month key (YYYY-MM) for any given date string or Date object
+  function getMonthKey(inputDate = new Date()) {
+    let d;
+    if (typeof inputDate === 'string') {
+      const parts = inputDate.split('T')[0].split('-');
+      if (parts.length >= 2) {
+        d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+      } else {
+        d = new Date(inputDate);
+      }
+    } else {
+      d = new Date(inputDate);
+    }
+    if (isNaN(d.getTime())) d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+  }
+
+  // Formats YYYY-MM to human display (e.g., "September 2026")
+  function formatMonthDisplay(monthKey) {
+    if (!monthKey) return '';
+    try {
+      const parts = monthKey.split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = new Date(y, m, 1);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+    } catch (e) {
+      console.warn('Month format error:', e);
+    }
+    return String(monthKey);
+  }
+
+  // Shifts a Monday string by offset weeks (+1 or -1)
+  function shiftWeek(mondayStr, offsetWeeks = 1) {
+    if (!mondayStr) mondayStr = getMondayOfWeek(getStudyCycleDate());
+    const parts = mondayStr.split('-');
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const dt = new Date(y, m, d + (offsetWeeks * 7));
+    return getMondayOfWeek(dt);
+  }
+
+  // Shifts a Month key by offset months (+1 or -1)
+  function shiftMonth(monthKey, offsetMonths = 1) {
+    if (!monthKey) monthKey = getMonthKey(getStudyCycleDate());
+    const parts = monthKey.split('-');
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const dt = new Date(y, m + offsetMonths, 1);
+    return getMonthKey(dt);
+  }
+
+  // Returns array of 7 day descriptors (Monday through Sunday) for a week
+  function getDaysOfWeek(mondayStr) {
+    if (!mondayStr) mondayStr = getMondayOfWeek(getStudyCycleDate());
+    const parts = mondayStr.split('-');
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const days = [];
+    const todayStr = getStudyCycleDate();
+
+    for (let i = 0; i < 7; i++) {
+      const dt = new Date(y, m, d + i);
+      const currYear = dt.getFullYear();
+      const currMonth = String(dt.getMonth() + 1).padStart(2, '0');
+      const currDay = String(dt.getDate()).padStart(2, '0');
+      const dateStr = `${currYear}-${currMonth}-${currDay}`;
+
+      days.push({
+        date: dateStr,
+        dayName: dayNames[i],
+        shortName: dayNames[i].substring(0, 3),
+        displayDate: dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        isToday: dateStr === todayStr
+      });
+    }
+    return days;
   }
 
   // Format seconds to hh:mm:ss
@@ -1086,6 +1202,311 @@
     ];
   }
 
+  // Initial Seed for Weekly To-Do Planner (Mon to Sun with tick/cross items)
+  function getDefaultWeeklyTodos() {
+    const currentMonday = getMondayOfWeek(getStudyCycleDate());
+    const parts = currentMonday.split('-');
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+
+    const makeDate = (offsetDays) => {
+      const dt = new Date(y, m, d + offsetDays);
+      const yr = dt.getFullYear();
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      const da = String(dt.getDate()).padStart(2, '0');
+      return `${yr}-${mo}-${da}`;
+    };
+
+    return {
+      [currentMonday]: [
+        // Monday
+        {
+          id: 'wt_mon_1',
+          date: makeDate(0),
+          dayName: 'Monday',
+          title: 'Maths Arithmetic: 50 Qs Percentage & Profit-Loss PYQs',
+          subject: 'Maths',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 500000
+        },
+        {
+          id: 'wt_mon_2',
+          date: makeDate(0),
+          dayName: 'Monday',
+          title: 'English Vocab: 50 Idioms & Phrases + 1 Editorial Analysis',
+          subject: 'English',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 400000
+        },
+        // Tuesday
+        {
+          id: 'wt_tue_1',
+          date: makeDate(1),
+          dayName: 'Tuesday',
+          title: 'Reasoning: 35 Qs Syllogism & Coding-Decoding Speed Drill',
+          subject: 'Reasoning',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 350000
+        },
+        {
+          id: 'wt_tue_2',
+          date: makeDate(1),
+          dayName: 'Tuesday',
+          title: 'GS History: Modern India 1857 Revolt to Gandhian Movements',
+          subject: 'GS',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 300000
+        },
+        // Wednesday
+        {
+          id: 'wt_wed_1',
+          date: makeDate(2),
+          dayName: 'Wednesday',
+          title: 'Maths Advance: 40 Qs Triangle Congruence & Geometry Theorems',
+          subject: 'Maths',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 250000
+        },
+        {
+          id: 'wt_wed_2',
+          date: makeDate(2),
+          dayName: 'Wednesday',
+          title: 'English Grammar: 30 Qs Subject-Verb Agreement & Error Spotting',
+          subject: 'English',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 200000
+        },
+        // Thursday
+        {
+          id: 'wt_thu_1',
+          date: makeDate(3),
+          dayName: 'Thursday',
+          title: 'GS Polity: Articles 1-51A (Fundamental Rights & DPSPs)',
+          subject: 'GS',
+          completed: false,
+          status: 'crossed',
+          createdAt: Date.now() - 150000
+        },
+        {
+          id: 'wt_thu_2',
+          date: makeDate(3),
+          dayName: 'Thursday',
+          title: 'Speed Calculations: Tables 1-30, Squares to 50 & Cubes to 30',
+          subject: 'Maths',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 100000
+        },
+        // Friday
+        {
+          id: 'wt_fri_1',
+          date: makeDate(4),
+          dayName: 'Friday',
+          title: 'English Vocab: 50 One Word Substitutions + 2 Cloze Tests',
+          subject: 'English',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 80000
+        },
+        {
+          id: 'wt_fri_2',
+          date: makeDate(4),
+          dayName: 'Friday',
+          title: 'Reasoning: Non-Verbal Series & Figure Completion 40 Qs',
+          subject: 'Reasoning',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 60000
+        },
+        // Saturday
+        {
+          id: 'wt_sat_1',
+          date: makeDate(5),
+          dayName: 'Saturday',
+          title: 'Weekly Comprehensive Weak Chapters Revision & Error Diary',
+          subject: 'Revision',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 40000
+        },
+        {
+          id: 'wt_sat_2',
+          date: makeDate(5),
+          dayName: 'Saturday',
+          title: 'Sectional Speed Mocks: 25 Qs Maths & 25 Qs Reasoning in 35 min',
+          subject: 'Mock',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 20000
+        },
+        // Sunday
+        {
+          id: 'wt_sun_1',
+          date: makeDate(6),
+          dayName: 'Sunday',
+          title: 'Full-Length Tier-1 Mock Exam (Target: 150+ Raw Score)',
+          subject: 'Mock',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 10000
+        },
+        {
+          id: 'wt_sun_2',
+          date: makeDate(6),
+          dayName: 'Sunday',
+          title: '2-Hour Post-Mortem Analysis: Log All Silly Mistakes in Error Notebook',
+          subject: 'Revision',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 5000
+        }
+      ]
+    };
+  }
+
+  // Initial Seed for Monthly Targets & Milestones
+  function getDefaultMonthlyTargets() {
+    const currentMonth = getMonthKey(getStudyCycleDate());
+    return {
+      [currentMonth]: [
+        {
+          id: 'mt_1',
+          title: 'Complete 12 Full-Length Tier-1 Mock Exams with Deep Post-Mortem',
+          subject: 'Mock Tests',
+          category: 'Mocks',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 500000
+        },
+        {
+          id: 'mt_2',
+          title: 'Finish Complete Arithmetic Syllabus (Profit-Loss, SI/CI, Time & Work, Speed-Distance)',
+          subject: 'Maths',
+          category: 'Syllabus',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 400000
+        },
+        {
+          id: 'mt_3',
+          title: 'Master 1,200 High-Frequency Blackbook Vocab (Idioms, OWS, Synonyms)',
+          subject: 'English',
+          category: 'Revision',
+          completed: true,
+          status: 'completed',
+          createdAt: Date.now() - 300000
+        },
+        {
+          id: 'mt_4',
+          title: 'Complete Indian Constitution Polity Articles & Modern History Timeline',
+          subject: 'General Awareness',
+          category: 'Syllabus',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 200000
+        },
+        {
+          id: 'mt_5',
+          title: 'Maintain 25+ Green Dots Consistency Calendar with Zero Unexcused Misses',
+          subject: 'General',
+          category: 'Discipline',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 100000
+        },
+        {
+          id: 'mt_6',
+          title: 'Achieve 45+ Raw Score in Reasoning Sectional Mocks Consistently',
+          subject: 'Reasoning',
+          category: 'Mocks',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now() - 50000
+        }
+      ]
+    };
+  }
+
+  // Pristine Zero-Data State Factory for Complete Master Factory Reset
+  function getEmptyPristineState() {
+    const todayStr = getStudyCycleDate();
+    return {
+      activeCycleDate: todayStr,
+      targetHours: 10.0,
+      isBreakDay: false,
+      soundEnabled: true,
+      targetExamTitle: DEFAULT_TARGET_EXAM.title,
+      targetExamDate: DEFAULT_TARGET_EXAM.date,
+      subjects: DEFAULT_SUBJECTS.map(s => ({
+        ...s,
+        seconds: 0,
+        isRunning: false,
+        lastStartTime: null
+      })),
+      todayBreakSeconds: 0,
+      yesterdayBreakSeconds: 0,
+      isBreakTimerRunning: false,
+      currentBreakSessionStart: null,
+      mathsQuestionsDone: 0,
+      habits: DEFAULT_HABITS.map(h => ({
+        ...h,
+        streak: 0,
+        completedDays: {},
+        todayCompleted: false
+      })),
+      weakAreas: [],
+      syllabus: DEFAULT_SYLLABUS.map(sub => ({
+        ...sub,
+        status: 'Pending'
+      })),
+      activeSyllabusSubject: 'all',
+      activeSyllabusStatus: 'all',
+      revisionTopics: [],
+      activeRevisionFilter: 'all',
+      selectedTargetDate: todayStr,
+      dateTargets: {},
+      weeklyTodos: {},
+      weeklyTasks: [],
+      monthlyTargets: {},
+      selectedTodoWeekStart: getMondayOfWeek(todayStr),
+      selectedTodoMonth: getMonthKey(todayStr),
+      revisionActiveTab: 'daily',
+      todoHubActiveView: 'weekly',
+      todoMonthlyFilter: 'all',
+      todoWeeklySubjectFilter: 'all',
+      todoMonthlySubjectFilter: 'all',
+      editingWeeklyTaskId: null,
+      editingMonthlyTargetId: null,
+      energyRatingToday: null,
+      energyHistory: [],
+      vaultItems: [],
+      activeVaultFilter: 'all',
+      vaultSearchQuery: '',
+      spacedRepChapters: [],
+      consecutiveStreak: 0,
+      claimedMilestones: [],
+      history: [],
+      mockAnalysisHistory: [],
+      selectedCalendarDate: todayStr,
+      journalEntries: [],
+      selectedJournalDate: todayStr,
+      mockScores: [],
+      mockChartActiveTab: 'full',
+      mockHistoryFilter: 'all',
+      mockSearchQuery: '',
+      activeSubjectId: null,
+      activeSubjectStartTime: null,
+      lastActiveTimestamp: Date.now()
+    };
+  }
+
   // Default Initial State Factory for Fresh First-Runs
   function getInitialDefaultState() {
     return {
@@ -1110,6 +1531,15 @@
       activeRevisionFilter: 'all',
       selectedTargetDate: getStudyCycleDate(),
       dateTargets: getDefaultDateTargets(),
+      weeklyTodos: getDefaultWeeklyTodos(),
+      monthlyTargets: getDefaultMonthlyTargets(),
+      selectedTodoWeekStart: getMondayOfWeek(getStudyCycleDate()),
+      selectedTodoMonth: getMonthKey(getStudyCycleDate()),
+      revisionActiveTab: 'daily',
+      todoHubActiveView: 'weekly',
+      todoMonthlyFilter: 'all',
+      editingWeeklyTaskId: null,
+      editingMonthlyTargetId: null,
       energyRatingToday: null,
       energyHistory: getDefaultEnergyHistory(),
       vaultItems: JSON.parse(JSON.stringify(DEFAULT_VAULT_ITEMS)),
@@ -1177,7 +1607,7 @@
       if (!Array.isArray(state.history)) state.history = [];
       if (!Array.isArray(state.syllabus)) state.syllabus = [];
       if (!Array.isArray(state.revisionTopics)) state.revisionTopics = [];
-      if (!state.dateTargets || typeof state.dateTargets !== 'object') state.dateTargets = getDefaultDateTargets();
+      if (!state.dateTargets || typeof state.dateTargets !== 'object') state.dateTargets = {};
       if (!Array.isArray(state.vaultItems)) state.vaultItems = [];
       if (!Array.isArray(state.spacedRepChapters)) state.spacedRepChapters = [];
       if (!Array.isArray(state.energyHistory)) state.energyHistory = [];
@@ -1186,10 +1616,86 @@
       if (!Array.isArray(state.weakAreas)) state.weakAreas = [];
       if (!Array.isArray(state.claimedMilestones)) state.claimedMilestones = [];
       if (!Array.isArray(state.mockAnalysisHistory)) state.mockAnalysisHistory = [];
+      if (!state.weeklyTodos || typeof state.weeklyTodos !== 'object') state.weeklyTodos = {};
+      if (!Array.isArray(state.weeklyTasks)) state.weeklyTasks = getAllWeeklyTasks();
+      if (!state.monthlyTargets || typeof state.monthlyTargets !== 'object') state.monthlyTargets = {};
+      if (!state.selectedTodoWeekStart) state.selectedTodoWeekStart = getMondayOfWeek(getStudyCycleDate());
+      if (!state.selectedTodoMonth) state.selectedTodoMonth = getMonthKey(getStudyCycleDate());
+      if (!state.revisionActiveTab) state.revisionActiveTab = 'daily';
+      if (!state.todoHubActiveView) state.todoHubActiveView = 'weekly';
+      if (!state.todoMonthlyFilter) state.todoMonthlyFilter = 'all';
+      if (!state.todoWeeklySubjectFilter) state.todoWeeklySubjectFilter = 'all';
+      if (!state.todoMonthlySubjectFilter) state.todoMonthlySubjectFilter = 'all';
       if (state.targetHours === undefined) state.targetHours = 10.0;
       if (state.soundEnabled === undefined) state.soundEnabled = true;
       if (!state.targetExamTitle) state.targetExamTitle = DEFAULT_TARGET_EXAM.title;
       if (!state.targetExamDate) state.targetExamDate = DEFAULT_TARGET_EXAM.date;
+
+      // Sync and hydrate weekly tasks from cgl_weekly_tasks in localStorage
+      try {
+        const rawWeekly = localStorage.getItem(WEEKLY_TASKS_STORAGE_KEY);
+        if (rawWeekly) {
+          const parsedWeekly = JSON.parse(rawWeekly);
+          if (Array.isArray(parsedWeekly) && parsedWeekly.length > 0) {
+            state.weeklyTasks = parsedWeekly;
+            parsedWeekly.forEach(t => {
+              if (t && t.date) {
+                const wStart = t.weekStart || getMondayOfWeek(t.date);
+                if (!state.weeklyTodos[wStart]) {
+                  state.weeklyTodos[wStart] = [];
+                }
+                const idx = state.weeklyTodos[wStart].findIndex(item => item.id === t.id);
+                if (idx === -1) {
+                  state.weeklyTodos[wStart].push(t);
+                } else {
+                  state.weeklyTodos[wStart][idx] = t;
+                }
+              }
+            });
+          }
+        } else {
+          // Initialize cgl_weekly_tasks in localStorage if not already present
+          saveWeeklyTasksToLocalStorage();
+        }
+      } catch (err) {
+        console.warn('Error reading cgl_weekly_tasks from localStorage:', err);
+      }
+
+      // Hydrate subjects with shortName, icon, and color if upgrading from older session
+      state.subjects.forEach(s => {
+        if (!s.shortName) {
+          if (s.id === 'maths' || (s.name && s.name.toLowerCase().includes('math'))) s.shortName = 'Maths';
+          else if (s.id === 'english' || (s.name && s.name.toLowerCase().includes('eng'))) s.shortName = 'English';
+          else if (s.id === 'reasoning' || (s.name && s.name.toLowerCase().includes('reason'))) s.shortName = 'Reasoning';
+          else if (s.id === 'ga' || (s.name && (s.name.toLowerCase().includes('general awareness') || s.name.toLowerCase().includes('gk') || s.name.toLowerCase().includes('gs')))) s.shortName = 'General Awareness';
+          else if (s.id === 'mocks' || (s.name && s.name.toLowerCase().includes('mock'))) s.shortName = 'Mock Tests';
+          else s.shortName = s.name || 'Subject';
+        }
+        if (!s.icon) {
+          const lower = (s.shortName || s.name || '').toLowerCase();
+          if (lower.includes('math')) s.icon = '📐';
+          else if (lower.includes('eng')) s.icon = '📖';
+          else if (lower.includes('reason')) s.icon = '🧩';
+          else if (lower.includes('awar') || lower.includes('gk') || lower.includes('gs') || lower.includes('hist') || lower.includes('polity')) s.icon = '🏛️';
+          else if (lower.includes('mock')) s.icon = '📊';
+          else if (lower.includes('comp')) s.icon = '💻';
+          else if (lower.includes('type') || lower.includes('typing')) s.icon = '⌨️';
+          else s.icon = '⚡';
+        }
+        if (!s.color) {
+          const lower = (s.shortName || s.name || '').toLowerCase();
+          if (lower.includes('math')) s.color = 'emerald';
+          else if (lower.includes('eng')) s.color = 'sky';
+          else if (lower.includes('reason')) s.color = 'violet';
+          else if (lower.includes('awar') || lower.includes('gk') || lower.includes('gs')) s.color = 'amber';
+          else if (lower.includes('mock')) s.color = 'rose';
+          else if (lower.includes('comp')) s.color = 'cyan';
+          else s.color = 'teal';
+        }
+        if (s.isDefault === undefined) {
+          s.isDefault = ['maths', 'english', 'reasoning', 'ga', 'mocks'].includes(s.id);
+        }
+      });
 
       // Reconcile background elapsed time if app was restored with an active subject
       const now = Date.now();
@@ -1205,8 +1711,10 @@
       }
       state.lastActiveTimestamp = now;
     } else {
-      // Brand new clean first-run: populate initial defaults & persist
-      state = getInitialDefaultState();
+      // Brand new clean first-run or post-reset: initialize clean zero-data state
+      state = getEmptyPristineState();
+      state.weeklyTasks = [];
+      saveWeeklyTasksToLocalStorage();
       saveState();
     }
 
@@ -1232,9 +1740,52 @@
     check5amDailyCycleReset();
   }
 
+  // --- WEEKLY TASKS STORAGE ENGINE & LOCALSTORAGE SYNC ---
+  // Helper to extract all weekly tasks across all weeks as a flat array
+  function getAllWeeklyTasks() {
+    const tasksMap = new Map();
+    if (state.weeklyTodos && typeof state.weeklyTodos === 'object') {
+      Object.keys(state.weeklyTodos).forEach(weekKey => {
+        const list = state.weeklyTodos[weekKey];
+        if (Array.isArray(list)) {
+          list.forEach(t => {
+            if (t && t.id) {
+              if (!t.weekStart) t.weekStart = weekKey;
+              tasksMap.set(t.id, t);
+            }
+          });
+        }
+      });
+    }
+    if (Array.isArray(state.weeklyTasks)) {
+      state.weeklyTasks.forEach(t => {
+        if (t && t.id) {
+          if (!tasksMap.has(t.id)) {
+            tasksMap.set(t.id, t);
+          }
+        }
+      });
+    }
+    return Array.from(tasksMap.values());
+  }
+
+  // Force immediate saving of the updated weekly tasks array into browser localStorage under 'cgl_weekly_tasks'
+  function saveWeeklyTasksToLocalStorage() {
+    try {
+      const allTasks = getAllWeeklyTasks();
+      state.weeklyTasks = allTasks;
+      localStorage.setItem(WEEKLY_TASKS_STORAGE_KEY, JSON.stringify(allTasks));
+      return allTasks;
+    } catch (e) {
+      console.error('Error saving cgl_weekly_tasks to localStorage:', e);
+      return [];
+    }
+  }
+
   // Save to LocalStorage & Debounced Cloud Sync
   function saveState(skipCloudSync = false) {
     try {
+      saveWeeklyTasksToLocalStorage();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
       console.error('Error saving state to localStorage:', e);
@@ -1525,6 +2076,7 @@
     renderEnergyHistory();
     renderVault();
     renderJournal();
+    renderTodoHub();
     renderMockTrends();
     renderHistoryTable();
     updateSidebarStatus();
@@ -3366,6 +3918,53 @@ ${item.formula}
       `;
     }
 
+    // Weekly To-Do Planner Tasks for this specific selected date
+    const inspectedWeekMon = getMondayOfWeek(selectedDate);
+    const inspectedWeekTodos = (state.weeklyTodos && state.weeklyTodos[inspectedWeekMon]) || [];
+    const inspectedDayTodos = inspectedWeekTodos.filter(t => t.date === selectedDate);
+    const inspectedDayTodosDone = inspectedDayTodos.filter(t => t.completed).length;
+
+    let todosSnippetHtml = `
+      <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-200 flex items-center gap-1.5">
+            <span>📅</span> Weekly Planner Goals for this Day
+          </span>
+          <span class="text-[11px] font-mono font-bold ${inspectedDayTodosDone === inspectedDayTodos.length && inspectedDayTodos.length > 0 ? 'text-emerald-400' : 'text-slate-400'}">
+            ${inspectedDayTodosDone}/${inspectedDayTodos.length} Completed
+          </span>
+        </div>
+        <div class="space-y-1.5">
+          ${inspectedDayTodos.length > 0 ? inspectedDayTodos.map(t => `
+            <div class="p-2 rounded-xl ${t.completed ? 'bg-emerald-950/25 border border-emerald-500/30' : (t.status === 'crossed' ? 'bg-rose-950/25 border border-rose-500/30' : 'bg-slate-950/70 border border-slate-800')} flex items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2 flex-1 min-w-0">
+                <button
+                  type="button"
+                  data-inspect-todo-toggle="${t.id}"
+                  class="w-5 h-5 rounded flex items-center justify-center font-bold text-[11px] cursor-pointer transition ${t.completed ? 'bg-emerald-500 text-slate-950 shadow-sm shadow-emerald-500/30' : (t.status === 'crossed' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30' : 'bg-slate-800 text-slate-400 hover:bg-emerald-500/20 hover:text-emerald-300')}"
+                  title="Toggle task completion status"
+                >
+                  ${t.completed ? '✓' : (t.status === 'crossed' ? '✕' : '○')}
+                </button>
+                <span class="truncate ${t.completed ? 'line-through text-slate-400' : (t.status === 'crossed' ? 'line-through text-rose-300/80' : 'text-slate-200')}">
+                  ${escapeHtml(t.title)}
+                </span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800/80 text-slate-300 border border-slate-700/60 shrink-0">
+                ${escapeHtml(t.subject || 'Task')}
+              </span>
+            </div>
+          `).join('') : '<p class="text-xs text-slate-500 italic py-1">No to-do goals scheduled for this day yet.</p>'}
+        </div>
+        <div class="flex items-center justify-between pt-1.5 border-t border-slate-800/80">
+          <span class="text-[10px] font-mono text-slate-500">Week: ${inspectedWeekMon}</span>
+          <button id="btn-inspect-open-todo-hub" class="px-3 py-1 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 text-xs font-mono font-semibold transition flex items-center gap-1 border border-sky-500/30 cursor-pointer">
+            <span>📆 Open Week in To-Do Hub</span>
+          </button>
+        </div>
+      </div>
+    `;
+
     // Action button at bottom
     let actionBtnHtml = '';
     if (isToday) {
@@ -3445,6 +4044,9 @@ ${item.formula}
         </div>
       </div>
 
+      <!-- Calendar Sync: Weekly To-Do Hub Planner Goals for this Date -->
+      ${todosSnippetHtml}
+
       <!-- Calendar Sync: Aspirant Daily Journal -->
       ${journalSnippetHtml}
 
@@ -3453,6 +4055,37 @@ ${item.formula}
         ${actionBtnHtml}
       </div>
     `;
+
+    // Hook Weekly To-Do list interactions from Calendar Day Inspector
+    const btnOpenTodoHub = panel.querySelector('#btn-inspect-open-todo-hub');
+    if (btnOpenTodoHub) {
+      btnOpenTodoHub.addEventListener('click', () => {
+        state.selectedTodoWeekStart = inspectedWeekMon;
+        navigateTo('todo-hub');
+      });
+    }
+
+    panel.querySelectorAll('[data-inspect-todo-toggle]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const taskId = e.currentTarget.getAttribute('data-inspect-todo-toggle');
+        const weekTodos = state.weeklyTodos[inspectedWeekMon];
+        if (weekTodos) {
+          const task = weekTodos.find(t => t.id === taskId);
+          if (task) {
+            if (task.completed) {
+              task.completed = false;
+              task.status = 'pending';
+            } else {
+              task.completed = true;
+              task.status = 'completed';
+            }
+            saveState();
+            renderDayInspectionCard();
+            renderCalendar();
+          }
+        }
+      });
+    });
 
     // Hook edit or create buttons
     const btnEdit = panel.querySelector('#btn-edit-inspected-day');
@@ -3609,6 +4242,1344 @@ ${item.formula}
           renderHistoryTable();
           renderCalendar();
         }
+      });
+    });
+  }
+
+  // ==========================================================================
+  // 7F-2. CALENDAR-CONNECTED WEEKLY & MONTHLY TO-DO HUB ENGINE
+  // ==========================================================================
+
+  function findSubjectObject(subjectQuery) {
+    if (!subjectQuery) return null;
+    const q = String(subjectQuery).trim().toLowerCase();
+    return (state.subjects || []).find(s => {
+      const sId = (s.id || '').toLowerCase();
+      const sShort = (s.shortName || '').toLowerCase();
+      const sName = (s.name || '').toLowerCase();
+      return sId === q || sShort === q || sName === q || sName.includes(q) || q.includes(sShort);
+    }) || null;
+  }
+
+  function getSubjectBadge(subject) {
+    const sObj = findSubjectObject(subject);
+    if (sObj) {
+      const color = sObj.color || 'emerald';
+      const badgeClass = `subj-badge-${color}`;
+      return {
+        id: sObj.id,
+        displayName: sObj.shortName || sObj.name,
+        fullName: sObj.name,
+        icon: sObj.icon || '⚡',
+        color: color,
+        badgeClass: badgeClass
+      };
+    }
+    // Fallbacks for standard presets
+    const raw = String(subject || 'General').trim();
+    const lower = raw.toLowerCase();
+    if (lower.includes('math')) return { id: 'maths', displayName: 'Maths', icon: '📐', color: 'emerald', badgeClass: 'subj-badge-emerald' };
+    if (lower.includes('eng')) return { id: 'english', displayName: 'English', icon: '📖', color: 'sky', badgeClass: 'subj-badge-sky' };
+    if (lower.includes('reason')) return { id: 'reasoning', displayName: 'Reasoning', icon: '🧩', color: 'violet', badgeClass: 'subj-badge-violet' };
+    if (lower.includes('ga') || lower.includes('gk') || lower.includes('gs') || lower.includes('aware')) return { id: 'ga', displayName: 'General Awareness', icon: '🏛️', color: 'amber', badgeClass: 'subj-badge-amber' };
+    if (lower.includes('mock')) return { id: 'mocks', displayName: 'Mock Tests', icon: '📊', color: 'rose', badgeClass: 'subj-badge-rose' };
+    if (lower.includes('rev')) return { id: 'revision', displayName: 'Revision', icon: '🔄', color: 'fuchsia', badgeClass: 'subj-badge-fuchsia' };
+    if (lower.includes('comp')) return { id: 'computer', displayName: 'Computer', icon: '💻', color: 'cyan', badgeClass: 'subj-badge-cyan' };
+    if (lower.includes('type')) return { id: 'typing', displayName: 'Typing', icon: '⌨️', color: 'teal', badgeClass: 'subj-badge-teal' };
+
+    return {
+      id: raw.toLowerCase().replace(/\s+/g, '_'),
+      displayName: raw,
+      fullName: raw,
+      icon: '⚡',
+      color: 'teal',
+      badgeClass: 'subj-badge-teal'
+    };
+  }
+
+  function getSubjectBadgeClass(subject) {
+    const b = getSubjectBadge(subject);
+    return b.badgeClass;
+  }
+
+  function matchesSubject(taskSubject, filterSubject) {
+    if (!filterSubject || filterSubject === 'all') return true;
+    if (!taskSubject) return false;
+    const taskBadge = getSubjectBadge(taskSubject);
+    const filterBadge = getSubjectBadge(filterSubject);
+    if (taskBadge.id === filterBadge.id) return true;
+    const tName = (taskBadge.displayName || '').toLowerCase();
+    const fName = (filterBadge.displayName || '').toLowerCase();
+    return tName === fName || tName.includes(fName) || fName.includes(tName);
+  }
+
+  function renderSubjectOptionsHtml(selectedVal, includeAll = false) {
+    let html = includeAll ? `<option value="all" ${selectedVal === 'all' ? 'selected' : ''}>All Subjects</option>` : '';
+    const subjects = (state.subjects && state.subjects.length > 0) ? state.subjects : DEFAULT_SUBJECTS;
+    subjects.forEach(s => {
+      const val = s.shortName || s.name;
+      const isSelected = (selectedVal && (selectedVal === val || selectedVal === s.id || selectedVal === s.name));
+      html += `<option value="${escapeHtml(val)}" ${isSelected ? 'selected' : ''}>${s.icon || '⚡'} ${escapeHtml(val)}</option>`;
+    });
+    // Add extra useful options if not already present
+    const hasRevision = subjects.some(s => (s.shortName || s.name).toLowerCase().includes('revision'));
+    if (!hasRevision) {
+      const isSelected = (selectedVal === 'Revision');
+      html += `<option value="Revision" ${isSelected ? 'selected' : ''}>🔄 Revision & Speed</option>`;
+    }
+    const hasGeneral = subjects.some(s => (s.shortName || s.name).toLowerCase().includes('general'));
+    if (!hasGeneral) {
+      const isSelected = (selectedVal === 'General' || selectedVal === 'Other');
+      html += `<option value="General" ${isSelected ? 'selected' : ''}>⚡ General & Routine</option>`;
+    }
+    return html;
+  }
+
+  function populateSubjectSelectElement(selectEl, selectedVal, includeAll = false) {
+    if (!selectEl) return;
+    const currentVal = selectedVal !== undefined ? selectedVal : selectEl.value;
+    selectEl.innerHTML = renderSubjectOptionsHtml(currentVal, includeAll);
+    if (currentVal) {
+      selectEl.value = currentVal;
+    }
+  }
+
+  function getCategoryBadgeClass(category) {
+    switch (category) {
+      case 'Syllabus':
+        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      case 'Mocks':
+        return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+      case 'Revision':
+        return 'bg-pink-500/20 text-pink-300 border border-pink-500/30';
+      case 'Discipline':
+        return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      case 'Custom':
+        return 'bg-sky-500/20 text-sky-300 border border-sky-500/30';
+      default:
+        return 'bg-slate-800 text-slate-300 border border-slate-700';
+    }
+  }
+
+  // Switch Hub Tabs (Daily Hub | Weekly Planner | Monthly Milestones)
+  function switchHubTab(tabName) {
+    if (!['daily', 'weekly', 'monthly'].includes(tabName)) {
+      tabName = 'daily';
+    }
+    state.revisionActiveTab = tabName;
+    saveState();
+
+    const tabDaily = document.getElementById('tab-btn-hub-daily');
+    const tabWeekly = document.getElementById('tab-btn-hub-weekly');
+    const tabMonthly = document.getElementById('tab-btn-hub-monthly');
+    const indicator = document.getElementById('hub-active-tab-indicator');
+
+    const viewDaily = document.getElementById('hub-view-daily');
+    const viewWeekly = document.getElementById('hub-view-weekly');
+    const viewMonthly = document.getElementById('hub-view-monthly');
+
+    if (tabDaily) tabDaily.classList.toggle('active', tabName === 'daily');
+    if (tabWeekly) tabWeekly.classList.toggle('active', tabName === 'weekly');
+    if (tabMonthly) tabMonthly.classList.toggle('active', tabName === 'monthly');
+
+    if (viewDaily) viewDaily.classList.toggle('hidden', tabName !== 'daily');
+    if (viewWeekly) viewWeekly.classList.toggle('hidden', tabName !== 'weekly');
+    if (viewMonthly) viewMonthly.classList.toggle('hidden', tabName !== 'monthly');
+
+    if (indicator) {
+      if (tabName === 'weekly') {
+        indicator.textContent = 'Weekly Planner (Mon–Sun) Active';
+      } else if (tabName === 'monthly') {
+        indicator.textContent = 'Monthly Milestones Active';
+      } else {
+        indicator.textContent = 'Daily Hub Active';
+      }
+    }
+
+    if (tabName === 'weekly') {
+      renderWeeklyView();
+    } else if (tabName === 'monthly') {
+      renderMonthlyView();
+    } else {
+      renderTargetHub();
+      renderRevisionSystem();
+    }
+  }
+
+  // Master Render for Revision & To-Do Hub Views
+  function renderTodoHub() {
+    const section = document.getElementById('section-revision');
+    if (!section) return;
+
+    // Safety checks for state attributes
+    if (!state.selectedTodoWeekStart) {
+      state.selectedTodoWeekStart = getMondayOfWeek(getStudyCycleDate());
+    }
+    if (!state.selectedTodoMonth) {
+      state.selectedTodoMonth = getMonthKey(getStudyCycleDate());
+    }
+    if (!state.revisionActiveTab) {
+      state.revisionActiveTab = 'daily';
+    }
+    if (!state.weeklyTodos || typeof state.weeklyTodos !== 'object') {
+      state.weeklyTodos = {};
+    }
+    if (!state.monthlyTargets || typeof state.monthlyTargets !== 'object') {
+      state.monthlyTargets = {};
+    }
+
+    const currentTab = state.revisionActiveTab || 'daily';
+    const tabDaily = document.getElementById('tab-btn-hub-daily');
+    const tabWeekly = document.getElementById('tab-btn-hub-weekly');
+    const tabMonthly = document.getElementById('tab-btn-hub-monthly');
+    const indicator = document.getElementById('hub-active-tab-indicator');
+
+    const viewDaily = document.getElementById('hub-view-daily');
+    const viewWeekly = document.getElementById('hub-view-weekly');
+    const viewMonthly = document.getElementById('hub-view-monthly');
+
+    if (tabDaily) tabDaily.classList.toggle('active', currentTab === 'daily');
+    if (tabWeekly) tabWeekly.classList.toggle('active', currentTab === 'weekly');
+    if (tabMonthly) tabMonthly.classList.toggle('active', currentTab === 'monthly');
+
+    if (viewDaily) viewDaily.classList.toggle('hidden', currentTab !== 'daily');
+    if (viewWeekly) viewWeekly.classList.toggle('hidden', currentTab !== 'weekly');
+    if (viewMonthly) viewMonthly.classList.toggle('hidden', currentTab !== 'monthly');
+
+    if (indicator) {
+      if (currentTab === 'weekly') {
+        indicator.textContent = 'Weekly Planner (Mon–Sun) Active';
+      } else if (currentTab === 'monthly') {
+        indicator.textContent = 'Monthly Milestones Active';
+      } else {
+        indicator.textContent = 'Daily Hub Active';
+      }
+    }
+
+    renderWeeklyView();
+    renderMonthlyView();
+  }
+
+  // --- RENDER WEEKLY VIEW (MON TO SUN: 7 DAYS) ---
+  function renderWeeklyView(weekDays) {
+    const currentWeekStart = state.selectedTodoWeekStart || getMondayOfWeek(getStudyCycleDate());
+    state.selectedTodoWeekStart = currentWeekStart;
+    if (!weekDays || !Array.isArray(weekDays) || weekDays.length !== 7) {
+      weekDays = getDaysOfWeek(currentWeekStart);
+    }
+
+    // Weekly Period Labels & Date Picker
+    const periodLabel = document.getElementById('todo-hub-period-label');
+    const subPeriodLabel = document.getElementById('todo-hub-sub-period-label');
+    const jumpDatePicker = document.getElementById('todo-hub-jump-date-picker');
+
+    const exactRangeStr = (weekDays.length === 7)
+      ? `${weekDays[0].shortName}, ${weekDays[0].displayDate} - ${weekDays[6].shortName}, ${weekDays[6].displayDate}`
+      : 'Weekly Planner';
+    const yearStr = weekDays.length === 7 ? weekDays[0].date.split('-')[0] : '';
+
+    if (periodLabel && weekDays.length === 7) {
+      periodLabel.textContent = `Week of ${exactRangeStr}, ${yearStr}`;
+    }
+    if (subPeriodLabel) subPeriodLabel.textContent = `Monday to Sunday Sync • 5:00 AM Cycle Boundary`;
+    if (jumpDatePicker) jumpDatePicker.value = currentWeekStart;
+
+    // Weekly Progress Stats
+    const weekTodos = state.weeklyTodos[currentWeekStart] || [];
+    const totalCount = weekTodos.length;
+    const completedCount = weekTodos.filter(t => t.completed).length;
+    const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    const statCompleted = document.getElementById('todo-hub-stat-completed');
+    const statTotal = document.getElementById('todo-hub-stat-total');
+    const statPct = document.getElementById('todo-hub-stat-pct');
+    const progressBar = document.getElementById('todo-hub-progress-bar');
+
+    if (statCompleted) statCompleted.textContent = completedCount;
+    if (statTotal) statTotal.textContent = totalCount;
+    if (statPct) statPct.textContent = `${pct}%`;
+    if (progressBar) progressBar.style.width = `${pct}%`;
+
+    // Populate Explicit Weekly Task Subject Select
+    const selectWeeklySubj = document.getElementById('select-weekly-task-subject');
+    if (selectWeeklySubj) {
+      populateSubjectSelectElement(selectWeeklySubj, selectWeeklySubj.value || 'Maths');
+    }
+
+    // Weekly Subject-Wise Filter Tabs
+    const weeklySubjFilterBar = document.getElementById('weekly-subject-filters-bar');
+    if (weeklySubjFilterBar) {
+      const currentSubjFilter = state.todoWeeklySubjectFilter || 'all';
+      const totalAll = weekTodos.length;
+      let filterHtml = `
+        <button
+          type="button"
+          data-weekly-subj-filter="all"
+          class="todo-subj-filter-pill ${currentSubjFilter === 'all' ? 'active' : ''}"
+        >
+          <span>🎯 All</span> <span class="opacity-70 font-mono">(${totalAll})</span>
+        </button>
+      `;
+
+      const subjects = (state.subjects && state.subjects.length > 0) ? state.subjects : DEFAULT_SUBJECTS;
+      subjects.forEach(s => {
+        const sName = s.shortName || s.name;
+        const count = weekTodos.filter(t => matchesSubject(t.subject, sName)).length;
+        const isActive = (currentSubjFilter === sName);
+        filterHtml += `
+          <button
+            type="button"
+            data-weekly-subj-filter="${escapeHtml(sName)}"
+            class="todo-subj-filter-pill ${isActive ? 'active' : ''}"
+          >
+            <span>${s.icon || '⚡'} ${escapeHtml(sName)}</span>
+            <span class="opacity-75 font-mono">(${count})</span>
+          </button>
+        `;
+      });
+
+      weeklySubjFilterBar.innerHTML = filterHtml;
+
+      weeklySubjFilterBar.querySelectorAll('[data-weekly-subj-filter]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          state.todoWeeklySubjectFilter = e.currentTarget.getAttribute('data-weekly-subj-filter');
+          saveState();
+          renderWeeklyView(weekDays);
+        });
+      });
+    }
+
+    // Wire Manage Custom Subjects Button
+    const btnManageSubjWeekly = document.getElementById('btn-manage-subjects-weekly');
+    if (btnManageSubjWeekly) {
+      btnManageSubjWeekly.onclick = () => openSubjectManagerModal();
+    }
+
+    // Update Top-Level Weekly Date Range Banners & Day Selector
+    const rangeBadge = document.getElementById('weekly-active-date-range-badge');
+    const rangeText = document.getElementById('weekly-active-date-range-text');
+    const rangeYear = document.getElementById('weekly-active-date-range-year');
+    const rangeStats = document.getElementById('weekly-range-stats-summary');
+    const selectWeeklyDay = document.getElementById('select-weekly-task-day');
+
+    if (rangeBadge) rangeBadge.textContent = exactRangeStr;
+    if (rangeText) rangeText.textContent = exactRangeStr;
+    if (rangeYear) rangeYear.textContent = yearStr;
+    if (rangeStats) rangeStats.textContent = `${completedCount} / ${totalCount} Done (${pct}%)`;
+
+    if (selectWeeklyDay && weekDays.length === 7) {
+      const prevSelectedVal = selectWeeklyDay.value;
+      selectWeeklyDay.innerHTML = weekDays.map(day => `
+        <option value="${day.date}" ${day.isToday ? 'selected' : ''}>
+          ${day.dayName} (${day.shortName}, ${day.displayDate})${day.isToday ? ' • TODAY' : ''}
+        </option>
+      `).join('');
+      if (prevSelectedVal && weekDays.some(d => d.date === prevSelectedVal)) {
+        selectWeeklyDay.value = prevSelectedVal;
+      }
+    }
+
+    const grid = document.getElementById('todo-weekly-days-grid');
+    if (!grid) return;
+
+    const activeSubjFilter = state.todoWeeklySubjectFilter || 'all';
+
+    grid.innerHTML = weekDays.map(day => {
+      const allDayTasks = weekTodos.filter(t => t.date === day.date);
+      const dayTasks = (activeSubjFilter === 'all')
+        ? allDayTasks
+        : allDayTasks.filter(t => matchesSubject(t.subject, activeSubjFilter));
+      const dayCompletedCount = allDayTasks.filter(t => t.completed).length;
+      const isDayAllDone = allDayTasks.length > 0 && dayCompletedCount === allDayTasks.length;
+
+      const tasksHtml = dayTasks.length === 0
+        ? `<div class="p-3 text-center rounded-xl bg-slate-950/40 border border-slate-800/60 text-slate-500 text-[11px] italic">
+             ${activeSubjFilter === 'all' ? `No study goals mapped for ${day.shortName}.` : `No ${escapeHtml(activeSubjFilter)} goals for ${day.shortName}.`}
+           </div>`
+        : dayTasks.map(task => {
+            const isEditing = (state.editingWeeklyTaskId === task.id);
+
+            if (isEditing) {
+              return `
+                <div class="p-2.5 rounded-xl bg-slate-900 border border-sky-500/60 shadow-lg space-y-2">
+                  <input
+                    type="text"
+                    id="input-edit-weekly-${task.id}"
+                    value="${escapeHtml(task.title)}"
+                    class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white font-medium focus:outline-none focus:border-sky-400"
+                    placeholder="Task title..."
+                  />
+                  <div class="flex items-center justify-between gap-1.5">
+                    <select id="select-edit-weekly-${task.id}" class="px-2 py-1 rounded-lg bg-slate-950 border border-slate-700 text-[11px] text-slate-200 font-mono">
+                      ${renderSubjectOptionsHtml(task.subject)}
+                    </select>
+                    <div class="flex items-center gap-1">
+                      <button type="button" data-save-weekly-edit="${task.id}" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] transition cursor-pointer">
+                        Save
+                      </button>
+                      <button type="button" data-cancel-weekly-edit class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition cursor-pointer">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+
+            const isDone = task.completed;
+            const isCrossed = (task.status === 'crossed');
+            const taskBadge = getSubjectBadge(task.subject);
+
+            return `
+              <div class="todo-task-item ${isDone ? 'completed' : (isCrossed ? 'crossed' : '')} p-2 rounded-xl transition">
+                <div class="flex items-start gap-1.5 flex-1 min-w-0">
+                  <!-- Interactive Tick & Cross Status Controls -->
+                  <div class="flex items-center gap-1 pt-0.5 shrink-0">
+                    <button
+                      type="button"
+                      data-todo-tick="${task.id}"
+                      class="todo-status-tick-btn ${isDone ? 'active' : ''}"
+                      title="Mark Goal Achieved (Tick ✓)"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      data-todo-cross="${task.id}"
+                      class="todo-status-cross-btn ${isCrossed ? 'active' : ''}"
+                      title="Mark Goal Missed / Incomplete (Cross ✕)"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <!-- Task Title & Subject Pill -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${taskBadge.badgeClass}">
+                        ${taskBadge.icon} ${escapeHtml(taskBadge.displayName)}
+                      </span>
+                      <span class="todo-task-title text-xs font-medium leading-snug ${isDone ? 'line-through text-slate-400' : (isCrossed ? 'line-through text-rose-300/80' : 'text-slate-200')}">
+                        ${escapeHtml(task.title)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Inline Edit & Delete Operations -->
+                <div class="flex items-center gap-1 shrink-0 ml-1">
+                  <button
+                    type="button"
+                    data-edit-weekly-task="${task.id}"
+                    class="todo-action-btn edit"
+                    title="Edit task inline"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    type="button"
+                    data-delete-weekly-task="${task.id}"
+                    class="todo-action-btn delete"
+                    title="Delete task"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+      return `
+        <div class="todo-day-card flex flex-col justify-between ${day.isToday ? 'is-today' : ''}">
+          <div>
+            <!-- Day Card Header -->
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+              <div class="flex items-center gap-1.5">
+                <span class="font-extrabold text-white text-xs font-mono uppercase tracking-wider">${day.shortName}</span>
+                <span class="text-[11px] font-mono text-slate-400 font-semibold">${day.displayDate}</span>
+                ${day.isToday ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">TODAY</span>' : ''}
+              </div>
+              <div class="text-[10px] font-mono font-bold ${isDayAllDone ? 'text-emerald-400' : 'text-slate-400'}">
+                ${dayCompletedCount}/${allDayTasks.length} Done
+              </div>
+            </div>
+
+            <!-- Task Items Container -->
+            <div class="space-y-2 mb-3">
+              ${tasksHtml}
+            </div>
+          </div>
+
+          <!-- Bottom: Add Task Mini-Form & Quick Presets -->
+          <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+            <div class="flex items-center gap-1">
+              <input
+                type="text"
+                id="input-add-task-${day.date}"
+                placeholder="Add ${day.shortName} goal..."
+                class="flex-1 min-w-0 px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 font-sans"
+                data-day-input="${day.date}"
+              />
+              <select id="select-subject-${day.date}" class="px-1.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[10px] text-slate-300 font-mono focus:outline-none focus:border-sky-500">
+                ${renderSubjectOptionsHtml('Maths')}
+              </select>
+              <button
+                type="button"
+                data-add-task-btn="${day.date}"
+                data-day-name="${day.dayName}"
+                class="w-7 h-7 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold flex items-center justify-center text-sm transition cursor-pointer shadow-sm shadow-sky-500/20 shrink-0"
+                title="Add Goal"
+              >
+                +
+              </button>
+            </div>
+            <!-- Quick Preset Mission Chips -->
+            <div class="flex items-center gap-1 flex-wrap">
+              <button type="button" data-quick-preset-day="${day.date}" data-preset-title="320 Maths Qs Mission" data-preset-subj="Maths" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-emerald-300 border border-slate-800 transition cursor-pointer">
+                + 320 Maths Qs
+              </button>
+              <button type="button" data-quick-preset-day="${day.date}" data-preset-title="50 English Vocab + Editorial" data-preset-subj="English" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-sky-300 border border-slate-800 transition cursor-pointer">
+                + Vocab
+              </button>
+              <button type="button" data-quick-preset-day="${day.date}" data-preset-title="1 Full Tier-1 Mock Exam" data-preset-subj="Mock Tests" class="text-[9px] px-1.5 py-0.5 rounded bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-rose-300 border border-slate-800 transition cursor-pointer">
+                + Mock
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach Day Grid Interaction Listeners
+    // 1. Tick Button Click
+    grid.querySelectorAll('[data-todo-tick]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const taskId = e.currentTarget.getAttribute('data-todo-tick');
+        const tasks = state.weeklyTodos[currentWeekStart];
+        if (tasks) {
+          const task = tasks.find(t => t.id === taskId);
+          if (task) {
+            if (task.completed) {
+              task.completed = false;
+              task.status = 'pending';
+            } else {
+              task.completed = true;
+              task.status = 'completed';
+            }
+            saveWeeklyTasksToLocalStorage();
+            saveState();
+            renderWeeklyView(weekDays);
+            renderTodoHub();
+            renderCalendar();
+            renderDayInspectionCard();
+          }
+        }
+      });
+    });
+
+    // 2. Cross Button Click
+    grid.querySelectorAll('[data-todo-cross]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const taskId = e.currentTarget.getAttribute('data-todo-cross');
+        const tasks = state.weeklyTodos[currentWeekStart];
+        if (tasks) {
+          const task = tasks.find(t => t.id === taskId);
+          if (task) {
+            if (task.status === 'crossed') {
+              task.status = 'pending';
+              task.completed = false;
+            } else {
+              task.status = 'crossed';
+              task.completed = false;
+            }
+            saveWeeklyTasksToLocalStorage();
+            saveState();
+            renderWeeklyView(weekDays);
+            renderTodoHub();
+            renderCalendar();
+            renderDayInspectionCard();
+          }
+        }
+      });
+    });
+
+    // 3. Inline Edit Trigger
+    grid.querySelectorAll('[data-edit-weekly-task]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const taskId = e.currentTarget.getAttribute('data-edit-weekly-task');
+        state.editingWeeklyTaskId = taskId;
+        renderWeeklyView(weekDays);
+
+        // Auto-focus input
+        setTimeout(() => {
+          const editInput = document.getElementById(`input-edit-weekly-${taskId}`);
+          if (editInput) {
+            editInput.focus();
+            editInput.select();
+            editInput.addEventListener('keydown', (ke) => {
+              if (ke.key === 'Enter') {
+                saveWeeklyEditHandler(taskId);
+              } else if (ke.key === 'Escape') {
+                state.editingWeeklyTaskId = null;
+                renderWeeklyView(weekDays);
+              }
+            });
+          }
+        }, 30);
+      });
+    });
+
+    const saveWeeklyEditHandler = (taskId) => {
+      const editInput = document.getElementById(`input-edit-weekly-${taskId}`);
+      const editSelect = document.getElementById(`select-edit-weekly-${taskId}`);
+      if (!editInput || !editInput.value.trim()) return;
+
+      const tasks = state.weeklyTodos[currentWeekStart];
+      if (tasks) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+          task.title = editInput.value.trim();
+          if (editSelect) task.subject = editSelect.value;
+          state.editingWeeklyTaskId = null;
+          saveWeeklyTasksToLocalStorage();
+          saveState();
+          renderWeeklyView(weekDays);
+          renderTodoHub();
+          renderCalendar();
+          renderDayInspectionCard();
+        }
+      }
+    };
+
+    // 4. Save Edit Button
+    grid.querySelectorAll('[data-save-weekly-edit]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const taskId = e.currentTarget.getAttribute('data-save-weekly-edit');
+        saveWeeklyEditHandler(taskId);
+      });
+    });
+
+    // 5. Cancel Edit Button
+    grid.querySelectorAll('[data-cancel-weekly-edit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.editingWeeklyTaskId = null;
+        renderWeeklyView(weekDays);
+      });
+    });
+
+    // 6. Delete Task
+    grid.querySelectorAll('[data-delete-weekly-task]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const taskId = e.currentTarget.getAttribute('data-delete-weekly-task');
+        if (confirm('Delete this goal from weekly planner?')) {
+          if (state.weeklyTodos[currentWeekStart]) {
+            state.weeklyTodos[currentWeekStart] = state.weeklyTodos[currentWeekStart].filter(t => t.id !== taskId);
+            if (Array.isArray(state.weeklyTasks)) {
+              state.weeklyTasks = state.weeklyTasks.filter(t => t.id !== taskId);
+            }
+            saveWeeklyTasksToLocalStorage();
+            saveState();
+            renderWeeklyView(weekDays);
+            renderTodoHub();
+            renderCalendar();
+            renderDayInspectionCard();
+          }
+        }
+      });
+    });
+
+    // 7. Add Task from Day Mini-Form
+    grid.querySelectorAll('[data-add-task-btn]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetDate = e.currentTarget.getAttribute('data-add-task-btn');
+        const dayName = e.currentTarget.getAttribute('data-day-name') || 'Day';
+        executeAddTask(targetDate, dayName);
+      });
+    });
+
+    grid.querySelectorAll('[data-day-input]').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const targetDate = e.currentTarget.getAttribute('data-day-input');
+          executeAddTask(targetDate, 'Day');
+        }
+      });
+    });
+
+    const executeAddTask = (targetDate, dayName) => {
+      const input = document.getElementById(`input-add-task-${targetDate}`);
+      const select = document.getElementById(`select-subject-${targetDate}`);
+      if (!input || !input.value.trim()) return;
+
+      const exactRangeStr = (weekDays.length === 7)
+        ? `${weekDays[0].shortName}, ${weekDays[0].displayDate} - ${weekDays[6].shortName}, ${weekDays[6].displayDate}`
+        : 'Weekly Planner';
+
+      const newTask = {
+        id: 'wt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        date: targetDate,
+        dayName: dayName,
+        title: input.value.trim(),
+        subject: select ? select.value : 'Other',
+        dateRange: exactRangeStr,
+        weekRange: exactRangeStr,
+        weekStart: currentWeekStart,
+        completed: false,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+
+      if (!state.weeklyTodos[currentWeekStart]) {
+        state.weeklyTodos[currentWeekStart] = [];
+      }
+      state.weeklyTodos[currentWeekStart].push(newTask);
+      if (!Array.isArray(state.weeklyTasks)) state.weeklyTasks = getAllWeeklyTasks();
+      else if (!state.weeklyTasks.some(t => t.id === newTask.id)) state.weeklyTasks.push(newTask);
+
+      saveWeeklyTasksToLocalStorage();
+      saveState();
+      input.value = '';
+      renderWeeklyView(weekDays);
+      renderTodoHub();
+      renderCalendar();
+      renderDayInspectionCard();
+    };
+
+    // 8. Quick Preset Mission Chips
+    grid.querySelectorAll('[data-quick-preset-day]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetDate = e.currentTarget.getAttribute('data-quick-preset-day');
+        const presetTitle = e.currentTarget.getAttribute('data-preset-title');
+        const presetSubj = e.currentTarget.getAttribute('data-preset-subj') || 'Other';
+
+        const exactRangeStr = (weekDays.length === 7)
+          ? `${weekDays[0].shortName}, ${weekDays[0].displayDate} - ${weekDays[6].shortName}, ${weekDays[6].displayDate}`
+          : 'Weekly Planner';
+
+        const newTask = {
+          id: 'wt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          date: targetDate,
+          dayName: 'Day',
+          title: presetTitle,
+          subject: presetSubj,
+          dateRange: exactRangeStr,
+          weekRange: exactRangeStr,
+          weekStart: currentWeekStart,
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now()
+        };
+
+        if (!state.weeklyTodos[currentWeekStart]) {
+          state.weeklyTodos[currentWeekStart] = [];
+        }
+        state.weeklyTodos[currentWeekStart].push(newTask);
+        if (!Array.isArray(state.weeklyTasks)) state.weeklyTasks = getAllWeeklyTasks();
+        else if (!state.weeklyTasks.some(t => t.id === newTask.id)) state.weeklyTasks.push(newTask);
+
+        saveWeeklyTasksToLocalStorage();
+        saveState();
+        renderWeeklyView(weekDays);
+        renderTodoHub();
+        renderCalendar();
+        renderDayInspectionCard();
+      });
+    });
+  }
+
+  // --- RENDER MONTHLY VIEW (STRATEGIC MILESTONES & TARGETS) ---
+  function renderMonthlyView() {
+    const listContainer = document.getElementById('monthly-targets-list-container');
+    const badgeLabel = document.getElementById('monthly-badge-label');
+    const periodLabel = document.getElementById('monthly-period-label');
+    const jumpDatePicker = document.getElementById('monthly-jump-date-picker');
+
+    const currentMonth = state.selectedTodoMonth || getMonthKey(getStudyCycleDate());
+    state.selectedTodoMonth = currentMonth;
+
+    const monthDisplay = formatMonthDisplay(currentMonth);
+    const monthHeadingStr = `${monthDisplay} Milestones`;
+
+    if (badgeLabel) badgeLabel.textContent = monthDisplay;
+    if (periodLabel) periodLabel.textContent = monthDisplay;
+    if (jumpDatePicker) jumpDatePicker.value = currentMonth;
+
+    const headingTitleText = document.getElementById('monthly-heading-title-text');
+    if (headingTitleText) headingTitleText.textContent = monthHeadingStr;
+
+    // Populate Explicit Monthly Milestone Subject Select
+    const selectMonthlySubj = document.getElementById('select-monthly-milestone-subject');
+    if (selectMonthlySubj) {
+      populateSubjectSelectElement(selectMonthlySubj, selectMonthlySubj.value || 'Maths');
+    }
+
+    const allTargets = state.monthlyTargets[currentMonth] || [];
+    const catFilter = state.todoMonthlyFilter || 'all';
+    const subjFilter = state.todoMonthlySubjectFilter || 'all';
+
+    // Monthly Subject-Wise Filter Tabs
+    const monthlySubjFilterBar = document.getElementById('monthly-subject-filters-bar');
+    if (monthlySubjFilterBar) {
+      const totalAll = allTargets.length;
+      let filterHtml = `
+        <button
+          type="button"
+          data-monthly-subj-filter="all"
+          class="todo-subj-filter-pill ${subjFilter === 'all' ? 'active' : ''}"
+        >
+          <span>🎯 All</span> <span class="opacity-70 font-mono">(${totalAll})</span>
+        </button>
+      `;
+
+      const subjects = (state.subjects && state.subjects.length > 0) ? state.subjects : DEFAULT_SUBJECTS;
+      subjects.forEach(s => {
+        const sName = s.shortName || s.name;
+        const count = allTargets.filter(t => matchesSubject(t.subject, sName)).length;
+        const isActive = (subjFilter === sName);
+        filterHtml += `
+          <button
+            type="button"
+            data-monthly-subj-filter="${escapeHtml(sName)}"
+            class="todo-subj-filter-pill ${isActive ? 'active' : ''}"
+          >
+            <span>${s.icon || '⚡'} ${escapeHtml(sName)}</span>
+            <span class="opacity-75 font-mono">(${count})</span>
+          </button>
+        `;
+      });
+
+      monthlySubjFilterBar.innerHTML = filterHtml;
+
+      monthlySubjFilterBar.querySelectorAll('[data-monthly-subj-filter]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          state.todoMonthlySubjectFilter = e.currentTarget.getAttribute('data-monthly-subj-filter');
+          saveState();
+          renderMonthlyView();
+        });
+      });
+    }
+
+    // Wire Manage Custom Subjects Button inside Monthly View
+    const btnManageSubjMonthly = document.getElementById('btn-manage-subjects-monthly');
+    if (btnManageSubjMonthly) {
+      btnManageSubjMonthly.onclick = () => openSubjectManagerModal();
+    }
+
+    // Monthly Progress Stats
+    const totalCount = allTargets.length;
+    const completedCount = allTargets.filter(t => t.completed).length;
+    const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+    const statCompleted = document.getElementById('monthly-stat-completed');
+    const statTotal = document.getElementById('monthly-stat-total');
+    const statPct = document.getElementById('monthly-stat-pct');
+    const progressBar = document.getElementById('monthly-progress-bar');
+    const headingStatsSummary = document.getElementById('monthly-heading-stats-summary');
+
+    if (statCompleted) statCompleted.textContent = completedCount;
+    if (statTotal) statTotal.textContent = totalCount;
+    if (statPct) statPct.textContent = `${pct}%`;
+    if (progressBar) progressBar.style.width = `${pct}%`;
+    if (headingStatsSummary) headingStatsSummary.textContent = `${completedCount} / ${totalCount} Done (${pct}%)`;
+
+    if (!listContainer) return;
+
+    const filteredTargets = allTargets.filter(t => {
+      const matchCat = (catFilter === 'all' || t.category === catFilter);
+      const matchSubj = (subjFilter === 'all' || matchesSubject(t.subject, subjFilter));
+      return matchCat && matchSubj;
+    });
+
+    if (filteredTargets.length === 0) {
+      listContainer.innerHTML = `
+        <div class="p-8 text-center rounded-3xl bg-[#0b1120] border border-slate-800 text-slate-400 space-y-2">
+          <div class="text-3xl">🎯</div>
+          <h4 class="text-sm font-bold text-white">No Monthly Targets for this View</h4>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">
+            ${catFilter === 'all' && subjFilter === 'all'
+              ? `Establish your core syllabus targets, mock milestones, or discipline benchmarks for ${formatMonthDisplay(currentMonth)} using the form above.`
+              : `No targets found matching the current filters (Category: ${catFilter}, Subject: ${subjFilter}) for ${formatMonthDisplay(currentMonth)}.`}
+          </p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = filteredTargets.map(target => {
+      const isEditing = (state.editingMonthlyTargetId === target.id);
+
+      if (isEditing) {
+        return `
+          <div class="p-4 rounded-2xl bg-slate-900 border border-sky-500/60 shadow-lg space-y-3">
+            <input
+              type="text"
+              id="input-edit-monthly-${target.id}"
+              value="${escapeHtml(target.title)}"
+              class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white font-medium focus:outline-none focus:border-sky-400"
+              placeholder="Monthly target title..."
+            />
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-mono text-slate-400">Subject:</span>
+                  <select id="select-edit-monthly-subject-${target.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200 font-mono">
+                    ${renderSubjectOptionsHtml(target.subject || 'Maths')}
+                  </select>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] font-mono text-slate-400">Category:</span>
+                  <select id="select-edit-monthly-${target.id}" class="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-200 font-mono">
+                    <option value="Syllabus" ${target.category === 'Syllabus' ? 'selected' : ''}>📚 Core Syllabus</option>
+                    <option value="Mocks" ${target.category === 'Mocks' ? 'selected' : ''}>📊 Mocks & Scores</option>
+                    <option value="Revision" ${target.category === 'Revision' ? 'selected' : ''}>🔄 Speed & Revision</option>
+                    <option value="Discipline" ${target.category === 'Discipline' ? 'selected' : ''}>⚡ Discipline & Routine</option>
+                    <option value="Custom" ${target.category === 'Custom' ? 'selected' : ''}>✨ Custom Milestone</option>
+                  </select>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 ml-auto">
+                <button type="button" data-save-monthly-edit="${target.id}" class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition cursor-pointer">
+                  Save
+                </button>
+                <button type="button" data-cancel-monthly-edit class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition cursor-pointer">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      const isDone = target.completed;
+      const isCrossed = (target.status === 'crossed');
+      const subjBadge = getSubjectBadge(target.subject || 'General');
+
+      return `
+        <div class="todo-task-item ${isDone ? 'completed' : (isCrossed ? 'crossed' : '')} flex items-center justify-between p-3.5 rounded-2xl border transition">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <!-- Interactive Tick & Cross Status Controls -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                data-monthly-tick="${target.id}"
+                class="todo-status-tick-btn ${isDone ? 'active' : ''}"
+                title="Mark Target Achieved (Tick ✓)"
+              >
+                ✓
+              </button>
+              <button
+                type="button"
+                data-monthly-cross="${target.id}"
+                class="todo-status-cross-btn ${isCrossed ? 'active' : ''}"
+                title="Mark Target Incomplete / Abandoned (Cross ✕)"
+              >
+                ✕
+              </button>
+            </div>
+
+            <!-- Title & Subject/Category Badges -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${subjBadge.badgeClass}">
+                  ${subjBadge.icon} ${escapeHtml(subjBadge.displayName)}
+                </span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${getCategoryBadgeClass(target.category)}">
+                  ${escapeHtml(target.category || 'Target')}
+                </span>
+                <span class="text-sm font-semibold leading-snug ${isDone ? 'line-through text-slate-400' : (isCrossed ? 'line-through text-rose-300/80' : 'text-slate-100')}">
+                  ${escapeHtml(target.title)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inline Edit & Delete Operations -->
+          <div class="flex items-center gap-1.5 shrink-0 ml-2">
+            <button
+              type="button"
+              data-edit-monthly-target="${target.id}"
+              class="todo-action-btn edit"
+              title="Edit target inline"
+            >
+              ✏️
+            </button>
+            <button
+              type="button"
+              data-delete-monthly-target="${target.id}"
+              class="todo-action-btn delete"
+              title="Delete target"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach Monthly Targets Listeners
+    // 1. Tick Button Click
+    listContainer.querySelectorAll('[data-monthly-tick]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-monthly-tick');
+        const targets = state.monthlyTargets[currentMonth];
+        if (targets) {
+          const target = targets.find(t => t.id === targetId);
+          if (target) {
+            if (target.completed) {
+              target.completed = false;
+              target.status = 'pending';
+            } else {
+              target.completed = true;
+              target.status = 'completed';
+            }
+            saveState();
+            renderTodoHub();
+          }
+        }
+      });
+    });
+
+    // 2. Cross Button Click
+    listContainer.querySelectorAll('[data-monthly-cross]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-monthly-cross');
+        const targets = state.monthlyTargets[currentMonth];
+        if (targets) {
+          const target = targets.find(t => t.id === targetId);
+          if (target) {
+            if (target.status === 'crossed') {
+              target.status = 'pending';
+              target.completed = false;
+            } else {
+              target.status = 'crossed';
+              target.completed = false;
+            }
+            saveState();
+            renderTodoHub();
+          }
+        }
+      });
+    });
+
+    // 3. Inline Edit Trigger
+    listContainer.querySelectorAll('[data-edit-monthly-target]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-edit-monthly-target');
+        state.editingMonthlyTargetId = targetId;
+        renderMonthlyView();
+
+        setTimeout(() => {
+          const editInput = document.getElementById(`input-edit-monthly-${targetId}`);
+          if (editInput) {
+            editInput.focus();
+            editInput.select();
+            editInput.addEventListener('keydown', (ke) => {
+              if (ke.key === 'Enter') {
+                saveMonthlyEditHandler(targetId);
+              } else if (ke.key === 'Escape') {
+                state.editingMonthlyTargetId = null;
+                renderMonthlyView();
+              }
+            });
+          }
+        }, 30);
+      });
+    });
+
+    const saveMonthlyEditHandler = (targetId) => {
+      const editInput = document.getElementById(`input-edit-monthly-${targetId}`);
+      const editSelect = document.getElementById(`select-edit-monthly-${targetId}`);
+      const editSubjSelect = document.getElementById(`select-edit-monthly-subject-${targetId}`);
+      if (!editInput || !editInput.value.trim()) return;
+
+      const targets = state.monthlyTargets[currentMonth];
+      if (targets) {
+        const target = targets.find(t => t.id === targetId);
+        if (target) {
+          target.title = editInput.value.trim();
+          if (editSelect) target.category = editSelect.value;
+          if (editSubjSelect) target.subject = editSubjSelect.value;
+          state.editingMonthlyTargetId = null;
+          saveState();
+          renderTodoHub();
+        }
+      }
+    };
+
+    // 4. Save Edit Button
+    listContainer.querySelectorAll('[data-save-monthly-edit]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-save-monthly-edit');
+        saveMonthlyEditHandler(targetId);
+      });
+    });
+
+    // 5. Cancel Edit Button
+    listContainer.querySelectorAll('[data-cancel-monthly-edit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.editingMonthlyTargetId = null;
+        renderMonthlyView();
+      });
+    });
+
+    // 6. Delete Target
+    listContainer.querySelectorAll('[data-delete-monthly-target]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetId = e.currentTarget.getAttribute('data-delete-monthly-target');
+        if (confirm('Delete this monthly milestone target?')) {
+          if (state.monthlyTargets[currentMonth]) {
+            state.monthlyTargets[currentMonth] = state.monthlyTargets[currentMonth].filter(t => t.id !== targetId);
+            saveState();
+            renderTodoHub();
+          }
+        }
+      });
+    });
+  }
+
+  // --- BIND TO-DO HUB GLOBAL CONTROLS & LISTENERS ---
+  function bindTodoHubEvents() {
+    // 1. Hub Master View Switcher Tabs (Daily Hub | Weekly Planner | Monthly Milestones)
+    document.querySelectorAll('.hub-view-tab').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tab = e.currentTarget.getAttribute('data-hub-tab') || e.currentTarget.getAttribute('data-tab');
+        if (tab) {
+          switchHubTab(tab);
+        }
+      });
+    });
+
+    // 2. Weekly Period Navigation Controls
+    const btnWeeklyPrev = document.getElementById('btn-todo-prev');
+    if (btnWeeklyPrev) {
+      btnWeeklyPrev.addEventListener('click', () => {
+        state.selectedTodoWeekStart = shiftWeek(state.selectedTodoWeekStart, -1);
+        saveState();
+        renderWeeklyView();
+      });
+    }
+
+    const btnWeeklyNext = document.getElementById('btn-todo-next');
+    if (btnWeeklyNext) {
+      btnWeeklyNext.addEventListener('click', () => {
+        state.selectedTodoWeekStart = shiftWeek(state.selectedTodoWeekStart, 1);
+        saveState();
+        renderWeeklyView();
+      });
+    }
+
+    const btnWeeklyToday = document.getElementById('btn-todo-today');
+    if (btnWeeklyToday) {
+      btnWeeklyToday.addEventListener('click', () => {
+        state.selectedTodoWeekStart = getMondayOfWeek(getStudyCycleDate());
+        saveState();
+        renderWeeklyView();
+      });
+    }
+
+    const weeklyJumpDatePicker = document.getElementById('todo-hub-jump-date-picker');
+    if (weeklyJumpDatePicker) {
+      weeklyJumpDatePicker.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val) {
+          state.selectedTodoWeekStart = getMondayOfWeek(val);
+          saveState();
+          renderWeeklyView();
+        }
+      });
+    }
+
+    // 3. Monthly Period Navigation Controls
+    const btnMonthlyPrev = document.getElementById('btn-monthly-prev');
+    if (btnMonthlyPrev) {
+      btnMonthlyPrev.addEventListener('click', () => {
+        state.selectedTodoMonth = shiftMonth(state.selectedTodoMonth, -1);
+        saveState();
+        renderMonthlyView();
+      });
+    }
+
+    const btnMonthlyNext = document.getElementById('btn-monthly-next');
+    if (btnMonthlyNext) {
+      btnMonthlyNext.addEventListener('click', () => {
+        state.selectedTodoMonth = shiftMonth(state.selectedTodoMonth, 1);
+        saveState();
+        renderMonthlyView();
+      });
+    }
+
+    const btnMonthlyToday = document.getElementById('btn-monthly-today');
+    if (btnMonthlyToday) {
+      btnMonthlyToday.addEventListener('click', () => {
+        state.selectedTodoMonth = getMonthKey(getStudyCycleDate());
+        saveState();
+        renderMonthlyView();
+      });
+    }
+
+    const monthlyJumpDatePicker = document.getElementById('monthly-jump-date-picker');
+    if (monthlyJumpDatePicker) {
+      monthlyJumpDatePicker.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val) {
+          state.selectedTodoMonth = val;
+          saveState();
+          renderMonthlyView();
+        }
+      });
+    }
+
+    // 4. Switch between To-Do Hub and Habits/Calendar
+    const btnSwitchToCal = document.getElementById('btn-todo-switch-to-calendar');
+    if (btnSwitchToCal) {
+      btnSwitchToCal.addEventListener('click', () => {
+        navigateTo('calendar');
+      });
+    }
+
+    const btnGotoHub = document.getElementById('btn-goto-todo-hub');
+    if (btnGotoHub) {
+      btnGotoHub.addEventListener('click', () => {
+        navigateTo('todo-hub');
+      });
+    }
+
+    // 5. Add Explicit Weekly Task Form Handler
+    const formAddWeekly = document.getElementById('form-add-weekly-task');
+    const btnSubmitWeekly = document.getElementById('btn-submit-weekly-task');
+
+    const handleAddWeeklyTaskSubmit = (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+
+      const inputTitle = document.getElementById('input-weekly-task-title');
+      const selectDay = document.getElementById('select-weekly-task-day');
+      const selectSubj = document.getElementById('select-weekly-task-subject');
+
+      if (!inputTitle || !inputTitle.value.trim()) {
+        if (inputTitle) inputTitle.focus();
+        return false;
+      }
+
+      const currentWeekStart = state.selectedTodoWeekStart || getMondayOfWeek(getStudyCycleDate());
+      state.selectedTodoWeekStart = currentWeekStart;
+      const weekDays = getDaysOfWeek(currentWeekStart);
+
+      const exactRangeStr = (weekDays.length === 7)
+        ? `${weekDays[0].shortName}, ${weekDays[0].displayDate} - ${weekDays[6].shortName}, ${weekDays[6].displayDate}`
+        : 'Weekly Planner';
+
+      const targetDate = (selectDay && selectDay.value) ? selectDay.value : (weekDays[0] ? weekDays[0].date : currentWeekStart);
+      const targetDayObj = weekDays.find(d => d.date === targetDate) || weekDays[0];
+      const targetDayName = targetDayObj ? targetDayObj.dayName : 'Monday';
+
+      const taskText = inputTitle.value.trim();
+      const subjectCategory = (selectSubj && selectSubj.value) ? selectSubj.value.trim() : 'Maths';
+
+      const newTask = {
+        id: 'wt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        date: targetDate,
+        dayName: targetDayName,
+        title: taskText,
+        subject: subjectCategory,
+        dateRange: exactRangeStr,
+        weekRange: exactRangeStr,
+        weekStart: currentWeekStart,
+        completed: false,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+
+      if (!state.weeklyTodos || typeof state.weeklyTodos !== 'object') {
+        state.weeklyTodos = {};
+      }
+      if (!Array.isArray(state.weeklyTodos[currentWeekStart])) {
+        state.weeklyTodos[currentWeekStart] = [];
+      }
+      state.weeklyTodos[currentWeekStart].push(newTask);
+
+      if (!Array.isArray(state.weeklyTasks)) {
+        state.weeklyTasks = getAllWeeklyTasks();
+      } else if (!state.weeklyTasks.some(t => t.id === newTask.id)) {
+        state.weeklyTasks.push(newTask);
+      }
+
+      // Force immediate saving of updated weekly tasks array into localStorage under 'cgl_weekly_tasks'
+      saveWeeklyTasksToLocalStorage();
+      saveState();
+
+      // Clear input title field
+      inputTitle.value = '';
+
+      // Instantly call the render function for the Weekly Planner tab so the new task appears without refresh
+      renderWeeklyView(weekDays);
+      renderTodoHub();
+      renderCalendar();
+      renderDayInspectionCard();
+
+      playChime('success');
+      return false;
+    };
+
+    if (formAddWeekly) {
+      formAddWeekly.onsubmit = handleAddWeeklyTaskSubmit;
+      formAddWeekly.addEventListener('submit', handleAddWeeklyTaskSubmit);
+    }
+    if (btnSubmitWeekly) {
+      btnSubmitWeekly.addEventListener('click', (e) => {
+        const inputTitle = document.getElementById('input-weekly-task-title');
+        if (inputTitle && inputTitle.value.trim()) {
+          handleAddWeeklyTaskSubmit(e);
+        }
+      });
+    }
+
+    // 6. Add Monthly Milestone Form Handler
+    const formAddMonthly = document.getElementById('form-add-monthly-milestone') || document.getElementById('form-add-monthly-target');
+    if (formAddMonthly) {
+      formAddMonthly.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputTitle = document.getElementById('input-monthly-milestone-title') || document.getElementById('input-monthly-target-title');
+        const selectCat = document.getElementById('select-monthly-milestone-category') || document.getElementById('select-monthly-target-category');
+        const selectSubj = document.getElementById('select-monthly-milestone-subject');
+        if (!inputTitle || !inputTitle.value.trim()) return;
+
+        const currentMonth = state.selectedTodoMonth || getMonthKey(getStudyCycleDate());
+        const newTarget = {
+          id: 'mt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          title: inputTitle.value.trim(),
+          category: selectCat ? selectCat.value : 'Custom',
+          subject: selectSubj ? selectSubj.value : 'General',
+          completed: false,
+          status: 'pending',
+          createdAt: Date.now()
+        };
+
+        if (!state.monthlyTargets[currentMonth]) {
+          state.monthlyTargets[currentMonth] = [];
+        }
+        state.monthlyTargets[currentMonth].push(newTarget);
+        saveState();
+        inputTitle.value = '';
+        renderMonthlyView();
+      });
+    }
+
+    // 7. Monthly Filter Buttons
+    document.querySelectorAll('.todo-monthly-filter').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const filter = e.currentTarget.getAttribute('data-filter');
+        state.todoMonthlyFilter = filter;
+        document.querySelectorAll('.todo-monthly-filter').forEach(b => {
+          if (b.getAttribute('data-filter') === filter) {
+            b.className = 'todo-monthly-filter px-3 py-1 rounded-lg transition font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 cursor-pointer';
+          } else {
+            b.className = 'todo-monthly-filter px-3 py-1 rounded-lg transition text-slate-400 hover:text-white cursor-pointer';
+          }
+        });
+        renderMonthlyView();
       });
     });
   }
@@ -4870,6 +6841,328 @@ ${item.formula}
     openModal('modal-edit-history');
   }
 
+  // --- 8G. CUSTOM SUBJECT & CURRICULUM MANAGER MODAL ---
+  function openSubjectManagerModal() {
+    state.editingManagerSubjectId = null;
+    renderSubjectManagerList();
+    openModal('modal-manage-subjects');
+  }
+
+  function renderSubjectManagerList() {
+    const listContainer = document.getElementById('subject-manager-list');
+    const countEl = document.getElementById('subject-manager-count');
+    if (!Array.isArray(state.subjects)) {
+      state.subjects = JSON.parse(JSON.stringify(DEFAULT_SUBJECTS));
+    }
+
+    if (countEl) countEl.textContent = state.subjects.length;
+    if (!listContainer) return;
+
+    if (state.subjects.length === 0) {
+      listContainer.innerHTML = `
+        <div class="p-6 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 space-y-2">
+          <div class="text-2xl">📚</div>
+          <h5 class="text-xs font-bold text-white">No Subjects Configured</h5>
+          <p class="text-[11px] text-slate-400">Add a subject above or click "Restore Core Subjects" to load defaults.</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = state.subjects.map(s => {
+      const isEditing = (state.editingManagerSubjectId === s.id);
+      const badge = getSubjectBadge(s.shortName || s.name);
+
+      if (isEditing) {
+        return `
+          <div class="p-3.5 rounded-2xl bg-slate-950 border border-emerald-500/60 shadow-lg space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div class="sm:col-span-5">
+                <label class="block text-[10px] font-mono text-slate-400 uppercase mb-0.5">Subject Full Name</label>
+                <input
+                  type="text"
+                  id="edit-sm-name-${s.id}"
+                  value="${escapeHtml(s.name)}"
+                  class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div class="sm:col-span-3">
+                <label class="block text-[10px] font-mono text-slate-400 uppercase mb-0.5">Short Tag</label>
+                <input
+                  type="text"
+                  id="edit-sm-short-${s.id}"
+                  value="${escapeHtml(s.shortName || s.name)}"
+                  class="w-full px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] font-mono text-slate-400 uppercase mb-0.5">Icon</label>
+                <input
+                  type="text"
+                  id="edit-sm-icon-${s.id}"
+                  value="${escapeHtml(s.icon || '⚡')}"
+                  maxlength="4"
+                  class="w-full px-2 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-center text-xs text-white font-mono focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] font-mono text-slate-400 uppercase mb-0.5">Color</label>
+                <select id="edit-sm-color-${s.id}" class="w-full px-2 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 font-mono">
+                  <option value="emerald" ${s.color === 'emerald' ? 'selected' : ''}>🟢 Emerald</option>
+                  <option value="sky" ${s.color === 'sky' ? 'selected' : ''}>🔵 Sky</option>
+                  <option value="violet" ${s.color === 'violet' ? 'selected' : ''}>🟣 Violet</option>
+                  <option value="amber" ${s.color === 'amber' ? 'selected' : ''}>🟠 Amber</option>
+                  <option value="rose" ${s.color === 'rose' ? 'selected' : ''}>🔴 Rose</option>
+                  <option value="cyan" ${s.color === 'cyan' ? 'selected' : ''}>🩵 Cyan</option>
+                  <option value="fuchsia" ${s.color === 'fuchsia' ? 'selected' : ''}>🌸 Fuchsia</option>
+                  <option value="teal" ${s.color === 'teal' ? 'selected' : ''}>🌊 Teal</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                data-save-sm-edit="${s.id}"
+                class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono transition cursor-pointer"
+              >
+                Save Changes
+              </button>
+              <button
+                type="button"
+                data-cancel-sm-edit
+                class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${badge.badgeClass}">
+              ${s.icon || '⚡'}
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-bold text-white leading-tight truncate">${escapeHtml(s.name)}</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${badge.badgeClass}">
+                  ${escapeHtml(s.shortName || s.name)}
+                </span>
+                ${s.isDefault ? `
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-mono text-slate-400 bg-slate-900 border border-slate-800">
+                    Core
+                  </span>
+                ` : `
+                  <span class="px-1.5 py-0.5 rounded text-[9px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/30">
+                    Custom
+                  </span>
+                `}
+              </div>
+              <span class="text-[11px] font-mono text-slate-400 block mt-0.5">
+                Logged Time: ${formatHMS(s.seconds || 0)}
+              </span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0 ml-2">
+            <button
+              type="button"
+              data-edit-sm="${s.id}"
+              class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs transition cursor-pointer"
+              title="Edit Subject Details"
+            >
+              ✏️
+            </button>
+            <button
+              type="button"
+              data-delete-sm="${s.id}"
+              class="p-2 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-slate-800 text-xs transition cursor-pointer"
+              title="Delete Subject"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach Listeners to Subject Manager Items
+    // 1. Edit Trigger
+    listContainer.querySelectorAll('[data-edit-sm]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-edit-sm');
+        state.editingManagerSubjectId = id;
+        renderSubjectManagerList();
+      });
+    });
+
+    // 2. Cancel Edit
+    listContainer.querySelectorAll('[data-cancel-sm-edit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.editingManagerSubjectId = null;
+        renderSubjectManagerList();
+      });
+    });
+
+    // 3. Save Edit
+    listContainer.querySelectorAll('[data-save-sm-edit]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-save-sm-edit');
+        const s = state.subjects.find(item => item.id === id);
+        if (!s) return;
+
+        const inputName = document.getElementById(`edit-sm-name-${id}`);
+        const inputShort = document.getElementById(`edit-sm-short-${id}`);
+        const inputIcon = document.getElementById(`edit-sm-icon-${id}`);
+        const selectColor = document.getElementById(`edit-sm-color-${id}`);
+
+        if (!inputName || !inputName.value.trim()) {
+          alert('Subject name is required.');
+          return;
+        }
+
+        s.name = inputName.value.trim();
+        s.shortName = (inputShort && inputShort.value.trim()) ? inputShort.value.trim() : s.name;
+        s.icon = (inputIcon && inputIcon.value.trim()) ? inputIcon.value.trim() : '⚡';
+        if (selectColor) s.color = selectColor.value;
+
+        state.editingManagerSubjectId = null;
+        saveState();
+        playChime('success');
+
+        renderSubjectManagerList();
+        renderWeeklyView();
+        renderMonthlyView();
+        renderSubjectCards();
+        renderSubjectBreakdown();
+      });
+    });
+
+    // 4. Delete Subject
+    listContainer.querySelectorAll('[data-delete-sm]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-delete-sm');
+        const s = state.subjects.find(item => item.id === id);
+        if (!s) return;
+
+        if (state.subjects.length <= 1) {
+          alert('At least one subject must remain in your curriculum.');
+          return;
+        }
+
+        const msg = s.isDefault
+          ? `Delete core subject "${s.name}"? You can restore default subjects anytime.`
+          : `Delete custom subject "${s.name}"?`;
+
+        if (confirm(msg)) {
+          state.subjects = state.subjects.filter(item => item.id !== id);
+          if (state.activeSubjectId === id) {
+            state.activeSubjectId = null;
+            state.activeSubjectStartTime = null;
+          }
+          saveState();
+
+          renderSubjectManagerList();
+          renderWeeklyView();
+          renderMonthlyView();
+          renderSubjectCards();
+          renderSubjectBreakdown();
+        }
+      });
+    });
+  }
+
+  function bindSubjectManagerModalControls() {
+    // 1. Emoji Picker Chips
+    const chipsContainer = document.getElementById('subject-icon-picker-chips');
+    const inputIcon = document.getElementById('input-new-subject-icon');
+    if (chipsContainer && inputIcon) {
+      chipsContainer.querySelectorAll('.subj-icon-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+          const icon = e.currentTarget.getAttribute('data-icon');
+          if (icon) {
+            inputIcon.value = icon;
+            chipsContainer.querySelectorAll('.subj-icon-chip').forEach(c => c.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+          }
+        });
+      });
+    }
+
+    // 2. Create Custom Subject Form
+    const formCreate = document.getElementById('form-create-custom-subject');
+    if (formCreate) {
+      formCreate.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputName = document.getElementById('input-new-subject-name');
+        const inputShort = document.getElementById('input-new-subject-short');
+        const selectColor = document.getElementById('select-new-subject-color');
+        const iconVal = (inputIcon && inputIcon.value.trim()) ? inputIcon.value.trim() : '⚡';
+
+        if (!inputName || !inputName.value.trim()) return;
+
+        const name = inputName.value.trim();
+        const shortName = (inputShort && inputShort.value.trim()) ? inputShort.value.trim() : name;
+        const color = selectColor ? selectColor.value : 'emerald';
+
+        const newSubj = {
+          id: 'subj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          name: name,
+          shortName: shortName,
+          icon: iconVal,
+          color: color,
+          seconds: 0,
+          isRunning: false,
+          isDefault: false
+        };
+
+        if (!Array.isArray(state.subjects)) state.subjects = [];
+        state.subjects.push(newSubj);
+        saveState();
+
+        inputName.value = '';
+        if (inputShort) inputShort.value = '';
+        playChime('success');
+
+        renderSubjectManagerList();
+        renderWeeklyView();
+        renderMonthlyView();
+        renderSubjectCards();
+        renderSubjectBreakdown();
+      });
+    }
+
+    // 3. Restore Default Core Subjects
+    const btnRestore = document.getElementById('btn-restore-default-subjects');
+    if (btnRestore) {
+      btnRestore.addEventListener('click', () => {
+        if (confirm('Restore standard core subjects (Maths, English, Reasoning, GA, Mock Tests)? Any existing custom subjects and logged times will be preserved.')) {
+          DEFAULT_SUBJECTS.forEach(def => {
+            const exists = state.subjects.some(s => s.id === def.id || (s.shortName || s.name).toLowerCase() === (def.shortName || def.name).toLowerCase());
+            if (!exists) {
+              state.subjects.push(JSON.parse(JSON.stringify(def)));
+            }
+          });
+          saveState();
+          playChime('success');
+          renderSubjectManagerList();
+          renderWeeklyView();
+          renderMonthlyView();
+          renderSubjectCards();
+          renderSubjectBreakdown();
+        }
+      });
+    }
+
+    // 4. Header & Tab buttons opening Subject Manager
+    const btnOpenSubjMgrHub = document.getElementById('btn-open-subject-manager-hub');
+    if (btnOpenSubjMgrHub) {
+      btnOpenSubjMgrHub.addEventListener('click', () => openSubjectManagerModal());
+    }
+  }
+
   // ==========================================================================
   // 9. NAVIGATION & SECTION SWITCHING
   // ==========================================================================
@@ -4877,6 +7170,12 @@ ${item.formula}
   function navigateTo(sectionKey) {
     if (sectionKey === 'habits') {
       sectionKey = 'calendar';
+    }
+
+    let targetHubTab = null;
+    if (sectionKey === 'todo-hub') {
+      sectionKey = 'revision';
+      targetHubTab = 'weekly';
     }
 
     // Hide all sections
@@ -4895,7 +7194,7 @@ ${item.formula}
     // Update active class in sidebar links
     document.querySelectorAll('#sidebar-nav .nav-link').forEach(btn => {
       const linkNav = btn.getAttribute('data-nav');
-      if (linkNav === sectionKey || (sectionKey === 'calendar' && linkNav === 'habits')) {
+      if (linkNav === sectionKey || (sectionKey === 'calendar' && linkNav === 'habits') || (sectionKey === 'revision' && linkNav === 'todo-hub' && targetHubTab)) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
@@ -4911,7 +7210,13 @@ ${item.formula}
     } else if (sectionKey === 'syllabus') {
       renderSyllabus();
     } else if (sectionKey === 'revision') {
-      renderRevisionSystem();
+      if (targetHubTab) {
+        switchHubTab(targetHubTab);
+      } else {
+        renderTodoHub();
+        renderTargetHub();
+        renderRevisionSystem();
+      }
     } else if (sectionKey === 'calendar') {
       renderCalendar();
       renderDayInspectionCard();
@@ -5369,8 +7674,8 @@ ${item.formula}
     }
   }
 
-  // Helper to determine subject CSS badge class
-  function getSubjectBadgeClass(subj) {
+  // Helper to determine subject CSS badge class for mock diagnostics
+  function getMockAnalysisSubjectBadgeClass(subj) {
     const s = String(subj || '').toLowerCase();
     if (s.includes('quant') || s.includes('math')) return 'subj-badge-quant';
     if (s.includes('reason') || s.includes('intel')) return 'subj-badge-reasoning';
@@ -5424,7 +7729,7 @@ ${item.formula}
       return `
         <div class="space-y-4">
           ${filteredQuestions.map((q, idx) => {
-            const subjBadge = getSubjectBadgeClass(q.subject);
+            const subjBadge = getMockAnalysisSubjectBadgeClass(q.subject);
             const qNum = escapeHtml(q.questionNumber || `Q.${idx + 1}`);
             const qSubj = escapeHtml(q.subject || 'General');
             const qTopic = escapeHtml(q.topic || 'Core Concept');
@@ -5522,7 +7827,7 @@ ${item.formula}
             </thead>
             <tbody class="divide-y divide-slate-800/60">
               ${filteredQuestions.map((q, idx) => {
-                const subjBadge = getSubjectBadgeClass(q.subject);
+                const subjBadge = getMockAnalysisSubjectBadgeClass(q.subject);
                 const qNum = escapeHtml(q.questionNumber || `Q.${idx + 1}`);
                 const qSubj = escapeHtml(q.subject || 'General');
                 const qTopic = escapeHtml(q.topic || 'Core Concept');
@@ -5635,7 +7940,7 @@ ${item.formula}
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               ${sections.map(sec => {
-                const badge = getSubjectBadgeClass(sec.name);
+                const badge = getMockAnalysisSubjectBadgeClass(sec.name);
                 const sScore = typeof sec.score === 'number' ? sec.score : 0;
                 const sMax = sec.totalMarks || 50;
                 const sAcc = typeof sec.accuracy === 'number' ? sec.accuracy : 0;
@@ -6012,6 +8317,9 @@ ${item.formula}
     if (topStreakBadge) {
       topStreakBadge.addEventListener('click', () => navigateTo('calendar'));
     }
+
+    // Weekly & Monthly To-Do Hub Event Binder
+    bindTodoHubEvents();
 
     // --- Target Exam Countdown Ticker Controls ---
     const btnEditDate = document.getElementById('btn-edit-exam-date');
@@ -7707,6 +10015,141 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       });
     }
 
+    // ========================================================================
+    // MASTER FACTORY RESET ENGINE (WIPE ALL LOCALSTORAGE, RESET STATE, RE-RENDER)
+    // ========================================================================
+    function performMasterFactoryReset() {
+      // 1. Clear All Local Storage
+      try {
+        localStorage.clear();
+      } catch (err) {
+        console.warn('localStorage.clear() encountered an error, falling back to explicit removals:', err);
+      }
+
+      // Explicitly wipe all keys associated with study hours, math targets, daily items, weekly/monthly planners, and custom logs
+      const storageKeysToWipe = [
+        STORAGE_KEY,
+        WEEKLY_TASKS_STORAGE_KEY,
+        'cgl_weekly_tasks',
+        'cgl_weekly_planners',
+        'cgl_monthly_planners',
+        'cgl_monthly_targets',
+        'cgl_study_hours',
+        'cgl_math_targets',
+        'cgl_maths_targets',
+        'cgl_daily_items',
+        'cgl_daily_hub',
+        'cgl_custom_logs',
+        'cgl_logs',
+        'cgl_history',
+        'cgl_journal',
+        'cgl_habits',
+        'cgl_syllabus',
+        'cgl_weak_areas',
+        'cgl_mock_scores',
+        'cgl_vault_items',
+        'cgl_energy_history',
+        'MISSION_CGL_2027_TRACKER_V4',
+        'MISSION_CGL_2027_TRACKER_V3',
+        'MISSION_CGL_2027_TRACKER_V2',
+        'MISSION_CGL_2027_TRACKER_V1'
+      ];
+
+      storageKeysToWipe.forEach(k => {
+        try {
+          localStorage.removeItem(k);
+        } catch (e) {}
+      });
+
+      // Sweep any remaining keys matching domain patterns
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (
+            key.startsWith('cgl_') ||
+            key.toLowerCase().includes('cgl') ||
+            key.toLowerCase().includes('tracker') ||
+            key.toLowerCase().includes('mission') ||
+            key.toLowerCase().includes('study')
+          )) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {}
+
+      // 2. Reset Global State
+      if (cloudSyncTimeout) {
+        clearTimeout(cloudSyncTimeout);
+        cloudSyncTimeout = null;
+      }
+
+      // Re-initialize state to the pristine empty initial defaults
+      state = getEmptyPristineState();
+      state.weeklyTasks = [];
+
+      // Persist the clean zero-state immediately so subsequent ticks or reloads remain fresh
+      saveWeeklyTasksToLocalStorage();
+      saveState();
+
+      // If connected to Firebase, synchronize the clean zero state to Firestore as well
+      if (currentUser && firestoreDb) {
+        performCloudSync().catch(err => console.warn('Cloud sync error after factory reset:', err));
+      }
+
+      // 3. Hard Refresh UI: Instantly re-render the entire DOM dashboard
+      closeModal('modal-confirm-factory-reset');
+      closeModal('modal-auth-sync');
+
+      // Destroy and reset mock chart instance if active
+      if (mockChartInstance) {
+        try {
+          mockChartInstance.destroy();
+        } catch (err) {}
+        mockChartInstance = null;
+      }
+
+      // Re-render the complete DOM dashboard so every section turns completely blank and fresh with zero data
+      updateUI();
+
+      // Trigger targeted sub-renders to guarantee 100% blank state across all views
+      renderHomeView();
+      renderSubjectCards();
+      renderHabitsList();
+      renderWeakAreas();
+      renderSyllabus();
+      renderTargetHub();
+      renderDateMathsMission();
+      renderDateTasks();
+      renderRevisionSystem();
+      renderSpacedRepetition();
+      renderCalendar();
+      renderDayInspectionCard();
+      renderMilestones();
+      renderEnergyRating();
+      renderEnergyHistory();
+      renderVault();
+      renderJournal();
+      renderTodoHub();
+      if (typeof renderWeeklyView === 'function') {
+        renderWeeklyView(getDaysOfWeek(state.selectedTodoWeekStart));
+      }
+      if (typeof renderMonthlyView === 'function') {
+        renderMonthlyView();
+      }
+      renderMockTrends();
+      renderMockChart();
+      renderHistoryTable();
+      updateSidebarStatus();
+      updateLocalStorageStatsUI();
+
+      // Audio & toast confirmation
+      playChime('success');
+      showAuthToast('💥 Master Factory Reset complete! All data wiped and dashboard reset to zero.');
+    }
+
+    // Attach to window for direct execution/debugging
+    window.performMasterFactoryReset = performMasterFactoryReset;
+
     // --- MASTER FACTORY RESET (GLOBAL LOCALSTORAGE WIPE) ---
     const btnMasterReset = document.getElementById('btn-master-factory-reset');
     if (btnMasterReset) {
@@ -7718,12 +10161,15 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     const btnConfirmFactoryResetYes = document.getElementById('btn-confirm-factory-reset-yes');
     if (btnConfirmFactoryResetYes) {
       btnConfirmFactoryResetYes.addEventListener('click', () => {
-        try {
-          localStorage.clear();
-        } catch (e) {
-          localStorage.removeItem(STORAGE_KEY);
-        }
-        window.location.reload();
+        performMasterFactoryReset();
+      });
+    }
+
+    const btnAuthOpenReset = document.getElementById('btn-auth-open-factory-reset');
+    if (btnAuthOpenReset) {
+      btnAuthOpenReset.addEventListener('click', () => {
+        closeModal('modal-auth-sync');
+        openModal('modal-confirm-factory-reset');
       });
     }
 
@@ -7743,15 +10189,15 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       const elMaths = document.getElementById('local-stat-maths');
       const elMocks = document.getElementById('local-stat-mocks');
       if (elDays) {
-        const countDays = Object.keys(state.history || {}).length;
+        const countDays = Array.isArray(state.history) ? state.history.length : 0;
         elDays.textContent = `${countDays} Day${countDays === 1 ? '' : 's'}`;
       }
       if (elMaths) {
-        const solved = state.maths320 ? (state.maths320.completedCount || 0) : 0;
+        const solved = state.mathsQuestionsDone || 0;
         elMaths.textContent = `${solved} / 320`;
       }
       if (elMocks) {
-        const countMocks = Array.isArray(state.mockRecords) ? state.mockRecords.length : 0;
+        const countMocks = Array.isArray(state.mockScores) ? state.mockScores.length : (Array.isArray(state.mockRecords) ? state.mockRecords.length : 0);
         elMocks.textContent = `${countMocks} Mock${countMocks === 1 ? '' : 's'}`;
       }
     }
@@ -7989,6 +10435,9 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       });
     });
 
+    // Subject Manager Modal Controls
+    bindSubjectManagerModalControls();
+
     // Escape Key Handler closes any open modal or sidebar
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -8069,11 +10518,31 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
 
   // Application Entry Point
   function init() {
-    loadState();
-    initFirebaseService();
-    bindEvents();
-    updateUI();
-    startTickEngine();
+    try {
+      loadState();
+    } catch (err) {
+      console.error('Error in loadState:', err);
+    }
+    try {
+      initFirebaseService();
+    } catch (err) {
+      console.error('Error in initFirebaseService:', err);
+    }
+    try {
+      bindEvents();
+    } catch (err) {
+      console.error('Error in bindEvents:', err);
+    }
+    try {
+      updateUI();
+    } catch (err) {
+      console.error('Error in updateUI:', err);
+    }
+    try {
+      startTickEngine();
+    } catch (err) {
+      console.error('Error in startTickEngine:', err);
+    }
     console.log('Mission CGL 2027 & Railway Tracker initialized successfully with background active tracking.');
   }
 
@@ -8082,8 +10551,18 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
   // ==========================================================================
 
   function handleFirestoreError(error, operationType, path) {
+    const errStr = error instanceof Error ? error.message : String(error);
+    if (errStr.includes('resource-exhausted') || errStr.includes('quota exceeded') || errStr.includes('Quota limit exceeded')) {
+      if (!cloudQuotaExceeded) {
+        cloudQuotaExceeded = true;
+        console.warn('Firestore free tier quota limit reached. Switching to local-only persistence mode.');
+        try {
+          showAuthToast('Firestore free tier quota exceeded. Running seamlessly on local storage mode.');
+        } catch {}
+      }
+    }
     const errInfo = {
-      error: error instanceof Error ? error.message : String(error),
+      error: errStr,
       authInfo: {
         userId: currentUser?.uid || null,
         email: currentUser?.email || null,
@@ -8214,14 +10693,16 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
   }
 
   function scheduleCloudSync() {
+    if (cloudQuotaExceeded) return;
     if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
     cloudSyncTimeout = setTimeout(() => {
       performCloudSync();
-    }, 2500); // 2.5 second debounce
+    }, 30000); // 30 second debounce to prevent quota overuse
   }
 
   async function performCloudSync() {
-    if (!currentUser || !firestoreDb || isSyncingToCloud) return;
+    if (cloudQuotaExceeded || !currentUser || !firestoreDb || isSyncingToCloud) return;
+    if (lastCloudSyncTimestamp && Date.now() - lastCloudSyncTimestamp < 60000) return; // Throttle to max once per 60s
     isSyncingToCloud = true;
 
     try {
