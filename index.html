@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,12 +7,12 @@
   <meta name="description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, calendar-connected weekly & monthly to-do hub, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
   <meta property="og:title" content="Mission CGL 2027 & Railway Tracker" />
   <meta property="og:description" content="Distraction-free Mission CGL 2027 & Railway Tracker command center with 5:00 AM daily reset, calendar-connected weekly & monthly to-do hub, automatic subject-to-break timer linking, mock score trend graph analytics, independent journal with subjective evaluation, and gamified streak engine." />
-  <meta name="theme-color" content="#060911" />
+  <meta name="theme-color" content="#2D6A4F" />
 
-  <!-- Fonts -->
+  <!-- Fonts: Outfit (Display & Numbers), Plus Jakarta Sans (Body & UI), JetBrains Mono (Stats & Timers) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -22,18 +22,65 @@
       theme: {
         extend: {
           colors: {
+            brand: {
+              forest: '#2D6A4F',
+              forestDark: '#1B4332',
+              forestLight: '#40916C',
+              forestWash: '#F0FDF4',
+              emerald: '#059669',
+              emeraldWash: '#ECFDF5',
+              amber: '#D97706',
+              amberWash: '#FFFBEB',
+              coral: '#EA580C',
+              coralDark: '#C2410C',
+              coralWash: '#FFF7ED',
+              teal: '#0D9488',
+              tealWash: '#F0FDFA',
+              surface: '#FFFFFF',
+              surfaceSubtle: '#F4F7F4',
+              slateNavy: '#0F291E',
+              slateText: '#264639',
+              slateMuted: '#5F7168',
+              borderSubtle: '#DDE7E1'
+            },
             command: {
-              deep: '#060911',
-              surface: '#0b1120',
-              card: '#0f172a',
-              border: '#1e293b',
-              accent: '#10b981',
-              accentHover: '#059669',
+              deep: '#F4F7F4',
+              surface: '#FFFFFF',
+              card: '#FFFFFF',
+              border: '#DDE7E1',
+              accent: '#2D6A4F',
+              accentHover: '#1B4332',
+            },
+            pirate: {
+              ocean: '#F4F7F4',
+              sky: '#EBF2ED',
+              card: '#FFFFFF',
+              cardIvory: '#FFFFFF',
+              navy: '#0F291E',
+              deepNavy: '#0F291E',
+              slate: '#264639',
+              muted: '#5F7168',
+              gold: '#D97706',
+              goldDark: '#B45309',
+              strawHat: '#E09F3E',
+              crimson: '#EA580C',
+              crimsonGlow: '#F97316',
+              seaBlue: '#2D6A4F',
+              seaCyan: '#0D9488',
+              parchment: '#FFFFFF',
+              wantedPaper: '#FFFFFF',
+              treasureTeal: '#059669',
+              mint: '#10B981',
+              mintBg: '#ECFDF5',
+              amberBg: '#FFFBEB'
             }
           },
           fontFamily: {
+            display: ['"Outfit"', '"Plus Jakarta Sans"', 'sans-serif'],
             sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
+            pirate: ['"Outfit"', '"Plus Jakarta Sans"', 'sans-serif'],
+            manga: ['"Outfit"', '"Plus Jakarta Sans"', 'sans-serif'],
           }
         }
       }
@@ -58,33 +105,38 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 
-<body class="mission-control-grid text-slate-100 min-h-screen font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200 relative overflow-x-hidden">
+<body class="bg-[#F4F7F4] text-[#264639] min-h-screen font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900 relative overflow-x-hidden">
 
-  <!-- Ambient Glow for Mission Control Aesthetic -->
-  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[950px] h-[340px] bg-emerald-500/5 blur-[140px] rounded-full pointer-events-none -z-10"></div>
+  <!-- Ambient Light Washes for Forest Depth and Focus -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[360px] bg-emerald-600/7 blur-[140px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed top-24 -left-20 w-[500px] h-[500px] bg-amber-500/6 blur-[160px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed top-40 -right-20 w-[450px] h-[450px] bg-teal-600/6 blur-[150px] rounded-full pointer-events-none -z-10"></div>
 
   <!-- ========================================================
-       TOP HEADER (MINIMALIST COMMAND BAR)
+       TOP HEADER (FOREST COMMAND BAR & STATUS METRICS)
        ======================================================== -->
-  <header class="sticky top-0 z-40 bg-[#060911]/90 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 py-3 flex items-center justify-between transition-all">
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-emerald-900/10 px-4 sm:px-6 py-3 flex items-center justify-between transition-all shadow-[0_1px_3px_0_rgba(15,41,30,0.03)]">
     <div class="flex items-center gap-3">
-      <!-- ☰ Hamburger Sidebar Toggle Button -->
+      <!-- Hamburger Sidebar Toggle Button -->
       <button
         id="btn-open-sidebar"
-        class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-800/90 text-slate-300 hover:text-emerald-400 flex items-center justify-center transition-all active:scale-95 shadow-sm"
+        class="w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-700 hover:from-emerald-900 hover:to-emerald-800 text-white flex items-center justify-center transition-all active:scale-95 shadow-sm hover:shadow-md hover:shadow-emerald-900/20 cursor-pointer"
         title="Open Navigation Menu"
         aria-label="Open Sidebar Menu"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
+        <span class="text-base font-bold">🧭</span>
       </button>
 
       <div class="flex items-center gap-2.5">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
         <div class="flex flex-col">
-          <span class="text-xs sm:text-sm font-extrabold text-white tracking-wider uppercase font-mono">MISSION CGL 2027</span>
-          <span class="text-[10px] text-slate-400 font-mono tracking-tight hidden sm:inline">RAILWAY NTPC & CENTRAL GOVT</span>
+          <span class="text-xs sm:text-sm font-extrabold text-[#0F291E] tracking-tight uppercase font-display flex items-center gap-1.5">
+            MISSION SSC CGL 2027
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 font-mono font-bold">STAGE 1</span>
+          </span>
+          <span class="text-[10px] text-emerald-900/60 font-medium tracking-tight hidden sm:inline flex items-center gap-1">
+            <span>🌲</span> FOREST COMMAND • HIGH-PERFORMANCE PREPARATION OS
+          </span>
         </div>
       </div>
     </div>
@@ -92,39 +144,39 @@
     <!-- Top Status Badges -->
     <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
       <!-- Live Digital Clock & Date -->
-      <div class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/70 text-[11px] sm:text-xs text-slate-200 font-mono shadow-sm" title="Real-Time System Clock">
-        <span class="text-emerald-400">🕒</span>
-        <span id="top-live-clock" class="font-bold text-emerald-300">--:--:--</span>
-        <span id="top-live-date" class="text-slate-400 hidden md:inline text-[10px] pl-1 border-l border-slate-700">---</span>
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-900/15 text-[11px] sm:text-xs text-[#0F291E] font-mono shadow-xs" title="Real-Time System Clock">
+        <span class="text-emerald-700">⏱️</span>
+        <span id="top-live-clock" class="font-bold text-[#0F291E]">--:--:--</span>
+        <span id="top-live-date" class="text-[#5F7168] hidden md:inline text-[10px] pl-1 border-l border-emerald-900/15">---</span>
       </div>
 
       <!-- Live Break Status Pill (Shown when on Break) -->
-      <div id="top-break-active-pill" class="hidden items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] sm:text-xs font-mono break-active-pulse">
-        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-        <span>BREAK ACTIVE: <strong id="top-break-active-time">00:00</strong></span>
+      <div id="top-break-active-pill" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-800 text-[11px] sm:text-xs font-mono break-active-pulse">
+        <span class="text-sm">☕</span>
+        <span>CAMP BREAK: <strong id="top-break-active-time" class="text-orange-900 font-bold">00:00</strong></span>
       </div>
 
-      <!-- 5:00 AM Cycle Countdown -->
-      <div class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] sm:text-xs text-slate-300 font-mono" title="Daily study cycle & benchmark archival strictly at 5:00:00 AM">
-        <span class="text-emerald-400">⏳</span>
-        <span id="top-5am-countdown">5 AM in --:--:--</span>
+      <!-- 5:00 AM Cycle Countdown (Dawn Reset) -->
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-900/15 text-[11px] sm:text-xs text-[#264639] font-mono shadow-xs" title="Daily study cycle resets at 5:00 AM">
+        <span class="text-amber-600">🌅</span>
+        <span id="top-5am-countdown">Reset in --:--:--</span>
       </div>
 
       <!-- Streak Flame Badge -->
-      <div id="top-streak-badge" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-bold shadow-sm cursor-pointer hover:bg-emerald-500/20 transition" title="Click to view Streak & Treasure Chests">
-        <span>🔥</span>
+      <div id="top-streak-badge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] sm:text-xs font-bold shadow-xs cursor-pointer hover:bg-amber-100/80 transition" title="Daily Consistency Streak">
+        <span class="flame-icon">🔥</span>
         <span id="top-streak-count">0 Days</span>
       </div>
 
       <!-- Data & Storage Hub Status Pill / Button -->
       <button
         id="btn-top-auth"
-        class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/30 hover:border-emerald-500/60 text-[11px] sm:text-xs font-mono text-slate-200 transition shadow-sm cursor-pointer"
-        title="Data & Storage Hub: Local Storage & Cloud Backup"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50/50 border border-emerald-900/15 hover:border-emerald-500 text-[11px] sm:text-xs font-medium text-[#264639] transition shadow-xs cursor-pointer"
+        title="Local Storage & Cloud Synchronization Hub"
         aria-label="Data and Storage Manager"
       >
-        <span id="auth-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        <span id="auth-status-label" class="hidden sm:inline">Local (Saved)</span>
+        <span id="auth-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10B981]"></span>
+        <span id="auth-status-label" class="hidden sm:inline text-[#0F291E] font-medium">Sync (Active)</span>
         <span class="text-xs">💾</span>
       </button>
     </div>
@@ -134,29 +186,29 @@
        SLIDING SIDEBAR & OVERLAY (OFF-CANVAS NAVIGATION)
        All other features hidden here as requested
        ======================================================== -->
-  <div id="sidebar-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-300"></div>
 
   <aside
     id="sidebar"
-    class="fixed top-0 left-0 bottom-0 w-80 max-w-[88vw] bg-[#0b1120] border-r border-slate-800 z-50 flex flex-col justify-between -translate-x-full transition-transform duration-300 ease-out shadow-2xl overflow-y-auto"
+    class="fixed top-0 left-0 bottom-0 w-80 max-w-[88vw] bg-white/98 backdrop-blur-xl border-r border-emerald-900/15 z-50 flex flex-col justify-between -translate-x-full transition-transform duration-300 ease-out shadow-2xl overflow-y-auto"
   >
     <div>
       <!-- Sidebar Header -->
-      <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+      <div class="p-5 border-b border-emerald-900/10 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-extrabold text-lg">
-            ⚡
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-700 flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-emerald-900/20">
+            🌲
           </div>
           <div>
-            <h2 class="text-sm font-extrabold text-white tracking-wide font-mono">COMMAND CENTER</h2>
-            <p class="text-[11px] text-slate-400">SSC CGL 2027 & Railway</p>
+            <h2 class="text-sm font-extrabold text-[#0F291E] tracking-tight font-display">FOREST COMMAND</h2>
+            <p class="text-[11px] text-[#5F7168] font-mono">SSC CGL 2027 • Preparation OS</p>
           </div>
         </div>
 
         <button
           id="btn-close-sidebar"
-          class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
-          title="Close Sidebar"
+          class="w-8 h-8 rounded-lg bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 flex items-center justify-center transition border border-slate-200 shadow-xs cursor-pointer"
+          title="Close Navigation Log"
           aria-label="Close Sidebar"
         >
           ✕
@@ -170,10 +222,10 @@
           data-nav="home"
           class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99] active"
         >
-          <span class="text-lg">🏠</span>
+          <span class="text-lg">🏴‍☠️</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Aspirant Command Center</div>
-            <div class="text-[11px] text-slate-400 font-normal">Ticker, Quotes, Gauge, Breakdown, Radar & Breaks</div>
+            <div class="text-amber-100 font-medium">Grand Line Command Deck</div>
+            <div class="text-[11px] text-slate-400 font-normal">Log Pose, Pirate Code, Sail Gauge & Crew Feast</div>
           </div>
         </button>
 
@@ -182,10 +234,10 @@
           data-nav="subjects"
           class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
         >
-          <span class="text-lg">⏱️</span>
+          <span class="text-lg">⚔️</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Subject Stopwatches</div>
-            <div class="text-[11px] text-slate-400 font-normal">Auto-Break Link & 320 Maths Qs</div>
+            <div class="text-slate-100 font-medium">Three-Sword Subject Stopwatches</div>
+            <div class="text-[11px] text-slate-400 font-normal">Auto-Anchor Link & 320 Combat Drills</div>
           </div>
         </button>
 
@@ -194,10 +246,10 @@
           data-nav="syllabus"
           class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
         >
-          <span class="text-lg">📚</span>
+          <span class="text-lg">🗺️</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Customized Syllabus Tracker</div>
-            <div class="text-[11px] text-slate-400 font-normal">Per-Subject Chapters, Custom Topics & Status</div>
+            <div class="text-slate-100 font-medium">Grand Line Territory Map (Syllabus)</div>
+            <div class="text-[11px] text-slate-400 font-normal">Island Chapters, Custom Poneglyphs & Mastery</div>
           </div>
         </button>
 
@@ -208,8 +260,8 @@
         >
           <span class="text-lg">🎯</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Daily Targets & Revision Hub</div>
-            <div class="text-[11px] text-slate-400 font-normal">Date-wise Targets, 320 Maths Qs & Future Planner</div>
+            <div class="text-slate-100 font-medium">Daily Bounty Quota & Haki Drills</div>
+            <div class="text-[11px] text-slate-400 font-normal">Date Targets, 320 Drills & Sea Route Planner</div>
           </div>
         </button>
 
@@ -220,8 +272,8 @@
         >
           <span class="text-lg">🏆</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Gamified Habits & Calendar</div>
-            <div class="text-[11px] text-slate-400 font-normal">Dynamic Habits, Green Dots & Day Inspector</div>
+            <div class="text-slate-100 font-medium">Pirate Crew Log & Calendar Compass</div>
+            <div class="text-[11px] text-slate-400 font-normal">Haki Habits, Gold Treasure Dots & Day Inspector</div>
           </div>
         </button>
 
@@ -230,10 +282,10 @@
           data-nav="todo-hub"
           class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
         >
-          <span class="text-lg">📅</span>
+          <span class="text-lg">📜</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Weekly & Monthly To-Do Hub</div>
-            <div class="text-[11px] text-slate-400 font-normal">Mon–Sun Planner, Monthly Milestones & Sync</div>
+            <div class="text-slate-100 font-medium">Poneglyph Weekly & Monthly Quests</div>
+            <div class="text-[11px] text-slate-400 font-normal">Mon–Sun Sea Route, Grand Line Milestones</div>
           </div>
         </button>
 
@@ -244,8 +296,8 @@
         >
           <span class="text-lg">📓</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Daily Aspirant Journal</div>
-            <div class="text-[11px] text-slate-400 font-normal">Daily Notes, [✔]/[✘] Evaluation & Calendar Sync</div>
+            <div class="text-slate-100 font-medium">Captain's Log & Daily Journal</div>
+            <div class="text-[11px] text-slate-400 font-normal">Daily Sea Musings, [✔]/[✘] Voyage Check & Compass Sync</div>
           </div>
         </button>
 
@@ -254,10 +306,10 @@
           data-nav="mock-trends"
           class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
         >
-          <span class="text-lg">📈</span>
+          <span class="text-lg">💰</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Mock Score Trends</div>
-            <div class="text-[11px] text-slate-400 font-normal">Full & Sectional Mocks, Visual Graph & Trajectory</div>
+            <div class="text-slate-100 font-medium">Bounty Hunter Mock Score Trends</div>
+            <div class="text-[11px] text-slate-400 font-normal">Full & Sectional Mocks, Berry Trajectory</div>
           </div>
         </button>
 
@@ -268,8 +320,8 @@
         >
           <span class="text-lg">⚡</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Daily Energy & Focus Rating</div>
-            <div class="text-[11px] text-slate-400 font-normal">1-5 Energy Scale & Session Reflections</div>
+            <div class="text-slate-100 font-medium">Conqueror's Haki & Energy Rating</div>
+            <div class="text-[11px] text-slate-400 font-normal">Level 1-5 Haki Scale & Voyage Reflections</div>
           </div>
         </button>
 
@@ -280,8 +332,20 @@
         >
           <span class="text-lg">🗝️</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Formula & Short-Trick Vault</div>
-            <div class="text-[11px] text-slate-400 font-normal">Maths Shortcuts, Vocab & Static Facts</div>
+            <div class="text-slate-100 font-medium">Straw Hat Secret Technique Vault</div>
+            <div class="text-[11px] text-slate-400 font-normal">Maths Shortcuts, Vocab Roots & Grand Line Lore</div>
+          </div>
+        </button>
+
+        <!-- Dedicated Novel & Book Reading Hub Section -->
+        <button
+          data-nav="books"
+          class="nav-link w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold transition active:scale-[0.99]"
+        >
+          <span class="text-lg">📚</span>
+          <div class="flex-1">
+            <div class="text-slate-100 font-medium">Library of Ohara (Poneglyph Hub)</div>
+            <div class="text-[11px] text-slate-400 font-normal">Active Tomes, Up Next Queue & Conquered Scrolls</div>
           </div>
         </button>
 
@@ -292,8 +356,8 @@
         >
           <span class="text-lg">📄</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Mock PDF Analyzer</div>
-            <div class="text-[11px] text-slate-400 font-normal">PDF Scorecards & AI Weak Areas</div>
+            <div class="text-slate-100 font-medium">Marine Cipher Pol Mock Analyzer</div>
+            <div class="text-[11px] text-slate-400 font-normal">PDF Scorecards & Weak Point Radar</div>
           </div>
         </button>
 
@@ -304,50 +368,50 @@
         >
           <span class="text-lg">⚙️</span>
           <div class="flex-1">
-            <div class="text-slate-100 font-medium">Settings & History</div>
-            <div class="text-[11px] text-slate-400 font-normal">Daily Logs, Resets & Master Factory Wipe</div>
+            <div class="text-slate-100 font-medium">Shipwright Workshop & History</div>
+            <div class="text-[11px] text-slate-400 font-normal">Daily Voyage Logs, Resets & Master Overhaul</div>
           </div>
         </button>
       </nav>
     </div>
 
     <!-- Sidebar Footer -->
-    <div class="p-4 border-t border-slate-800 space-y-3 bg-[#060911]/60">
-      <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5 text-xs">
-        <div class="flex items-center justify-between text-slate-400">
-          <span>Active Cycle:</span>
-          <span id="sidebar-cycle-date" class="font-mono text-emerald-400 font-semibold">--</span>
+    <div class="p-4 border-t border-amber-500/20 space-y-3 bg-[#070b19]/90">
+      <div class="p-3 rounded-xl bg-[#131e3a] border border-amber-500/25 space-y-1.5 text-xs shadow-inner">
+        <div class="flex items-center justify-between text-slate-300">
+          <span>Current Sea Route:</span>
+          <span id="sidebar-cycle-date" class="font-mono text-amber-400 font-semibold">--</span>
         </div>
-        <div class="flex items-center justify-between text-slate-400">
-          <span>Daily Target:</span>
-          <span id="sidebar-target-hours" class="font-bold text-slate-200">10.0 Hours</span>
+        <div class="flex items-center justify-between text-slate-300">
+          <span>Bounty Quota:</span>
+          <span id="sidebar-target-hours" class="font-bold text-amber-200">10.0 Hours</span>
         </div>
-        <div class="flex items-center justify-between text-slate-400">
-          <span>Maths 320-Q:</span>
-          <span id="sidebar-maths-qs" class="font-mono text-emerald-400 font-bold">0 / 320</span>
+        <div class="flex items-center justify-between text-slate-300">
+          <span>Combat Drills (320-Q):</span>
+          <span id="sidebar-maths-qs" class="font-mono text-amber-400 font-bold">0 / 320</span>
         </div>
       </div>
 
       <!-- Cloud Backup Quick Trigger in Sidebar -->
       <button
         id="btn-sidebar-cloud-sync"
-        class="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 text-xs text-slate-300 hover:text-emerald-400 flex items-center justify-between transition font-mono"
+        class="w-full py-2 px-3 rounded-xl bg-[#131e3a] hover:bg-[#1c2541] border border-amber-500/25 hover:border-amber-400 text-xs text-slate-300 hover:text-amber-300 flex items-center justify-between transition font-mono"
       >
         <span class="flex items-center gap-2">
           <span>☁️</span>
-          <span id="sidebar-auth-status-text">Cloud Sync (Guest)</span>
+          <span id="sidebar-auth-status-text">Straw Hat Cloud Log</span>
         </span>
-        <span class="text-[10px] text-emerald-400">Open &rarr;</span>
+        <span class="text-[10px] text-amber-400">Open &rarr;</span>
       </button>
 
       <div class="flex items-center justify-between pt-1">
         <button
           id="btn-sidebar-sound"
-          class="text-xs text-slate-400 hover:text-emerald-400 transition flex items-center gap-1.5"
+          class="text-xs text-slate-400 hover:text-amber-300 transition flex items-center gap-1.5"
         >
           <span>🔊 Sound ON</span>
         </button>
-        <span class="text-[10px] text-slate-500 font-mono">v4.0 • Command Center</span>
+        <span class="text-[10px] text-amber-400/80 font-mono">v4.0 • Grand Line Edition</span>
       </div>
     </div>
   </aside>
@@ -371,96 +435,98 @@
     <section id="section-home" class="space-y-6">
 
       <!-- a) Large, bold Exam Countdown Ticker counting down to the target exam date -->
-      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-2xl relative overflow-hidden">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 mb-4">
+      <div class="p-6 rounded-3xl bg-[#0b132b] border border-amber-500/30 shadow-2xl relative overflow-hidden pirate-card">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/20 pb-3 mb-4">
           <div class="flex items-center gap-2.5">
-            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#f4d03f]"></span>
             <div>
-              <span class="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">MISSION TARGET COUNTDOWN</span>
-              <h2 id="home-exam-title" class="text-base sm:text-lg font-extrabold text-white font-mono">SSC CGL 2027 TIER-1 & RAILWAY NTPC</h2>
+              <span class="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-bold flex items-center gap-1.5">
+                <span>🧭</span> ARRIVAL AT LAUGH TALE / FINAL EXAM COUNTDOWN
+              </span>
+              <h2 id="home-exam-title" class="text-base sm:text-lg font-extrabold text-white font-manga tracking-wide">SSC CGL 2027 TIER-1 & RAILWAY NTPC CORONATION</h2>
             </div>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <span id="home-exam-target-date-label" class="text-xs font-mono text-slate-300 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span id="home-exam-target-date-label" class="text-xs font-mono text-amber-200 bg-[#070b19] px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-inner">
               Target: September 15, 2027
             </span>
             <!-- Interactive Direct Date Picker -->
-            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/90 text-slate-200 text-xs font-medium border border-slate-700 transition" title="Select Exam Target Date from Calendar">
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#131e3a] hover:bg-[#1c2541] text-amber-100 text-xs font-medium border border-amber-500/30 transition" title="Select Exam Target Date from Log Pose Calendar">
               <span class="text-xs">📅</span>
               <input
                 type="date"
                 id="inline-exam-date-picker"
-                class="bg-transparent text-xs font-mono text-emerald-400 font-bold outline-none cursor-pointer hover:text-emerald-300 transition"
-                title="Select Exam Target Date from Calendar"
+                class="bg-transparent text-xs font-mono text-amber-300 font-bold outline-none cursor-pointer hover:text-amber-200 transition"
+                title="Select Exam Target Date from Log Pose Calendar"
               />
             </div>
             <button
               id="btn-edit-exam-date"
-              class="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold border border-emerald-500/30 transition flex items-center gap-1 active:scale-95"
-              title="Change target date or exam title"
+              class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold border border-amber-500/40 transition flex items-center gap-1 active:scale-95 shadow-sm"
+              title="Change target date or voyage destination"
             >
-              <span>✏️ Edit Target</span>
+              <span>✏️ Edit Destination</span>
             </button>
           </div>
         </div>
 
         <!-- Bold 4-Unit Digits Grid: Days, Hours, Minutes, Seconds -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center my-1">
-          <div class="countdown-digit-box p-4 rounded-2xl">
-            <div id="ticker-days" class="text-3xl sm:text-5xl font-black font-mono text-emerald-400 tracking-tight">---</div>
-            <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">DAYS REMAINING</div>
+          <div class="countdown-digit-box p-4 rounded-2xl bg-[#070b19]/80 border border-amber-500/20 shadow-md">
+            <div id="ticker-days" class="text-3xl sm:text-5xl font-black font-manga text-amber-400 tracking-tight">---</div>
+            <div class="text-[11px] font-mono uppercase tracking-wider text-amber-200/80 mt-1 font-bold">DAYS SAILING</div>
           </div>
-          <div class="countdown-digit-box p-4 rounded-2xl">
-            <div id="ticker-hours" class="text-3xl sm:text-5xl font-black font-mono text-white tracking-tight">--</div>
+          <div class="countdown-digit-box p-4 rounded-2xl bg-[#070b19]/80 border border-slate-700/60 shadow-md">
+            <div id="ticker-hours" class="text-3xl sm:text-5xl font-black font-manga text-white tracking-tight">--</div>
             <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">HOURS</div>
           </div>
-          <div class="countdown-digit-box p-4 rounded-2xl">
-            <div id="ticker-minutes" class="text-3xl sm:text-5xl font-black font-mono text-white tracking-tight">--</div>
+          <div class="countdown-digit-box p-4 rounded-2xl bg-[#070b19]/80 border border-slate-700/60 shadow-md">
+            <div id="ticker-minutes" class="text-3xl sm:text-5xl font-black font-manga text-white tracking-tight">--</div>
             <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">MINUTES</div>
           </div>
-          <div class="countdown-digit-box p-4 rounded-2xl">
-            <div id="ticker-seconds" class="text-3xl sm:text-5xl font-black font-mono text-teal-300 tracking-tight">--</div>
+          <div class="countdown-digit-box p-4 rounded-2xl bg-[#070b19]/80 border border-amber-500/20 shadow-md">
+            <div id="ticker-seconds" class="text-3xl sm:text-5xl font-black font-manga text-teal-300 tracking-tight">--</div>
             <div class="text-[11px] font-mono uppercase tracking-wider text-slate-400 mt-1 font-bold">SECONDS</div>
           </div>
         </div>
 
         <!-- Live Clock & Cycle Synchronizer Sub-Bar -->
-        <div class="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-400">
+        <div class="mt-4 pt-3 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-slate-300">
           <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span class="text-slate-300">Live Precision Time: <strong id="ticker-current-time" class="text-emerald-300 font-bold">--:--:--</strong></span>
-            <span id="ticker-current-date" class="text-slate-500 hidden md:inline">(--)</span>
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            <span class="text-slate-300">🧭 Log Pose Magnetic Time: <strong id="ticker-current-time" class="text-amber-300 font-bold">--:--:--</strong></span>
+            <span id="ticker-current-date" class="text-slate-400 hidden md:inline">(--)</span>
           </div>
           <div class="flex items-center gap-3">
-            <span class="flex items-center gap-1.5 text-slate-300 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
-              <span>🌅</span> Next 5:00 AM Reset: <strong id="ticker-5am-countdown-sub" class="text-amber-300 font-bold">--:--:--</strong>
+            <span class="flex items-center gap-1.5 text-amber-200 bg-[#070b19] px-2.5 py-1 rounded-lg border border-amber-500/25">
+              <span>🌅</span> Grand Line Dawn (5:00 AM): <strong id="ticker-5am-countdown-sub" class="text-amber-300 font-bold">--:--:--</strong>
             </span>
           </div>
         </div>
       </div>
 
       <!-- b) Daily Motivational & Accountability Quotes placed directly below the countdown ticker -->
-      <div class="p-5 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl relative overflow-hidden">
-        <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3 mb-3">
-          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-mono">
+      <div class="p-5 rounded-3xl bg-[#0b132b] border border-amber-500/25 shadow-xl relative overflow-hidden pirate-card">
+        <div class="flex items-center justify-between gap-3 border-b border-amber-500/20 pb-3 mb-3">
+          <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider font-manga">
             <span class="text-amber-400">⚡</span>
-            <span class="text-amber-300">DAILY MOTIVATIONAL & ACCOUNTABILITY PROTOCOL</span>
+            <span class="text-amber-300">STRAW HAT CODE: DISCIPLINE & CONQUEROR'S GRIT</span>
           </div>
           <button
             id="btn-rotate-quote"
-            class="text-[11px] text-slate-400 hover:text-emerald-400 transition flex items-center gap-1 font-mono"
-            title="Manually rotate to next quote"
+            class="text-[11px] text-amber-300/80 hover:text-amber-200 transition flex items-center gap-1 font-mono px-2 py-1 rounded-lg bg-[#131e3a] border border-amber-500/25"
+            title="Manually rotate to next pirate wisdom"
           >
-            <span>🔄 Next Quote</span>
+            <span>🔄 Next Pirate Wisdom</span>
           </button>
         </div>
         <div class="space-y-2">
-          <p id="quote-text" class="text-sm sm:text-base font-medium text-slate-200 italic leading-relaxed">
-            "35 Lakh applicants registered for SSC CGL. Only 8,000 will get a 4600 Grade Pay desk in New Delhi. While you hesitate at 5:00 AM, someone in a small town library has already solved 50 trigonometry questions."
+          <p id="quote-text" class="text-sm sm:text-base font-medium text-amber-100/95 italic leading-relaxed">
+            "Scars on the back are a swordsman's shame. A wasted morning is an aspirant's defeat. Draw your blades and conquer Tier 2 with unrelenting discipline!"
           </p>
-          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px] text-slate-400 font-mono border-t border-slate-800/60">
-            <span id="quote-context" class="text-emerald-400 font-semibold">Brahma Muhurta 5 AM • 35 Lakh Aspirants Reality Check</span>
-            <span class="text-slate-500">Auto-rotates every 2 hours (setInterval)</span>
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 text-[11px] text-slate-400 font-mono border-t border-amber-500/15">
+            <span id="quote-context" class="text-amber-400 font-semibold">Roronoa Zoro • Three-Sword Haki • 5:00 AM Standard</span>
+            <span class="text-slate-400">Auto-rotates every 2 hours with pirate resolve</span>
           </div>
         </div>
       </div>
@@ -469,18 +535,18 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         <!-- c) Main "Total Hours Today" Circular Display -->
-        <div class="lg:col-span-5 flex flex-col items-center justify-center text-center p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl relative overflow-hidden">
+        <div class="lg:col-span-5 flex flex-col items-center justify-center text-center p-6 rounded-3xl bg-[#0b132b] border border-amber-500/30 shadow-xl relative overflow-hidden pirate-card">
           <div class="w-full flex items-center justify-between mb-2">
-            <span class="text-xs font-mono tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Total Study Today
+            <span class="text-xs font-mono tracking-wider uppercase text-amber-200/90 flex items-center gap-1.5 font-bold">
+              <span class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#f4d03f]"></span> Voyage Log / Active Sail Time
             </span>
             <!-- Break Day Toggle Button -->
             <button
               id="home-break-day-toggle"
-              class="px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition"
-              title="Toggle planned break day to protect streak"
+              class="px-2.5 py-1 rounded-lg text-xs font-medium border border-amber-500/30 bg-[#131e3a] hover:bg-[#1c2541] text-amber-200 transition"
+              title="Toggle planned port/feast day to protect your streak"
             >
-              ☕ Mark Break Day
+              🍖 Mark Feast Day
             </button>
           </div>
 
@@ -491,7 +557,7 @@
                 cx="50%"
                 cy="50%"
                 r="100"
-                class="stroke-slate-800/80"
+                class="stroke-slate-800/90"
                 stroke-width="12"
                 fill="transparent"
               />
@@ -500,7 +566,7 @@
                 cx="50%"
                 cy="50%"
                 r="100"
-                stroke="#10b981"
+                stroke="#f4d03f"
                 stroke-width="12"
                 stroke-linecap="round"
                 fill="transparent"
@@ -511,40 +577,40 @@
 
             <!-- Center Gauge Stats -->
             <div class="absolute inset-0 flex flex-col items-center justify-center select-none">
-              <span class="text-[11px] font-mono tracking-widest text-slate-400 uppercase">TIME LOGGED</span>
-              <span id="home-total-hours-display" class="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight my-1">
+              <span class="text-[11px] font-mono tracking-widest text-amber-300/80 uppercase font-bold">HOURS SAILED TODAY</span>
+              <span id="home-total-hours-display" class="text-3xl sm:text-4xl font-extrabold font-manga text-white tracking-tight my-1 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                 00h 00m 00s
               </span>
-              <div class="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
-                <span>Target:</span>
-                <span id="home-target-stat" class="text-emerald-400 font-bold">10.0h</span>
-                <span id="home-target-pct" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] font-semibold">(0%)</span>
+              <div class="flex items-center gap-1.5 text-xs text-slate-300 font-mono">
+                <span>Bounty Quota:</span>
+                <span id="home-target-stat" class="text-amber-400 font-bold">10.0h</span>
+                <span id="home-target-pct" class="px-1.5 py-0.5 rounded bg-[#070b19] text-amber-300 border border-amber-500/30 text-[10px] font-semibold">(0%)</span>
               </div>
             </div>
           </div>
 
           <!-- Active Timer State Badge -->
-          <div id="home-timer-status-badge" class="mt-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 flex items-center gap-2">
+          <div id="home-timer-status-badge" class="mt-2 px-3.5 py-1.5 rounded-full bg-[#070b19] border border-amber-500/25 text-xs font-mono text-amber-200 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-slate-500"></span>
-            <span>All Timers Idle • Ready to Focus</span>
+            <span>All Battle Stations Idle • Ready to Sail</span>
           </div>
         </div>
 
         <!-- d) Compact "Subject-wise Hours Breakdown" Summary Card -->
-        <div class="lg:col-span-7 flex flex-col justify-between p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl">
+        <div class="lg:col-span-7 flex flex-col justify-between p-6 rounded-3xl bg-[#0b132b] border border-amber-500/25 shadow-xl pirate-card">
           <div>
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
               <div>
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                  <span>📊</span> Subject Hours Breakdown
+                <h3 class="text-base font-bold text-white font-manga flex items-center gap-2">
+                  <span>⚔️</span> Crew Battle Stations & Subject Division
                 </h3>
-                <p class="text-xs text-slate-400">Distribution of today's study across subjects</p>
+                <p class="text-xs text-slate-400">Distribution of today's study across battle disciplines</p>
               </div>
               <button
                 id="btn-goto-stopwatches"
-                class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-bold transition flex items-center gap-1.5"
+                class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/35 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
               >
-                <span>Open Stopwatches</span>
+                <span>Battle Stopwatches</span>
                 <span>↗</span>
               </button>
             </div>
@@ -556,9 +622,9 @@
           </div>
 
           <!-- Bottom Summary Indicator -->
-          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
-            <span>5:00 AM Cycle Reset Active</span>
-            <span id="home-breakdown-total-tag" class="text-emerald-400 font-bold">Total: 0.0 hrs</span>
+          <div class="mt-4 pt-3 border-t border-amber-500/20 flex items-center justify-between text-xs text-slate-300 font-mono">
+            <span>🌅 5:00 AM Dawn Reset Active</span>
+            <span id="home-breakdown-total-tag" class="text-amber-400 font-bold">Total Sailed: 0.0 hrs</span>
           </div>
         </div>
 
@@ -568,40 +634,40 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         <!-- e) Dedicated "Weak Areas" Card (Populated from Mock PDF Analysis) -->
-        <div class="lg:col-span-5 flex flex-col justify-between p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl radar-sweep-effect">
+        <div class="lg:col-span-5 flex flex-col justify-between p-6 rounded-3xl bg-[#0b132b] border border-amber-500/25 shadow-xl radar-sweep-effect pirate-card">
           <div>
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
-                  <h3 class="text-base font-bold text-white flex items-center gap-1.5">
-                    <span>🎯</span> Weak Areas Radar
+                  <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                  <h3 class="text-base font-bold text-white font-manga flex items-center gap-1.5">
+                    <span>🎯</span> Admiral Weakness Radar (Cipher Pol)
                   </h3>
                 </div>
-                <p class="text-xs text-slate-400">Auto-populated from latest Mock Scorecard</p>
+                <p class="text-xs text-slate-400">Combat weaknesses decoded from latest Mock Trials</p>
               </div>
 
               <div class="flex items-center gap-2">
                 <button
                   id="btn-home-add-weakness"
-                  class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
-                  title="Add custom weakness topic"
+                  class="px-2.5 py-1 rounded-lg bg-[#131e3a] hover:bg-[#1c2541] text-amber-200 text-xs font-medium border border-amber-500/30 transition"
+                  title="Add custom combat weakness topic"
                 >
                   + Add
                 </button>
                 <button
                   id="btn-goto-mock-trends-home"
-                  class="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs font-bold border border-emerald-500/30 transition flex items-center gap-1"
-                  title="Open Mock Trends & Score Graph"
+                  class="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold border border-amber-500/30 transition flex items-center gap-1"
+                  title="Open Bounty Mock Trends & Berry Graph"
                 >
-                  <span>Mock Trends</span> <span>📈</span>
+                  <span>Bounty Trends</span> <span>📈</span>
                 </button>
                 <button
                   id="btn-goto-mock-analyzer"
-                  class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
-                  title="Analyze Mock PDF"
+                  class="px-2.5 py-1 rounded-lg bg-[#131e3a] hover:bg-[#1c2541] text-slate-300 text-xs font-medium border border-slate-700 transition"
+                  title="Analyze Mock PDF Scorecard"
                 >
-                  Analyze Mock ↗
+                  Analyze ↗
                 </button>
               </div>
             </div>
@@ -612,9 +678,9 @@
             </div>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-            <span>Focus high-priority drills on these topics</span>
-            <button id="btn-reset-weak-areas" class="text-rose-400/80 hover:text-rose-300 transition text-[11px]">
+          <div class="mt-4 pt-3 border-t border-amber-500/20 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Focus combat drills on these high-priority targets</span>
+            <button id="btn-reset-weak-areas" class="text-red-400/80 hover:text-red-300 transition text-[11px]">
               Clear Radar
             </button>
           </div>
@@ -622,95 +688,149 @@
 
         <!-- f) "Break & Inactivity Tracker" Card: Displays today's break time, and directly below it,
              shows yesterday's total break time for comparison, accompanied by dynamic accountability feedback -->
-        <div class="lg:col-span-7 flex flex-col justify-between p-6 rounded-3xl bg-[#0b1120] border border-slate-800/90 shadow-xl">
+        <div class="lg:col-span-7 flex flex-col justify-between p-6 rounded-3xl bg-[#0b132b] border border-amber-500/25 shadow-xl pirate-card">
           <div>
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-3 mb-4">
               <div class="flex items-center gap-2.5">
-                <span class="text-xl">☕</span>
+                <span class="text-2xl">🍖</span>
                 <div>
-                  <h3 class="text-base font-bold text-white">Break & Inactivity Tracker</h3>
-                  <p class="text-xs text-slate-400">Auto-tracks when subject timers pause or stop</p>
+                  <h3 class="text-base font-bold text-white font-manga">Anchor Dropped / Crew Feast & Rest Time</h3>
+                  <p class="text-xs text-slate-400">Auto-tracks when battle stopwatches pause or crew drops anchor</p>
                 </div>
               </div>
 
               <!-- Active Break Pill -->
-              <div id="home-break-state-badge" class="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-slate-800 text-slate-400 border border-slate-700">
-                ⏸️ Study Mode Active
+              <div id="home-break-state-badge" class="px-3 py-1 rounded-full text-xs font-mono font-semibold bg-[#131e3a] text-amber-300 border border-amber-500/30">
+                ⛵ Active Sail Mode
               </div>
             </div>
 
             <!-- Two-Tier Vertical Comparison Display: Today's Break and Directly Below It Yesterday's Break -->
             <div class="space-y-3.5">
               <!-- Today's Total Break -->
-              <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 relative overflow-hidden">
+              <div class="p-4 rounded-2xl bg-[#070b19] border border-amber-500/30 relative overflow-hidden">
                 <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-                  <span class="font-mono uppercase tracking-wider font-bold text-amber-400">TODAY'S TOTAL BREAK TIME</span>
+                  <span class="font-mono uppercase tracking-wider font-bold text-amber-400 flex items-center gap-1.5">
+                    <span>🍖</span> TODAY'S TOTAL FEAST & ANCHOR TIME
+                  </span>
                   <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
                 </div>
-                <div id="home-break-today-display" class="text-3xl sm:text-4xl font-extrabold font-mono text-amber-300">
+                <div id="home-break-today-display" class="text-3xl sm:text-4xl font-extrabold font-manga text-amber-300">
                   00h 00m 00s
                 </div>
                 <div class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                  <span id="home-break-current-session-label">Current Break Session: 00:00</span>
-                  <span class="text-[10px] font-mono text-slate-500">Auto-synced with subject timers</span>
+                  <span id="home-break-current-session-label">Current Rest Session: 00:00</span>
+                  <span class="text-[10px] font-mono text-slate-400">Auto-synced with subject battle timers</span>
                 </div>
               </div>
 
               <!-- Directly Below: Yesterday's Total Break Time for Comparison -->
-              <div class="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 relative overflow-hidden">
+              <div class="p-4 rounded-2xl bg-[#070b19]/70 border border-slate-700/60 relative overflow-hidden">
                 <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-                  <span class="font-mono uppercase tracking-wider font-bold text-slate-300">YESTERDAY'S TOTAL BREAK TIME (BENCHMARK)</span>
-                  <span class="text-[10px] font-mono text-slate-500">Archived at 5:00 AM</span>
+                  <span class="font-mono uppercase tracking-wider font-bold text-slate-300">YESTERDAY'S ANCHOR TIME (BENCHMARK)</span>
+                  <span class="text-[10px] font-mono text-amber-400/80">Archived at 5:00 AM Dawn</span>
                 </div>
-                <div id="home-break-yesterday-display" class="text-2xl sm:text-3xl font-extrabold font-mono text-slate-300">
+                <div id="home-break-yesterday-display" class="text-2xl sm:text-3xl font-extrabold font-manga text-slate-300">
                   00h 00m 00s
                 </div>
                 <!-- Direct Comparison Metric Badge -->
-                <div id="home-break-diff-badge" class="text-xs font-semibold mt-1 text-emerald-400">
-                  Comparing today's break against yesterday...
+                <div id="home-break-diff-badge" class="text-xs font-semibold mt-1 text-amber-400">
+                  Comparing today's feast against yesterday's voyage...
                 </div>
               </div>
 
               <!-- Dynamic Accountability Feedback Box -->
-              <div id="quote-comparison-notice" class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans flex items-start gap-2.5">
-                <span class="text-amber-400 text-base">⚠️</span>
-                <span id="quote-comparison-text">Evaluating discipline ratio against yesterday's cycle...</span>
+              <div id="quote-comparison-notice" class="p-3.5 rounded-xl bg-[#070b19] border border-amber-500/25 text-xs text-amber-100/90 leading-relaxed font-sans flex items-start gap-2.5">
+                <span class="text-amber-400 text-base">⚓</span>
+                <span id="quote-comparison-text">Sanji says: A warrior needs fuel, but don't sleep away your voyage to Laugh Tale!</span>
               </div>
             </div>
           </div>
 
           <!-- Action Controls for Break -->
-          <div class="mt-4 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="mt-4 pt-3 border-t border-amber-500/20 flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <button
                 id="btn-manual-break-toggle"
-                class="px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold transition active:scale-95"
+                class="px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold transition active:scale-95"
               >
-                ☕ Start Manual Break
+                🍖 Drop Anchor (Rest)
               </button>
               <button
                 id="btn-edit-break-time"
-                class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition"
-                title="Manually correct today's break duration"
+                class="px-3 py-1.5 rounded-xl bg-[#131e3a] hover:bg-[#1c2541] text-slate-300 text-xs font-medium border border-slate-700 transition"
+                title="Manually correct today's anchor duration"
               >
-                ✏️ Edit Break Time
+                ✏️ Edit Rest Time
               </button>
             </div>
 
             <button
               id="btn-reset-break-today"
-              class="text-xs text-slate-400 hover:text-rose-400 transition"
-              title="Reset today's break counter"
+              class="text-xs text-slate-400 hover:text-red-400 transition"
+              title="Reset today's anchor counter"
             >
-              Reset Break
+              Reset Rest
             </button>
           </div>
         </div>
 
       </div>
 
-    </section>
+      <!-- Novel & Book Reading Tracker Quick Widget on Homepage (Library of Ohara) -->
+      <div id="home-book-tracker-card" class="p-6 rounded-3xl bg-[#0b132b] border border-amber-500/30 shadow-xl space-y-4 relative overflow-hidden pirate-card">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/35 flex items-center justify-center text-amber-300 font-bold text-lg shadow-sm">
+              📚
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-extrabold text-amber-200 font-manga uppercase tracking-wide">Library of Ohara / Poneglyph Reading Hub</h3>
+                <span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-semibold">Vocabulary & Comprehension</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Decode English comprehension speed, ancient vocabulary scrolls, and captain mindset literature</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-home-add-book"
+              class="px-3.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/35 hover:bg-amber-500/25 text-amber-300 text-xs font-semibold transition active:scale-95 cursor-pointer shadow-sm"
+            >
+              + Add Tome / Scroll
+            </button>
+            <button
+              id="btn-home-open-books"
+              class="px-3.5 py-1.5 rounded-xl bg-[#131e3a] hover:bg-[#1c2541] text-amber-100 text-xs font-medium border border-amber-500/30 transition active:scale-95 flex items-center gap-1 cursor-pointer"
+            >
+              <span>Open Ohara Archive</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
 
+        <!-- Shelf Filter Tabs on Homepage Card -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-mono" id="home-book-shelf-tabs">
+          <button data-home-shelf="reading" class="home-shelf-tab px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 transition cursor-pointer whitespace-nowrap">
+            📖 In Hand Reading (<span id="home-count-reading">0</span>)
+          </button>
+          <button data-home-shelf="queue" class="home-shelf-tab px-3 py-1.5 rounded-xl bg-[#070b19] text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+            ⏳ Planned Poneglyphs (<span id="home-count-queue">0</span>)
+          </button>
+          <button data-home-shelf="completed" class="home-shelf-tab px-3 py-1.5 rounded-xl bg-[#070b19] text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+            🏆 Mastered Scrolls (<span id="home-count-completed">0</span>)
+          </button>
+          <button data-home-shelf="all" class="home-shelf-tab px-3 py-1.5 rounded-xl bg-[#070b19] text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap">
+            All Tomes (<span id="home-count-all">0</span>)
+          </button>
+        </div>
+
+        <div id="home-book-tracker-summary" class="pt-1">
+          <!-- Dynamically populated via renderHomeBookWidget() -->
+        </div>
+      </div>
+
+    </section>
 
     <!-- ========================================================
          SECTION 2: SUBJECT STOPWATCHES & 320 MATHS TARGET
@@ -2697,6 +2817,123 @@
         </div>
       </div>
     </section>
+
+    <!-- ========================================================
+         SECTION 7B: NOVEL & BOOK READING HUB
+         ======================================================== -->
+    <section id="section-books" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+            <span>📖</span> Novel & Book Reading Hub
+          </h2>
+          <p class="text-xs text-slate-400">
+            Track novels, comprehension books & vocabulary reading for SSC CGL, Railways & aspirant growth.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            id="btn-open-add-book-modal"
+            class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition active:scale-95 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/10"
+          >
+            <span>+</span>
+            <span>Add Book / Novel</span>
+          </button>
+          <button
+            id="btn-reset-books-default"
+            class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition cursor-pointer"
+            title="Restore default recommendation books"
+          >
+            Reset Defaults
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Shelf Stats Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono">
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 relative overflow-hidden">
+          <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Currently Reading</div>
+          <div id="stat-books-reading" class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">0</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">Active books in hand</div>
+          <div class="absolute -right-2 -bottom-2 text-4xl opacity-10 pointer-events-none">📖</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 relative overflow-hidden">
+          <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Up Next / Queue</div>
+          <div id="stat-books-queue" class="text-2xl sm:text-3xl font-black text-sky-400 mt-1">0</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">Planned reading list</div>
+          <div class="absolute -right-2 -bottom-2 text-4xl opacity-10 pointer-events-none">⏳</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 relative overflow-hidden">
+          <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Completed Books</div>
+          <div id="stat-books-completed" class="text-2xl sm:text-3xl font-black text-amber-400 mt-1">0</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">Conquered with reviews</div>
+          <div class="absolute -right-2 -bottom-2 text-4xl opacity-10 pointer-events-none">🏆</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-[#0b1120] border border-slate-800 relative overflow-hidden">
+          <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Pages Read</div>
+          <div id="stat-books-pages" class="text-2xl sm:text-3xl font-black text-teal-300 mt-1">0</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">Cumulative progress</div>
+          <div class="absolute -right-2 -bottom-2 text-4xl opacity-10 pointer-events-none">📑</div>
+        </div>
+      </div>
+
+      <!-- Main Controls & Shelves Filter & Search -->
+      <div class="p-6 rounded-3xl bg-[#0b1120] border border-slate-800 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <!-- Shelf filter tabs -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1" id="book-shelf-filter-tabs">
+            <button data-shelf-filter="all" class="book-shelf-filter-pill active">
+              <span>📚 All Shelves</span>
+              <span id="count-shelf-all" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] font-mono">0</span>
+            </button>
+            <button data-shelf-filter="reading" class="book-shelf-filter-pill">
+              <span>📖 Currently Reading</span>
+              <span id="count-shelf-reading" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] font-mono">0</span>
+            </button>
+            <button data-shelf-filter="queue" class="book-shelf-filter-pill">
+              <span>⏳ Up Next</span>
+              <span id="count-shelf-queue" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] font-mono">0</span>
+            </button>
+            <button data-shelf-filter="completed" class="book-shelf-filter-pill">
+              <span>🏆 Completed</span>
+              <span id="count-shelf-completed" class="px-1.5 py-0.2 rounded-full bg-slate-800 text-[10px] font-mono">0</span>
+            </button>
+          </div>
+
+          <!-- Category & Search Bar -->
+          <div class="flex items-center gap-2 flex-1 sm:flex-initial">
+            <select
+              id="select-books-category-filter"
+              class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 outline-none focus:border-emerald-500"
+            >
+              <option value="all">All Genres</option>
+              <option value="Vocabulary & English Reading">English / Vocabulary</option>
+              <option value="Self-help & Mindset">Self-help & Mindset</option>
+              <option value="Fiction & Literature">Fiction & Literature</option>
+              <option value="Non-fiction">Non-fiction</option>
+              <option value="General Knowledge & Science">GK & Science</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <div class="w-full sm:w-64 relative">
+              <input
+                type="text"
+                id="input-books-search"
+                placeholder="Search title, author, genre..."
+                class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Shelves Container -->
+        <div id="books-shelves-container" class="space-y-6 pt-2">
+          <!-- Dynamically populated via renderBookTracker() -->
+        </div>
+      </div>
+    </section>
+
     <section id="section-history" class="hidden space-y-6">
 
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
@@ -3745,6 +3982,318 @@
           ✓ Continue Studying in Local Mode
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: ADD BOOK / NOVEL
+       ======================================================== -->
+  <div id="modal-add-book" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📖</span> Add Book / Novel to Shelf
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+
+      <form id="form-add-book" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Book Title *</label>
+          <input
+            type="text"
+            id="book-input-title"
+            required
+            placeholder="e.g. Word Power Made Easy, Atomic Habits, The Alchemist"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Author Name (Optional)</label>
+          <input
+            type="text"
+            id="book-input-author"
+            placeholder="e.g. Norman Lewis, James Clear"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Category / Genre</label>
+          <select
+            id="book-input-category"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+          >
+            <option value="Vocabulary & English Reading">Vocabulary & English Reading (CGL Prep)</option>
+            <option value="Self-help & Mindset">Self-help & Mindset (Aspirant Discipline)</option>
+            <option value="Fiction & Literature">Fiction & Literature (Speed Reading)</option>
+            <option value="Non-fiction">Non-fiction & Productivity</option>
+            <option value="Biography & History">Biography & History</option>
+            <option value="General Knowledge & Science">General Knowledge & Science</option>
+            <option value="Other">Other / General</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Total Pages / Target</label>
+            <input
+              type="number"
+              id="book-input-total-pages"
+              min="1"
+              placeholder="e.g. 560"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Current Page / Start</label>
+            <input
+              type="number"
+              id="book-input-current-page"
+              min="0"
+              value="0"
+              placeholder="0"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Shelf / Reading Status *</label>
+          <select
+            id="book-input-status"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold"
+          >
+            <option value="reading">📖 Currently Reading (Active Shelf)</option>
+            <option value="queue">⏳ Want to Read / Up Next</option>
+            <option value="completed">🏆 Completed (Finished Books)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Reading Target / Notes (Optional)</label>
+          <textarea
+            id="book-input-notes"
+            rows="2"
+            placeholder="e.g. 15 pages every evening before sleep; finish 40 word roots."
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-2">
+          <button
+            type="submit"
+            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-600/20 active:scale-[0.99] cursor-pointer"
+          >
+            + Add Book to Shelf
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: EDIT BOOK / NOVEL
+       ======================================================== -->
+  <div id="modal-edit-book" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>✏️</span> Edit Book Details
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+
+      <form id="form-edit-book" class="space-y-3.5">
+        <input type="hidden" id="edit-book-id" />
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Book Title *</label>
+          <input
+            type="text"
+            id="edit-book-title"
+            required
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Author Name</label>
+          <input
+            type="text"
+            id="edit-book-author"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Category / Genre</label>
+          <select
+            id="edit-book-category"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+          >
+            <option value="Vocabulary & English Reading">Vocabulary & English Reading (CGL Prep)</option>
+            <option value="Self-help & Mindset">Self-help & Mindset (Aspirant Discipline)</option>
+            <option value="Fiction & Literature">Fiction & Literature (Speed Reading)</option>
+            <option value="Non-fiction">Non-fiction & Productivity</option>
+            <option value="Biography & History">Biography & History</option>
+            <option value="General Knowledge & Science">General Knowledge & Science</option>
+            <option value="Other">Other / General</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Total Pages</label>
+            <input
+              type="number"
+              id="edit-book-total-pages"
+              min="1"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Current Page</label>
+            <input
+              type="number"
+              id="edit-book-current-page"
+              min="0"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Shelf / Status</label>
+          <select
+            id="edit-book-status"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold"
+          >
+            <option value="reading">📖 Currently Reading</option>
+            <option value="queue">⏳ Up Next / Queue</option>
+            <option value="completed">🏆 Completed / Done</option>
+          </select>
+        </div>
+
+        <div id="edit-book-completed-fields" class="space-y-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Completion Date</label>
+              <input
+                type="date"
+                id="edit-book-completed-date"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Rating</label>
+              <select
+                id="edit-book-rating"
+                class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 text-amber-400 font-bold"
+              >
+                <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
+                <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                <option value="3">⭐⭐⭐ (3 Stars)</option>
+                <option value="2">⭐⭐ (2 Stars)</option>
+                <option value="1">⭐ (1 Star)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Key Takeaways & Reflections</label>
+            <textarea
+              id="edit-book-takeaways"
+              rows="2"
+              placeholder="What core lessons, vocabulary or ideas did you learn?"
+              class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Reading Notes / Motivation</label>
+          <textarea
+            id="edit-book-notes"
+            rows="2"
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-2">
+          <button
+            type="submit"
+            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-600/20 active:scale-[0.99] cursor-pointer"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL: MARK COMPLETE & CELEBRATE BOOK
+       ======================================================== -->
+  <div id="modal-complete-book" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-content w-full max-w-md p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>🎉</span> Celebrate Completion
+        </h3>
+        <button class="modal-close-btn text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+
+      <form id="form-complete-book" class="space-y-4">
+        <input type="hidden" id="complete-book-id" />
+
+        <div class="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-1">
+          <div class="text-[10px] text-emerald-400 uppercase font-mono font-bold tracking-wider">Book Finished</div>
+          <div id="complete-book-title-display" class="text-sm font-extrabold text-white">Book Title</div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Completion Date</label>
+          <input
+            type="date"
+            id="complete-book-date"
+            required
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1.5">Rating</label>
+          <input type="hidden" id="complete-book-rating-value" value="5" />
+          <div id="complete-book-stars" class="flex items-center gap-2 text-2xl select-none">
+            <button type="button" data-star="1" class="star-rating-btn text-amber-400">★</button>
+            <button type="button" data-star="2" class="star-rating-btn text-amber-400">★</button>
+            <button type="button" data-star="3" class="star-rating-btn text-amber-400">★</button>
+            <button type="button" data-star="4" class="star-rating-btn text-amber-400">★</button>
+            <button type="button" data-star="5" class="star-rating-btn text-amber-400">★</button>
+            <span id="complete-book-rating-label" class="text-xs text-slate-400 font-mono ml-2">5/5 Stars</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Key Takeaways & Reflections</label>
+          <textarea
+            id="complete-book-takeaways"
+            rows="3"
+            placeholder="What lessons, vocabulary roots, or mindset shifts did you gain from this read?"
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+          ></textarea>
+        </div>
+
+        <div class="pt-2">
+          <button
+            type="submit"
+            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-600/20 active:scale-[0.99] cursor-pointer"
+          >
+            Move to Completed Shelf 🏆
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

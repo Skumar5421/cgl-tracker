@@ -35,6 +35,53 @@
 
   const STORAGE_KEY = 'MISSION_CGL_2027_TRACKER_V4';
   const WEEKLY_TASKS_STORAGE_KEY = 'cgl_weekly_tasks';
+  const MONTHLY_TARGETS_STORAGE_KEY = 'cgl_monthly_targets';
+  const BOOK_SHELF_STORAGE_KEY = 'cgl_book_shelf';
+  const BOOK_TRACKER_STORAGE_KEY = 'cgl_book_tracker';
+
+  // --- RESILIENT SAFE STORAGE WRAPPERS ---
+  function safeJsonParse(jsonString, fallbackValue = null) {
+    if (!jsonString || typeof jsonString !== 'string') return fallbackValue;
+    try {
+      return JSON.parse(jsonString);
+    } catch (err) {
+      console.warn('safeJsonParse encountered invalid JSON, using fallback:', err);
+      return fallbackValue;
+    }
+  }
+
+  function safeJsonStringify(data, fallbackString = '{}') {
+    try {
+      return JSON.stringify(data);
+    } catch (err) {
+      console.warn('safeJsonStringify encountered serialization error:', err);
+      return fallbackString;
+    }
+  }
+
+  function safeStorageGet(key, fallbackValue = null) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return fallbackValue;
+      const raw = window.localStorage.getItem(key);
+      if (raw === null || raw === undefined) return fallbackValue;
+      return safeJsonParse(raw, fallbackValue);
+    } catch (err) {
+      console.warn(`safeStorageGet error for key "${key}":`, err);
+      return fallbackValue;
+    }
+  }
+
+  function safeStorageSet(key, data) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return false;
+      const serialized = typeof data === 'string' ? data : safeJsonStringify(data);
+      window.localStorage.setItem(key, serialized);
+      return true;
+    } catch (err) {
+      console.warn(`safeStorageSet error for key "${key}":`, err);
+      return false;
+    }
+  }
 
   // --- FIREBASE AUTHENTICATION & FIRESTORE CLOUD CONFIGURATION ---
   const FIREBASE_CONFIG = {
@@ -55,55 +102,67 @@
   let lastCloudSyncTimestamp = null;
   let cloudQuotaExceeded = false;
 
-  // 25+ Hard-Hitting Strict Anti-Procrastination Quotes
+  // 25+ Hard-Hitting Strict Anti-Procrastination & Pirate King Discipline Quotes
   const DISCIPLINE_QUOTES = [
     {
-      quote: "35 Lakh applicants registered for SSC CGL. Only 8,000 will get a 4600 Grade Pay desk in New Delhi. While you hesitate at 5:00 AM, someone in a small town library has already solved 50 trigonometry questions.",
-      context: "Rule of 35 Lakh Aspirants • Brahma Muhurta 5 AM"
+      quote: "If you don't take risks, you can't create a future! 35 Lakh applicants are fighting across the Grand Line of SSC CGL. While you hesitate at 5:00 AM, someone in a quiet corner of the sea has already solved 50 geometry theorems.",
+      context: "Monkey D. Luffy • Captain's Grand Line Decree • 5 AM Routine"
     },
     {
-      quote: "Brahma Muhurta (5:00 AM) is not a suggestion; it is the only quiet window before the noise of the world steals your focus. If you can't conquer your warm blanket, don't dream of conquering Tier 2.",
-      context: "Early Morning Sacrifice • 5:00 AM Standard"
+      quote: "When the world shoves you around, you've just got to stand up and shove back. It's not like anybody's going to save you if you start babbling excuses. Sit down, pick up your pen, and conquer your 320 Maths questions!",
+      context: "Roronoa Zoro • Swordsman's Bushido • 320 Questions Daily"
     },
     {
-      quote: "The Railway NTPC exam had 1.25 Crore candidates for 35,000 posts. That is a 0.28% acceptance rate. If you skip General Awareness today, you are actively choosing rejection.",
-      context: "Railway Recruitment Board Reality Check"
+      quote: "Brahma Muhurta (5:00 AM) is not a suggestion; it is the calm sea before the world's storms steal your focus. If you can't conquer your warm bed, don't dream of conquering Tier 2 cutoffs.",
+      context: "Early Morning Sacrifice • Silvers Rayleigh Focus Training"
     },
     {
-      quote: "Maths speed is not born from luck; it is forged by solving 320 questions every single day until percentage calculations happen in your subconscious without pen and paper.",
-      context: "320 Questions Daily Mission • Quantitative Aptitude"
+      quote: "Stop counting only what you have lost! What is gone is gone! Look at what still remains: your syllabus, your rough sheets, and 365 days until the exam. Set sail!",
+      context: "Jinbe • Knight of the Sea • Relentless Resilience"
     },
     {
-      quote: "Your parents tell their friends you are preparing for a Central Government officer post. Don't turn their pride into an apology. Sit down and start the stopwatch.",
-      context: "Accountability & Family Sacrifice"
+      quote: "The Railway NTPC exam had 1.25 Crore candidates for 35,000 posts. That is a 0.28% acceptance rate. If you skip General Awareness and Static GK today, you are walking straight into defeat.",
+      context: "Railway Recruitment Board Reality Check • Grand Line Fleet"
     },
     {
-      quote: "A mock test score of 120 means nothing when cutoffs hover above 145+. Every silly calculation error you ignore today will cost you 2.5 negative marks on exam day.",
-      context: "Mock Diagnostic Reality • Tier 1 Normalization"
+      quote: "Scars on the back are a swordsman's greatest shame. Backing down from difficult revision sets and mock errors is an aspirant's defeat. Confront your weak chapters head-on!",
+      context: "Roronoa Zoro • Honor of the Blade • Weak Areas Radar"
     },
     {
-      quote: "Motivation is an illusion invented by amateurs. High-ranking ASOs and Inspectors didn't feel inspired every morning—they sat down and worked because quitting was not an option.",
-      context: "Discipline > Fleeting Motivation"
+      quote: "A man's dream will never die! But dreams without 8 honest hours of daily practice will sink straight to the ocean floor. Work until your raw score shatters the cutoff.",
+      context: "Marshall D. Teach • Ambition vs Relentless Execution"
     },
     {
-      quote: "When you scroll on social media, remember your direct competitor is revising Modern History dates and Vocab flashcards. The exam paper will show no mercy.",
-      context: "The Competitive Cutoff Law"
+      quote: "Your parents tell their friends you are preparing for a 4600 Grade Pay Central Government post. Don't turn their faith into an apology. Start the voyage stopwatch and get to work.",
+      context: "Straw Hat Crew Duty • Family Sacrifice & Honor"
     },
     {
-      quote: "Consistency beats genius. The aspirant who studies 8 honest hours every day will crush the one who studies 14 hours once a week and sleeps for the next three days.",
-      context: "Pacing & Endurance Strategy"
+      quote: "A mock test score of 120 means nothing when cutoffs hover above 145+. Every calculation error you ignore today will cost you 2.5 negative marks on exam day.",
+      context: "Mock Diagnostic Reality • Tier 1 Normalization Sea"
     },
     {
-      quote: "Excise Inspector, CSS ASO, MEA Desk, Income Tax Inspector. These seats don't belong to who wanted it more—they belong to who solved more questions with precision under pressure.",
-      context: "4600 Grade Pay Aspiration"
+      quote: "The era where people dream of officer desks without solving thousands of PYQs is over! Motivation is an illusion; only disciplined daily reps carve a legend.",
+      context: "Edward Newgate (Whitebeard) • Law of Relentless Preparation"
     },
     {
-      quote: "Do not fool yourself with passive video watching. Staring at someone else solve questions on YouTube is entertainment, not preparation. Pick up the rough sheet and solve.",
-      context: "Active Recall vs Passive Illusion"
+      quote: "When you scroll on social media, remember your direct rival is grinding Modern History dates and Vocab flashcards. The Grand Line exam paper shows zero mercy.",
+      context: "The Competitive Cutoff Law • Emperor's Fleet Trial"
     },
     {
-      quote: "Sleep when your target is dead. If today's 320 questions are unfinished, your night has not started yet.",
-      context: "Target Fulfillment Law"
+      quote: "Consistency beats genius. The aspirant who sails 8 focused hours every day will crush the one who studies 14 hours once a week and sleeps for three days.",
+      context: "Pacing & Endurance Strategy • Straw Hat Voyage Discipline"
+    },
+    {
+      quote: "Excise Inspector, CSS ASO, MEA Foreign Desk, Income Tax Officer. These seats don't belong to who wished for them—they belong to who solved more questions with precision under fire.",
+      context: "4600 Grade Pay King's Treasure • Tier-2 Victory"
+    },
+    {
+      quote: "Do not fool yourself with passive video watching. Watching someone else solve questions on YouTube is spectating, not sailing. Pick up the rough sheet and solve.",
+      context: "Active Recall vs Passive Spectating • Captain's Law"
+    },
+    {
+      quote: "Sleep only when your target is conquered. If today's 320 questions are unfinished, your anchor does not drop tonight.",
+      context: "Target Fulfillment Law • Thousand Sunny Voyage"
     }
   ];
 
@@ -398,41 +457,52 @@
     return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
   }
 
-  // Play subtle feedback chime
+  // Play subtle feedback chime & Pirate High-Seas Fanfare
   function playChime(type = 'start') {
     if (!state.soundEnabled) return;
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
       if (type === 'start') {
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
+        // High-Seas Sailing Bell / Departure Horn (Harmonic brassy chord)
+        [392.00, 523.25, 659.25].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.2, audioCtx.currentTime + 0.18);
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+          osc.start(audioCtx.currentTime + idx * 0.03);
+          osc.stop(audioCtx.currentTime + 0.35);
+        });
       } else if (type === 'pause' || type === 'break') {
+        // Anchor Dropped / Galley Break (Warm two-tone drop)
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
         osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
-        osc.frequency.exponentialRampToValueAtTime(440.00, audioCtx.currentTime + 0.18); // A4
+        osc.frequency.exponentialRampToValueAtTime(392.00, audioCtx.currentTime + 0.22); // G4
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.25);
-      } else if (type === 'reward') {
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        osc.stop(audioCtx.currentTime + 0.28);
+      } else if (type === 'reward' || type === 'victory') {
+        // Grand Line Victory Fanfare (Heroic Pirate King Arpeggio: C5 - E5 - G5 - C6)
+        [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
           const o = audioCtx.createOscillator();
           const g = audioCtx.createGain();
+          o.type = 'triangle';
           o.connect(g);
           g.connect(audioCtx.destination);
-          o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
-          g.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
-          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.3);
-          o.start(audioCtx.currentTime + i * 0.1);
-          o.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+          o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.09);
+          g.gain.setValueAtTime(0.12, audioCtx.currentTime + i * 0.09);
+          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.09 + 0.35);
+          o.start(audioCtx.currentTime + i * 0.09);
+          o.stop(audioCtx.currentTime + i * 0.09 + 0.35);
         });
       }
     } catch (e) {
@@ -1587,15 +1657,7 @@
 
   // Load from LocalStorage
   function loadState() {
-    let saved = null;
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        saved = JSON.parse(raw);
-      }
-    } catch (e) {
-      console.error('Error loading state from localStorage:', e);
-    }
+    let saved = safeStorageGet(STORAGE_KEY, null);
 
     if (saved && typeof saved === 'object') {
       // User data exists in localStorage: NEVER overwrite user data or empty lists with defaults!
@@ -1633,32 +1695,64 @@
 
       // Sync and hydrate weekly tasks from cgl_weekly_tasks in localStorage
       try {
-        const rawWeekly = localStorage.getItem(WEEKLY_TASKS_STORAGE_KEY);
-        if (rawWeekly) {
-          const parsedWeekly = JSON.parse(rawWeekly);
-          if (Array.isArray(parsedWeekly) && parsedWeekly.length > 0) {
-            state.weeklyTasks = parsedWeekly;
-            parsedWeekly.forEach(t => {
-              if (t && t.date) {
-                const wStart = t.weekStart || getMondayOfWeek(t.date);
-                if (!state.weeklyTodos[wStart]) {
-                  state.weeklyTodos[wStart] = [];
-                }
-                const idx = state.weeklyTodos[wStart].findIndex(item => item.id === t.id);
-                if (idx === -1) {
-                  state.weeklyTodos[wStart].push(t);
-                } else {
-                  state.weeklyTodos[wStart][idx] = t;
-                }
+        const parsedWeekly = safeStorageGet(WEEKLY_TASKS_STORAGE_KEY, null);
+        if (Array.isArray(parsedWeekly) && parsedWeekly.length > 0) {
+          state.weeklyTasks = parsedWeekly;
+          parsedWeekly.forEach(t => {
+            if (t && t.date) {
+              const wStart = t.weekStart || getMondayOfWeek(t.date);
+              if (!state.weeklyTodos[wStart]) {
+                state.weeklyTodos[wStart] = [];
               }
-            });
-          }
+              const idx = state.weeklyTodos[wStart].findIndex(item => item.id === t.id);
+              if (idx === -1) {
+                state.weeklyTodos[wStart].push(t);
+              } else {
+                state.weeklyTodos[wStart][idx] = t;
+              }
+            }
+          });
         } else {
           // Initialize cgl_weekly_tasks in localStorage if not already present
           saveWeeklyTasksToLocalStorage();
         }
       } catch (err) {
         console.warn('Error reading cgl_weekly_tasks from localStorage:', err);
+      }
+
+      // Sync and hydrate monthly targets from cgl_monthly_targets in localStorage
+      try {
+        const parsedMonthly = safeStorageGet(MONTHLY_TARGETS_STORAGE_KEY, null);
+        if (parsedMonthly && typeof parsedMonthly === 'object') {
+          Object.keys(parsedMonthly).forEach(mKey => {
+            if (Array.isArray(parsedMonthly[mKey])) {
+              if (!state.monthlyTargets[mKey]) state.monthlyTargets[mKey] = [];
+              parsedMonthly[mKey].forEach(mTarget => {
+                if (mTarget && mTarget.id && !state.monthlyTargets[mKey].some(ex => ex.id === mTarget.id)) {
+                  state.monthlyTargets[mKey].push(mTarget);
+                }
+              });
+            }
+          });
+        } else {
+          saveMonthlyTargetsToLocalStorage();
+        }
+      } catch (err) {
+        console.warn('Error reading cgl_monthly_targets from localStorage:', err);
+      }
+
+      // Sync and hydrate reading hub books from cgl_book_shelf or cgl_book_tracker
+      try {
+        const savedBooks = safeStorageGet(BOOK_SHELF_STORAGE_KEY, null) || safeStorageGet(BOOK_TRACKER_STORAGE_KEY, null);
+        if (Array.isArray(savedBooks) && savedBooks.length > 0) {
+          state.books = savedBooks;
+        } else if (!Array.isArray(state.books) || state.books.length === 0) {
+          state.books = JSON.parse(JSON.stringify(DEFAULT_RECOMMENDED_BOOKS));
+          safeStorageSet(BOOK_SHELF_STORAGE_KEY, state.books);
+          safeStorageSet(BOOK_TRACKER_STORAGE_KEY, state.books);
+        }
+      } catch (err) {
+        console.warn('Error hydrating books in loadState:', err);
       }
 
       // Hydrate subjects with shortName, icon, and color if upgrading from older session
@@ -1774,7 +1868,7 @@
     try {
       const allTasks = getAllWeeklyTasks();
       state.weeklyTasks = allTasks;
-      localStorage.setItem(WEEKLY_TASKS_STORAGE_KEY, JSON.stringify(allTasks));
+      safeStorageSet(WEEKLY_TASKS_STORAGE_KEY, allTasks);
       return allTasks;
     } catch (e) {
       console.error('Error saving cgl_weekly_tasks to localStorage:', e);
@@ -1782,11 +1876,29 @@
     }
   }
 
+  // Force immediate saving of monthly targets into browser localStorage under 'cgl_monthly_targets'
+  function saveMonthlyTargetsToLocalStorage() {
+    try {
+      if (state.monthlyTargets && typeof state.monthlyTargets === 'object') {
+        safeStorageSet(MONTHLY_TARGETS_STORAGE_KEY, state.monthlyTargets);
+      }
+      return state.monthlyTargets;
+    } catch (e) {
+      console.error('Error saving cgl_monthly_targets to localStorage:', e);
+      return {};
+    }
+  }
+
   // Save to LocalStorage & Debounced Cloud Sync
   function saveState(skipCloudSync = false) {
     try {
       saveWeeklyTasksToLocalStorage();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      saveMonthlyTargetsToLocalStorage();
+      if (Array.isArray(state.books) && state.books.length > 0) {
+        safeStorageSet(BOOK_SHELF_STORAGE_KEY, state.books);
+        safeStorageSet(BOOK_TRACKER_STORAGE_KEY, state.books);
+      }
+      safeStorageSet(STORAGE_KEY, state);
     } catch (e) {
       console.error('Error saving state to localStorage:', e);
     }
@@ -2075,6 +2187,7 @@
     renderEnergyRating();
     renderEnergyHistory();
     renderVault();
+    renderBookTracker();
     renderJournal();
     renderTodoHub();
     renderMockTrends();
@@ -2085,6 +2198,7 @@
 
   // --- 7A. HOMEPAGE ("ASPIRANT COMMAND CENTER") ---
   function renderHomeView() {
+    renderHomeBookWidget();
     const totalStudySecs = calculateTotalStudySeconds();
     const targetSecs = (state.targetHours || 10.0) * 3600;
     const pct = Math.min(100, Math.round((totalStudySecs / targetSecs) * 100));
@@ -2105,7 +2219,7 @@
       const offset = circumference - (pct / 100) * circumference;
       circle.style.strokeDasharray = `${circumference}`;
       circle.style.strokeDashoffset = `${offset}`;
-      circle.style.stroke = pct >= 100 ? '#10b981' : '#10b981';
+      circle.style.stroke = pct >= 100 ? '#059669' : '#4F46E5';
     }
 
     // Active Timer Status Badge
@@ -2113,15 +2227,15 @@
     const activeSubject = state.subjects.find(s => s.isRunning);
     if (statusBadge) {
       if (activeSubject) {
-        statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span><span class="text-emerald-300 font-bold">Active: ${activeSubject.name.split('(')[0].trim()}</span>`;
+        statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span><span class="text-emerald-700 font-bold">Active: ${activeSubject.name.split('(')[0].trim()}</span>`;
       } else if (state.isBreakTimerRunning) {
         let curBreakSecs = 0;
         if (state.currentBreakSessionStart) {
           curBreakSecs = Math.floor((Date.now() - state.currentBreakSessionStart) / 1000);
         }
-        statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span class="text-amber-300 font-bold">On Break (${formatMS(curBreakSecs)})</span>`;
+        statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span><span class="text-orange-800 font-bold">On Break (${formatMS(curBreakSecs)})</span>`;
       } else {
-        statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500"></span><span>All Timers Idle • Ready to Focus</span>`;
+        statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-300"></span><span class="text-slate-500">All Timers Idle • Ready to Focus</span>`;
       }
     }
 
@@ -2129,10 +2243,10 @@
     const breakDayBtn = document.getElementById('home-break-day-toggle');
     if (breakDayBtn) {
       if (state.isBreakDay) {
-        breakDayBtn.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/40";
+        breakDayBtn.className = "px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs";
         breakDayBtn.textContent = "✓ Break Day Active";
       } else {
-        breakDayBtn.className = "px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition";
+        breakDayBtn.className = "px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition shadow-xs";
         breakDayBtn.textContent = "☕ Mark Break Day";
       }
     }
@@ -2843,6 +2957,42 @@
         statusIcon = '⏳';
       }
 
+      if (state.editingSyllabusId === item.id) {
+        return `
+          <div class="p-3.5 rounded-2xl bg-slate-900 border border-emerald-500/50 space-y-2.5">
+            <div class="text-xs font-bold text-emerald-400">Edit Syllabus Chapter / Topic</div>
+            <input
+              type="text"
+              id="inline-edit-syl-title-${item.id}"
+              value="${escapeHtml(item.title)}"
+              class="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500"
+            />
+            <div class="grid grid-cols-2 gap-2">
+              <select id="inline-edit-syl-sub-${item.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                <option value="maths" ${item.subject === 'maths' ? 'selected' : ''}>📐 Quantitative Aptitude</option>
+                <option value="english" ${item.subject === 'english' ? 'selected' : ''}>📖 English Language</option>
+                <option value="reasoning" ${item.subject === 'reasoning' ? 'selected' : ''}>🧩 Reasoning & GI</option>
+                <option value="ga" ${item.subject === 'ga' ? 'selected' : ''}>🌍 General Awareness</option>
+                <option value="railway" ${item.subject === 'railway' ? 'selected' : ''}>🚆 Railway NTPC Special</option>
+              </select>
+              <select id="inline-edit-syl-weight-${item.id}" class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white">
+                <option value="High (3-4 Qs)" ${item.weightage === 'High (3-4 Qs)' ? 'selected' : ''}>High (3-4 Qs)</option>
+                <option value="Medium (1-2 Qs)" ${item.weightage === 'Medium (1-2 Qs)' ? 'selected' : ''}>Medium (1-2 Qs)</option>
+                <option value="Low (0-1 Qs)" ${item.weightage === 'Low (0-1 Qs)' ? 'selected' : ''}>Low (0-1 Qs)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-1">
+              <button data-cancel-edit-syl="${item.id}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
+                Cancel
+              </button>
+              <button data-save-edit-syl="${item.id}" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition cursor-pointer">
+                Save Changes
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
       return `
         <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition">
           <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -2855,7 +3005,7 @@
               <span>${item.status}</span>
             </button>
             <div class="min-w-0">
-              <h4 class="text-xs sm:text-sm font-semibold text-white truncate">${item.title}</h4>
+              <h4 class="text-xs sm:text-sm font-semibold text-white truncate">${escapeHtml(item.title)}</h4>
               <div class="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
                 <span class="font-mono text-emerald-400/90">${subjectLabels[item.subject] || item.subject}</span>
                 <span>•</span>
@@ -2863,13 +3013,22 @@
               </div>
             </div>
           </div>
-          <button
-            data-delete-syllabus-topic="${item.id}"
-            class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 transition shrink-0"
-            title="Remove topic"
-          >
-            ✕
-          </button>
+          <div class="flex items-center gap-1 shrink-0">
+            <button
+              data-edit-syllabus-topic="${item.id}"
+              class="p-1.5 rounded-lg text-slate-500 hover:text-white transition cursor-pointer"
+              title="Edit topic title & weightage"
+            >
+              ✏️
+            </button>
+            <button
+              data-delete-syllabus-topic="${item.id}"
+              class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 transition shrink-0 cursor-pointer"
+              title="Remove topic"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       `;
     }).join('');
@@ -2884,12 +3043,49 @@
             topic.status = 'In Progress';
           } else if (topic.status === 'In Progress') {
             topic.status = 'Completed';
-            playChime('start');
+            try { playChime('start'); } catch (err) {}
           } else {
             topic.status = 'Not Started';
           }
           saveState();
           renderSyllabus();
+        }
+      });
+    });
+
+    // Attach topic inline edit triggers
+    list.querySelectorAll('[data-edit-syllabus-topic]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-edit-syllabus-topic');
+        state.editingSyllabusId = id;
+        renderSyllabus();
+      });
+    });
+
+    list.querySelectorAll('[data-cancel-edit-syl]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.editingSyllabusId = null;
+        renderSyllabus();
+      });
+    });
+
+    list.querySelectorAll('[data-save-edit-syl]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-save-edit-syl');
+        const topic = state.syllabus.find(t => t.id === id);
+        if (topic) {
+          const newTitle = document.getElementById(`inline-edit-syl-title-${id}`)?.value.trim();
+          const newSub = document.getElementById(`inline-edit-syl-sub-${id}`)?.value;
+          const newWeight = document.getElementById(`inline-edit-syl-weight-${id}`)?.value;
+          if (newTitle) {
+            topic.title = newTitle;
+            if (newSub) topic.subject = newSub;
+            if (newWeight) topic.weightage = newWeight;
+            state.editingSyllabusId = null;
+            saveState();
+            renderSyllabus();
+            try { playChime('success'); } catch (err) {}
+          }
         }
       });
     });
@@ -3674,6 +3870,1002 @@ ${item.formula}
         }
       });
     });
+  }
+
+  // ==========================================================================
+  // --- 7F6. NOVEL & BOOK READING HUB (SECTION 7B) ---
+  // ==========================================================================
+
+  const BOOK_STORAGE_KEY = 'cgl_book_tracker';
+
+  const DEFAULT_RECOMMENDED_BOOKS = [
+    {
+      id: 'book_word_power_1',
+      title: 'Word Power Made Easy',
+      author: 'Norman Lewis',
+      category: 'Vocabulary & English Reading',
+      totalPages: 560,
+      currentPage: 180,
+      status: 'reading',
+      notes: 'Root words, prefixes, and etymology for SSC CGL Tier 1 & 2 English.',
+      createdAt: '2026-08-01'
+    },
+    {
+      id: 'book_atomic_habits_2',
+      title: 'Atomic Habits',
+      author: 'James Clear',
+      category: 'Self-help & Mindset',
+      totalPages: 320,
+      currentPage: 0,
+      status: 'queue',
+      notes: 'Daily 1% compounding discipline for ruthless consistency in 2027 preparation.',
+      createdAt: '2026-08-10'
+    },
+    {
+      id: 'book_the_alchemist_3',
+      title: 'The Alchemist',
+      author: 'Paulo Coelho',
+      category: 'Fiction & Literature',
+      totalPages: 208,
+      currentPage: 208,
+      status: 'completed',
+      rating: 5,
+      completedDate: '2026-08-25',
+      takeaways: 'When you want something, all the universe conspires in helping you to achieve it. Unflinching dedication.',
+      notes: 'Fast evening reading for English comprehension speed.',
+      createdAt: '2026-07-20'
+    }
+  ];
+
+  let bookShelfFilter = 'all'; // 'all', 'reading', 'queue', 'completed'
+  let bookCategoryFilter = 'all';
+  let bookSearchQuery = '';
+
+  function loadBooks() {
+    try {
+      const parsedShelf = safeStorageGet(BOOK_SHELF_STORAGE_KEY, null);
+      if (Array.isArray(parsedShelf) && parsedShelf.length > 0) {
+        state.books = parsedShelf;
+        return parsedShelf;
+      }
+      const parsedTracker = safeStorageGet(BOOK_TRACKER_STORAGE_KEY, null) || safeStorageGet(BOOK_STORAGE_KEY, null);
+      if (Array.isArray(parsedTracker) && parsedTracker.length > 0) {
+        state.books = parsedTracker;
+        safeStorageSet(BOOK_SHELF_STORAGE_KEY, parsedTracker);
+        return parsedTracker;
+      }
+      if (Array.isArray(state.books) && state.books.length > 0) {
+        saveBooks(state.books);
+        return state.books;
+      }
+    } catch (e) {
+      console.error('Failed to load books from localStorage:', e);
+    }
+    const defaults = JSON.parse(JSON.stringify(DEFAULT_RECOMMENDED_BOOKS));
+    state.books = defaults;
+    saveBooks(defaults);
+    return defaults;
+  }
+
+  function saveBooks(books) {
+    try {
+      state.books = books;
+      safeStorageSet(BOOK_SHELF_STORAGE_KEY, books);
+      safeStorageSet(BOOK_TRACKER_STORAGE_KEY, books);
+      safeStorageSet(BOOK_STORAGE_KEY, books);
+    } catch (e) {
+      console.error('Failed to save books to localStorage:', e);
+    }
+  }
+
+  function getGenreBadgeColor(category) {
+    switch (category) {
+      case 'Vocabulary & English Reading':
+        return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+      case 'Self-help & Mindset':
+        return 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+      case 'Fiction & Literature':
+        return 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+      case 'Non-fiction':
+        return 'bg-sky-500/15 text-sky-400 border-sky-500/30';
+      case 'Biography & History':
+        return 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30';
+      case 'General Knowledge & Science':
+        return 'bg-teal-500/15 text-teal-400 border-teal-500/30';
+      default:
+        return 'bg-slate-800 text-slate-300 border-slate-700';
+    }
+  }
+
+  function renderBookTracker() {
+    const books = loadBooks();
+
+    const readingBooks = books.filter(b => b.status === 'reading');
+    const queueBooks = books.filter(b => b.status === 'queue');
+    const completedBooks = books.filter(b => b.status === 'completed');
+
+    let totalPagesRead = 0;
+    books.forEach(b => {
+      if (b.status === 'completed') {
+        totalPagesRead += (Number(b.totalPages) || Number(b.currentPage) || 0);
+      } else {
+        totalPagesRead += (Number(b.currentPage) || 0);
+      }
+    });
+
+    const statReading = document.getElementById('stat-books-reading');
+    const statQueue = document.getElementById('stat-books-queue');
+    const statCompleted = document.getElementById('stat-books-completed');
+    const statPages = document.getElementById('stat-books-pages');
+
+    if (statReading) statReading.textContent = readingBooks.length;
+    if (statQueue) statQueue.textContent = queueBooks.length;
+    if (statCompleted) statCompleted.textContent = completedBooks.length;
+    if (statPages) statPages.textContent = totalPagesRead.toLocaleString();
+
+    const countAll = document.getElementById('count-shelf-all');
+    const countReading = document.getElementById('count-shelf-reading');
+    const countQueue = document.getElementById('count-shelf-queue');
+    const countCompleted = document.getElementById('count-shelf-completed');
+
+    if (countAll) countAll.textContent = books.length;
+    if (countReading) countReading.textContent = readingBooks.length;
+    if (countQueue) countQueue.textContent = queueBooks.length;
+    if (countCompleted) countCompleted.textContent = completedBooks.length;
+
+    document.querySelectorAll('#book-shelf-filter-tabs .book-shelf-filter-pill').forEach(btn => {
+      const f = btn.getAttribute('data-shelf-filter');
+      if (f === bookShelfFilter) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    const catSelect = document.getElementById('select-books-category-filter');
+    if (catSelect && catSelect.value !== bookCategoryFilter) {
+      catSelect.value = bookCategoryFilter;
+    }
+
+    const filterBookList = (list) => {
+      let res = list;
+      if (bookCategoryFilter && bookCategoryFilter !== 'all') {
+        res = res.filter(b => b.category === bookCategoryFilter);
+      }
+      if (bookSearchQuery && bookSearchQuery.trim()) {
+        const q = bookSearchQuery.toLowerCase().trim();
+        res = res.filter(b => 
+          (b.title && b.title.toLowerCase().includes(q)) ||
+          (b.author && b.author.toLowerCase().includes(q)) ||
+          (b.category && b.category.toLowerCase().includes(q)) ||
+          (b.notes && b.notes.toLowerCase().includes(q)) ||
+          (b.takeaways && b.takeaways.toLowerCase().includes(q))
+        );
+      }
+      return res;
+    };
+
+    const container = document.getElementById('books-shelves-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const showReading = bookShelfFilter === 'all' || bookShelfFilter === 'reading';
+    const showQueue = bookShelfFilter === 'all' || bookShelfFilter === 'queue';
+    const showCompleted = bookShelfFilter === 'all' || bookShelfFilter === 'completed';
+
+    const filteredReading = filterBookList(readingBooks);
+    const filteredQueue = filterBookList(queueBooks);
+    const filteredCompleted = filterBookList(completedBooks);
+
+    let html = '';
+
+    // 1. ACTIVE SHELF: CURRENTLY READING
+    if (showReading) {
+      html += `
+        <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h3 class="text-sm font-extrabold text-white font-mono uppercase tracking-wider flex items-center gap-1.5">
+                <span>📖 Currently Reading</span>
+                <span class="text-xs font-normal text-emerald-400">(${filteredReading.length} Active)</span>
+              </h3>
+            </div>
+            <span class="text-[11px] text-slate-400 hidden sm:inline">Active books in progress • Log daily pages</span>
+          </div>
+
+          ${filteredReading.length === 0 ? `
+            <div class="p-8 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-center space-y-2">
+              <div class="text-2xl">📚</div>
+              <div class="text-xs text-slate-300 font-semibold">No books currently on your active reading shelf.</div>
+              <p class="text-[11px] text-slate-500 max-w-sm mx-auto">Pick a book from your Reading Queue below by clicking "Start Reading", or click "+ Add Book / Novel" above to start your next journey.</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${filteredReading.map(b => {
+                const total = Number(b.totalPages) || 0;
+                const curr = Number(b.currentPage) || 0;
+                const pct = total > 0 ? Math.min(100, Math.round((curr / total) * 100)) : 0;
+                const badgeColor = getGenreBadgeColor(b.category);
+
+                return `
+                  <div class="book-card book-card-active-reading p-5 rounded-2xl border flex flex-col justify-between space-y-4" data-book-id="${b.id}">
+                    <div class="space-y-2.5">
+                      <div class="flex items-start justify-between gap-2">
+                        <span class="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${badgeColor}">
+                          ${escapeHtml(b.category || 'General')}
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                          <button
+                            data-action="edit-book"
+                            data-id="${b.id}"
+                            class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs transition cursor-pointer"
+                            title="Edit book details"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            data-action="delete-book"
+                            data-id="${b.id}"
+                            class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 text-xs transition cursor-pointer"
+                            title="Delete book"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 class="text-base font-bold text-white group-hover:text-emerald-300 transition leading-snug">${escapeHtml(b.title)}</h4>
+                        <p class="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                          <span>✍️</span>
+                          <span>${escapeHtml(b.author || 'Unknown Author')}</span>
+                        </p>
+                      </div>
+
+                      ${b.notes ? `
+                        <p class="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 leading-relaxed font-sans">
+                          <span class="text-emerald-400 font-mono font-bold">🎯 Target:</span> ${escapeHtml(b.notes)}
+                        </p>
+                      ` : ''}
+
+                      <!-- Reading Progress Bar -->
+                      <div class="space-y-1.5 pt-1">
+                        <div class="flex items-center justify-between text-xs font-mono">
+                          <span class="text-slate-300 font-bold">
+                            Page <span class="text-emerald-400 text-sm font-black">${curr}</span> of ${total > 0 ? total : 'Ongoing'}
+                          </span>
+                          <span class="text-emerald-400 font-bold">${total > 0 ? pct + '%' : 'Reading'}</span>
+                        </div>
+                        <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                          <div class="book-progress-fill h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: ${total > 0 ? pct : (curr > 0 ? 50 : 0)}%"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Interactive Logging & Actions Bar -->
+                    <div class="pt-3 border-t border-slate-800/80 space-y-2.5">
+                      <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <span class="text-[11px] font-mono text-slate-400">Quick Log:</span>
+                        <div class="flex items-center gap-1.5">
+                          <button
+                            data-action="add-pages"
+                            data-id="${b.id}"
+                            data-delta="5"
+                            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 text-[11px] font-mono font-bold border border-slate-700 transition cursor-pointer"
+                            title="Add 5 pages to progress"
+                          >
+                            +5 pgs
+                          </button>
+                          <button
+                            data-action="add-pages"
+                            data-id="${b.id}"
+                            data-delta="10"
+                            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 text-[11px] font-mono font-bold border border-slate-700 transition cursor-pointer"
+                            title="Add 10 pages to progress"
+                          >
+                            +10 pgs
+                          </button>
+                          <button
+                            data-action="add-pages"
+                            data-id="${b.id}"
+                            data-delta="25"
+                            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 text-[11px] font-mono font-bold border border-slate-700 transition cursor-pointer"
+                            title="Add 25 pages to progress"
+                          >
+                            +25 pgs
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            min="0"
+                            value="${curr}"
+                            data-custom-page-input="${b.id}"
+                            class="w-16 px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white font-mono text-center outline-none focus:border-emerald-500"
+                            title="Direct page number"
+                          />
+                          <button
+                            data-action="set-custom-page"
+                            data-id="${b.id}"
+                            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition cursor-pointer"
+                          >
+                            Set
+                          </button>
+                        </div>
+
+                        <button
+                          data-action="mark-complete"
+                          data-id="${b.id}"
+                          class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-mono transition flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
+                        >
+                          <span>✔</span>
+                          <span>Mark Complete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // 2. UP NEXT / READING QUEUE SHELF
+    if (showQueue) {
+      html += `
+        <div class="space-y-3 pt-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+              <h3 class="text-sm font-extrabold text-white font-mono uppercase tracking-wider flex items-center gap-1.5">
+                <span>⏳ Up Next / Reading Queue</span>
+                <span class="text-xs font-normal text-sky-400">(${filteredQueue.length} Planned)</span>
+              </h3>
+            </div>
+            <span class="text-[11px] text-slate-400 hidden sm:inline">Planned novels & books to read next</span>
+          </div>
+
+          ${filteredQueue.length === 0 ? `
+            <div class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-center space-y-1.5">
+              <div class="text-xs text-slate-400 font-medium">Your reading queue is empty.</div>
+              <p class="text-[11px] text-slate-500">Plan ahead! Add novels or vocabulary books you want to read next.</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              ${filteredQueue.map(b => {
+                const badgeColor = getGenreBadgeColor(b.category);
+                return `
+                  <div class="book-card p-4 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3" data-book-id="${b.id}">
+                    <div class="space-y-2">
+                      <div class="flex items-start justify-between gap-2">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${badgeColor}">
+                          ${escapeHtml(b.category || 'General')}
+                        </span>
+                        <div class="flex items-center gap-1">
+                          <button
+                            data-action="edit-book"
+                            data-id="${b.id}"
+                            class="p-1 rounded-md text-slate-500 hover:text-white text-xs transition cursor-pointer"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            data-action="delete-book"
+                            data-id="${b.id}"
+                            class="p-1 rounded-md text-slate-500 hover:text-rose-400 text-xs transition cursor-pointer"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(b.title)}</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(b.author || 'Unknown Author')}</p>
+                      </div>
+
+                      <div class="text-[11px] text-slate-400 font-mono">
+                        Target: <span class="text-slate-200 font-bold">${b.totalPages ? b.totalPages + ' pages' : 'Unspecified'}</span>
+                      </div>
+
+                      ${b.notes ? `
+                        <p class="text-[11px] text-slate-400 line-clamp-2 italic">${escapeHtml(b.notes)}</p>
+                      ` : ''}
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                      <span class="text-[10px] font-mono text-slate-500">In Queue</span>
+                      <button
+                        data-action="move-to-reading"
+                        data-id="${b.id}"
+                        class="px-3 py-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/25 text-sky-300 text-xs font-semibold font-mono transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                      >
+                        <span>▶</span>
+                        <span>Start Reading</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // 3. COMPLETED / DONE SHELF
+    if (showCompleted) {
+      html += `
+        <div class="space-y-3 pt-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <h3 class="text-sm font-extrabold text-white font-mono uppercase tracking-wider flex items-center gap-1.5">
+                <span>🏆 Completed / Conquered Books</span>
+                <span class="text-xs font-normal text-amber-400">(${filteredCompleted.length} Done)</span>
+              </h3>
+            </div>
+            <span class="text-[11px] text-slate-400 hidden sm:inline">Completed books & reflections</span>
+          </div>
+
+          ${filteredCompleted.length === 0 ? `
+            <div class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-center space-y-1.5">
+              <div class="text-xs text-slate-400 font-medium">No completed books logged yet.</div>
+              <p class="text-[11px] text-slate-500">When you finish a book from Currently Reading, mark it complete to record your rating and key takeaways here!</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              ${filteredCompleted.map(b => {
+                const badgeColor = getGenreBadgeColor(b.category);
+                const rating = Number(b.rating) || 5;
+                const stars = '★'.repeat(rating) + '☆'.repeat(Math.max(0, 5 - rating));
+
+                return `
+                  <div class="book-card p-4 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3" data-book-id="${b.id}">
+                    <div class="space-y-2">
+                      <div class="flex items-start justify-between gap-2">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${badgeColor}">
+                          ${escapeHtml(b.category || 'General')}
+                        </span>
+                        <div class="flex items-center gap-1">
+                          <button
+                            data-action="edit-book"
+                            data-id="${b.id}"
+                            class="p-1 rounded-md text-slate-500 hover:text-white text-xs transition cursor-pointer"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            data-action="delete-book"
+                            data-id="${b.id}"
+                            class="p-1 rounded-md text-slate-500 hover:text-rose-400 text-xs transition cursor-pointer"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-emerald-400 text-xs">✓</span>
+                          <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(b.title)}</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(b.author || 'Unknown Author')}</p>
+                      </div>
+
+                      <div class="flex items-center justify-between text-[11px] font-mono">
+                        <span class="text-amber-400 font-bold">${stars}</span>
+                        <span class="text-slate-400">${b.completedDate || 'Completed'}</span>
+                      </div>
+
+                      ${b.takeaways ? `
+                        <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] text-slate-300 leading-relaxed font-sans">
+                          <div class="text-[10px] text-amber-400 font-mono font-bold uppercase tracking-wider mb-0.5">Key Learnings:</div>
+                          ${escapeHtml(b.takeaways)}
+                        </div>
+                      ` : ''}
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                      <span class="text-[10px] font-mono text-slate-400">${b.totalPages ? b.totalPages + ' pages' : 'Read'}</span>
+                      <button
+                        data-action="move-to-reading"
+                        data-id="${b.id}"
+                        class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-mono transition flex items-center gap-1 cursor-pointer"
+                        title="Move back to active reading shelf"
+                      >
+                        <span>🔄</span>
+                        <span>Re-read</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    container.innerHTML = html;
+
+    attachBookCardListeners(container);
+  }
+
+  function renderHomeBookWidget() {
+    const container = document.getElementById('home-book-tracker-summary');
+    if (!container) return;
+
+    const books = loadBooks();
+    const readingBooks = books.filter(b => b.status === 'reading');
+    const queueBooks = books.filter(b => b.status === 'queue');
+    const completedBooks = books.filter(b => b.status === 'completed');
+
+    let totalPagesRead = 0;
+    books.forEach(b => {
+      if (b.status === 'completed') {
+        totalPagesRead += (Number(b.totalPages) || Number(b.currentPage) || 0);
+      } else {
+        totalPagesRead += (Number(b.currentPage) || 0);
+      }
+    });
+
+    const activeShelf = state.homeBookShelfTab || 'reading';
+
+    // Update count labels on homepage shelf filter tabs
+    const countReadingEl = document.getElementById('home-count-reading');
+    const countQueueEl = document.getElementById('home-count-queue');
+    const countCompletedEl = document.getElementById('home-count-completed');
+
+    if (countReadingEl) countReadingEl.textContent = readingBooks.length;
+    if (countQueueEl) countQueueEl.textContent = queueBooks.length;
+    if (countCompletedEl) countCompletedEl.textContent = completedBooks.length;
+
+    // Update active class on homepage shelf tabs
+    document.querySelectorAll('#home-book-shelf-tabs .home-shelf-tab, [data-home-shelf]').forEach(btn => {
+      const s = btn.getAttribute('data-home-shelf') || btn.getAttribute('data-home-shelf-filter');
+      if (s === activeShelf) {
+        btn.className = 'home-shelf-tab px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 transition cursor-pointer whitespace-nowrap active shadow-sm';
+      } else {
+        btn.className = 'home-shelf-tab px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800 hover:text-white transition cursor-pointer whitespace-nowrap';
+      }
+    });
+
+    if (activeShelf === 'reading') {
+      if (readingBooks.length > 0) {
+        const activeBook = readingBooks[0];
+        const total = Number(activeBook.totalPages) || 0;
+        const curr = Number(activeBook.currentPage) || 0;
+        const pct = total > 0 ? Math.min(100, Math.round((curr / total) * 100)) : 0;
+        const badgeColor = getGenreBadgeColor(activeBook.category);
+
+        container.innerHTML = `
+          <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800/90 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${badgeColor}">
+                    ${escapeHtml(activeBook.category || 'Reading')}
+                  </span>
+                  <span class="text-[11px] font-mono text-emerald-400 font-bold">● Active In Hand</span>
+                </div>
+                <h4 class="text-sm sm:text-base font-bold text-white mt-1">${escapeHtml(activeBook.title)}</h4>
+                <p class="text-xs text-slate-400">by ${escapeHtml(activeBook.author || 'Unknown Author')}</p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  data-action="add-pages"
+                  data-id="${activeBook.id}"
+                  data-delta="5"
+                  class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 text-xs font-mono font-bold border border-slate-700 transition cursor-pointer"
+                  title="Quick log +5 pages"
+                >
+                  +5 pgs
+                </button>
+                <button
+                  data-action="add-pages"
+                  data-id="${activeBook.id}"
+                  data-delta="10"
+                  class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-slate-300 text-xs font-mono font-bold border border-slate-700 transition cursor-pointer"
+                  title="Quick log +10 pages"
+                >
+                  +10 pgs
+                </button>
+                <button
+                  data-action="mark-complete"
+                  data-id="${activeBook.id}"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-mono transition cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
+                >
+                  <span>✔</span>
+                  <span>Done</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs font-mono">
+                <span class="text-slate-300">Page <strong class="text-emerald-400">${curr}</strong> of ${total > 0 ? total : 'Ongoing'}</span>
+                <span class="text-emerald-400 font-bold">${total > 0 ? pct + '%' : 'Reading'}</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div class="book-progress-fill h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style="width: ${total > 0 ? pct : (curr > 0 ? 50 : 0)}%"></div>
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+              <div class="flex items-center gap-3 text-slate-400 text-[11px]">
+                <span>📖 <strong>${readingBooks.length}</strong> Reading</span>
+                <span>⏳ <strong>${queueBooks.length}</strong> In Queue</span>
+                <span>🏆 <strong>${completedBooks.length}</strong> Completed</span>
+              </div>
+              <span class="text-teal-300 font-bold text-[11px]">${totalPagesRead.toLocaleString()} Total Pages Read</span>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+            <div class="text-2xl">📚</div>
+            <div class="text-xs text-slate-300 font-semibold">No novel currently marked as "Currently Reading".</div>
+            <p class="text-[11px] text-slate-500">You have ${queueBooks.length} book(s) in your Reading Queue and ${completedBooks.length} completed.</p>
+            <div class="pt-1 flex items-center justify-center gap-2">
+              <button
+                id="btn-widget-open-hub"
+                class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-400 text-xs font-semibold transition cursor-pointer"
+              >
+                Open Reading Hub to Pick a Book →
+              </button>
+            </div>
+          </div>
+        `;
+        const btnOpen = document.getElementById('btn-widget-open-hub');
+        if (btnOpen) {
+          btnOpen.addEventListener('click', () => navigateTo('books'));
+        }
+      }
+    } else if (activeShelf === 'queue') {
+      if (queueBooks.length > 0) {
+        container.innerHTML = `
+          <div class="space-y-2.5">
+            ${queueBooks.slice(0, 3).map(b => {
+              const badgeColor = getGenreBadgeColor(b.category);
+              return `
+                <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${badgeColor}">
+                        ${escapeHtml(b.category || 'General')}
+                      </span>
+                      <span class="text-[10px] text-slate-500 font-mono">${b.totalPages ? b.totalPages + ' pgs' : ''}</span>
+                    </div>
+                    <h4 class="text-xs sm:text-sm font-bold text-white truncate mt-1">${escapeHtml(b.title)}</h4>
+                    <p class="text-[11px] text-slate-400">${escapeHtml(b.author || 'Unknown Author')}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button
+                      data-action="move-to-reading"
+                      data-id="${b.id}"
+                      class="px-3 py-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/25 text-sky-300 text-xs font-semibold font-mono transition flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>▶</span>
+                      <span>Start Reading</span>
+                    </button>
+                    <button
+                      data-action="edit-book"
+                      data-id="${b.id}"
+                      class="p-1.5 rounded-lg text-slate-500 hover:text-white text-xs transition cursor-pointer"
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+            ${queueBooks.length > 3 ? `
+              <div class="text-center pt-1">
+                <button id="btn-home-more-queue" class="text-xs text-sky-400 hover:underline font-mono cursor-pointer">
+                  + View all ${queueBooks.length} books in queue →
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        const btnMoreQueue = document.getElementById('btn-home-more-queue');
+        if (btnMoreQueue) {
+          btnMoreQueue.addEventListener('click', () => {
+            bookShelfFilter = 'queue';
+            navigateTo('books');
+          });
+        }
+      } else {
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+            <div class="text-2xl">⏳</div>
+            <div class="text-xs text-slate-300 font-semibold">Your Reading Queue is empty.</div>
+            <p class="text-[11px] text-slate-500">Plan upcoming English comprehension novels, vocabulary roots books, or mindset guides.</p>
+            <button
+              id="btn-widget-add-queue"
+              class="px-3.5 py-1.5 rounded-xl bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/25 text-sky-300 text-xs font-semibold transition cursor-pointer"
+            >
+              + Add Book to Queue
+            </button>
+          </div>
+        `;
+        const btnAddQueue = document.getElementById('btn-widget-add-queue');
+        if (btnAddQueue) {
+          btnAddQueue.addEventListener('click', () => {
+            const form = document.getElementById('form-add-book');
+            if (form) form.reset();
+            const statusInput = document.getElementById('book-input-status');
+            if (statusInput) statusInput.value = 'queue';
+            openModal('modal-add-book');
+          });
+        }
+      }
+    } else if (activeShelf === 'completed') {
+      if (completedBooks.length > 0) {
+        container.innerHTML = `
+          <div class="space-y-2.5">
+            ${completedBooks.slice(0, 3).map(b => {
+              const rating = Number(b.rating) || 5;
+              const stars = '★'.repeat(rating) + '☆'.repeat(Math.max(0, 5 - rating));
+              const badgeColor = getGenreBadgeColor(b.category);
+              return `
+                <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${badgeColor}">
+                        ${escapeHtml(b.category || 'General')}
+                      </span>
+                      <span class="text-amber-400 text-xs font-mono">${stars}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-1">
+                      <span class="text-emerald-400 text-xs">✓</span>
+                      <h4 class="text-xs sm:text-sm font-bold text-white truncate">${escapeHtml(b.title)}</h4>
+                    </div>
+                    <p class="text-[11px] text-slate-400">by ${escapeHtml(b.author || 'Unknown Author')} • ${b.completedDate || 'Done'}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button
+                      data-action="move-to-reading"
+                      data-id="${b.id}"
+                      class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition flex items-center gap-1 cursor-pointer"
+                      title="Re-read book"
+                    >
+                      <span>🔄</span>
+                      <span>Re-read</span>
+                    </button>
+                    <button
+                      data-action="edit-book"
+                      data-id="${b.id}"
+                      class="p-1.5 rounded-lg text-slate-500 hover:text-white text-xs transition cursor-pointer"
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+            ${completedBooks.length > 3 ? `
+              <div class="text-center pt-1">
+                <button id="btn-home-more-completed" class="text-xs text-amber-400 hover:underline font-mono cursor-pointer">
+                  + View all ${completedBooks.length} completed books →
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        const btnMoreComp = document.getElementById('btn-home-more-completed');
+        if (btnMoreComp) {
+          btnMoreComp.addEventListener('click', () => {
+            bookShelfFilter = 'completed';
+            navigateTo('books');
+          });
+        }
+      } else {
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center space-y-2">
+            <div class="text-2xl">🏆</div>
+            <div class="text-xs text-slate-300 font-semibold">No completed books logged yet.</div>
+            <p class="text-[11px] text-slate-500">When you finish reading an active book, mark it complete with a rating and key learnings!</p>
+          </div>
+        `;
+      }
+    }
+
+    attachBookCardListeners(container);
+  }
+
+  function attachBookCardListeners(container) {
+    if (!container) return;
+
+    // Quick add pages
+    container.querySelectorAll('[data-action="add-pages"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const delta = Number(e.currentTarget.getAttribute('data-delta')) || 5;
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book) {
+          book.currentPage = (Number(book.currentPage) || 0) + delta;
+          if (book.totalPages && book.currentPage > book.totalPages) {
+            book.currentPage = book.totalPages;
+          }
+          saveBooks(books);
+          renderBookTracker();
+          renderHomeBookWidget();
+          try { playChime('start'); } catch (err) {}
+        }
+      });
+    });
+
+    // Custom set page
+    container.querySelectorAll('[data-action="set-custom-page"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const input = container.querySelector(`[data-custom-page-input="${id}"]`);
+        if (input) {
+          const val = parseInt(input.value, 10);
+          if (!isNaN(val) && val >= 0) {
+            const books = loadBooks();
+            const book = books.find(b => b.id === id);
+            if (book) {
+              book.currentPage = val;
+              if (book.totalPages && book.currentPage > book.totalPages) {
+                book.currentPage = book.totalPages;
+              }
+              saveBooks(books);
+              renderBookTracker();
+              renderHomeBookWidget();
+              try { playChime('start'); } catch (err) {}
+            }
+          }
+        }
+      });
+    });
+
+    // Move to reading
+    container.querySelectorAll('[data-action="move-to-reading"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book) {
+          book.status = 'reading';
+          saveBooks(books);
+          renderBookTracker();
+          renderHomeBookWidget();
+          try { playChime('start'); } catch (err) {}
+        }
+      });
+    });
+
+    // Mark complete
+    container.querySelectorAll('[data-action="mark-complete"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book) {
+          openCompleteBookModal(book);
+        }
+      });
+    });
+
+    // Edit book
+    container.querySelectorAll('[data-action="edit-book"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book) {
+          openEditBookModal(book);
+        }
+      });
+    });
+
+    // Delete book
+    container.querySelectorAll('[data-action="delete-book"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book && confirm(`Delete "${book.title}" from your reading hub?`)) {
+          const updated = books.filter(b => b.id !== id);
+          saveBooks(updated);
+          renderBookTracker();
+          renderHomeBookWidget();
+        }
+      });
+    });
+  }
+
+  function openCompleteBookModal(book) {
+    const idInput = document.getElementById('complete-book-id');
+    const titleDisplay = document.getElementById('complete-book-title-display');
+    const dateInput = document.getElementById('complete-book-date');
+    const ratingInput = document.getElementById('complete-book-rating-value');
+    const takeawaysInput = document.getElementById('complete-book-takeaways');
+
+    if (idInput) idInput.value = book.id;
+    if (titleDisplay) titleDisplay.textContent = `${book.title} ${book.author ? `by ${book.author}` : ''}`;
+    if (dateInput) {
+      const today = typeof getStudyCycleDate === 'function' ? getStudyCycleDate() : new Date().toISOString().split('T')[0];
+      dateInput.value = today;
+    }
+    if (ratingInput) ratingInput.value = book.rating || 5;
+    updateCompleteStarsDisplay(book.rating || 5);
+    if (takeawaysInput) takeawaysInput.value = book.takeaways || '';
+
+    openModal('modal-complete-book');
+  }
+
+  function updateCompleteStarsDisplay(rating) {
+    const starsContainer = document.getElementById('complete-book-stars');
+    const ratingLabel = document.getElementById('complete-book-rating-label');
+    if (!starsContainer) return;
+
+    starsContainer.querySelectorAll('.star-rating-btn').forEach(btn => {
+      const starVal = Number(btn.getAttribute('data-star'));
+      if (starVal <= rating) {
+        btn.textContent = '★';
+        btn.className = 'star-rating-btn text-amber-400';
+      } else {
+        btn.textContent = '☆';
+        btn.className = 'star-rating-btn text-slate-600';
+      }
+    });
+
+    if (ratingLabel) {
+      ratingLabel.textContent = `${rating}/5 Stars`;
+    }
+  }
+
+  function openEditBookModal(book) {
+    const idInput = document.getElementById('edit-book-id');
+    const titleInput = document.getElementById('edit-book-title');
+    const authorInput = document.getElementById('edit-book-author');
+    const categoryInput = document.getElementById('edit-book-category');
+    const totalInput = document.getElementById('edit-book-total-pages');
+    const currentInput = document.getElementById('edit-book-current-page');
+    const statusInput = document.getElementById('edit-book-status');
+    const completedFields = document.getElementById('edit-book-completed-fields');
+    const completedDate = document.getElementById('edit-book-completed-date');
+    const ratingInput = document.getElementById('edit-book-rating');
+    const takeawaysInput = document.getElementById('edit-book-takeaways');
+    const notesInput = document.getElementById('edit-book-notes');
+
+    if (idInput) idInput.value = book.id;
+    if (titleInput) titleInput.value = book.title || '';
+    if (authorInput) authorInput.value = book.author || '';
+    if (categoryInput) categoryInput.value = book.category || 'Vocabulary & English Reading';
+    if (totalInput) totalInput.value = book.totalPages || '';
+    if (currentInput) currentInput.value = book.currentPage || 0;
+    if (statusInput) statusInput.value = book.status || 'reading';
+    if (completedDate) completedDate.value = book.completedDate || '';
+    if (ratingInput) ratingInput.value = book.rating || 5;
+    if (takeawaysInput) takeawaysInput.value = book.takeaways || '';
+    if (notesInput) notesInput.value = book.notes || '';
+
+    if (completedFields) {
+      completedFields.style.display = (book.status === 'completed') ? 'block' : 'none';
+    }
+
+    openModal('modal-edit-book');
   }
 
   // --- 7G. GAMIFIED CALENDAR & TREASURE BOXES (SECTION 6) ---
@@ -5538,32 +6730,56 @@ ${item.formula}
 
     // 6. Add Monthly Milestone Form Handler
     const formAddMonthly = document.getElementById('form-add-monthly-milestone') || document.getElementById('form-add-monthly-target');
+    const handleAddMonthlySubmit = (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      const inputTitle = document.getElementById('input-monthly-milestone-title') || document.getElementById('input-monthly-target-title');
+      const selectCat = document.getElementById('select-monthly-milestone-category') || document.getElementById('select-monthly-target-category');
+      const selectSubj = document.getElementById('select-monthly-milestone-subject');
+      if (!inputTitle || !inputTitle.value.trim()) {
+        if (inputTitle) inputTitle.focus();
+        return false;
+      }
+
+      const currentMonth = state.selectedTodoMonth || getMonthKey(getStudyCycleDate());
+      const newTarget = {
+        id: 'mt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title: inputTitle.value.trim(),
+        category: selectCat ? selectCat.value : 'Custom',
+        subject: selectSubj ? selectSubj.value : 'General',
+        completed: false,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+
+      if (!state.monthlyTargets[currentMonth]) {
+        state.monthlyTargets[currentMonth] = [];
+      }
+      state.monthlyTargets[currentMonth].unshift(newTarget);
+      saveMonthlyTargetsToLocalStorage();
+      saveState();
+      inputTitle.value = '';
+      state.todoMonthlyFilter = 'all';
+      state.todoMonthlySubjectFilter = 'all';
+      renderMonthlyView();
+      renderTodoHub();
+      try { playChime('success'); } catch (err) {}
+      return false;
+    };
+
     if (formAddMonthly) {
-      formAddMonthly.addEventListener('submit', (e) => {
-        e.preventDefault();
+      formAddMonthly.onsubmit = handleAddMonthlySubmit;
+      formAddMonthly.addEventListener('submit', handleAddMonthlySubmit);
+    }
+    const btnAddMonthly = document.getElementById('btn-add-monthly-milestone');
+    if (btnAddMonthly) {
+      btnAddMonthly.addEventListener('click', (e) => {
         const inputTitle = document.getElementById('input-monthly-milestone-title') || document.getElementById('input-monthly-target-title');
-        const selectCat = document.getElementById('select-monthly-milestone-category') || document.getElementById('select-monthly-target-category');
-        const selectSubj = document.getElementById('select-monthly-milestone-subject');
-        if (!inputTitle || !inputTitle.value.trim()) return;
-
-        const currentMonth = state.selectedTodoMonth || getMonthKey(getStudyCycleDate());
-        const newTarget = {
-          id: 'mt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-          title: inputTitle.value.trim(),
-          category: selectCat ? selectCat.value : 'Custom',
-          subject: selectSubj ? selectSubj.value : 'General',
-          completed: false,
-          status: 'pending',
-          createdAt: Date.now()
-        };
-
-        if (!state.monthlyTargets[currentMonth]) {
-          state.monthlyTargets[currentMonth] = [];
+        if (inputTitle && inputTitle.value.trim()) {
+          handleAddMonthlySubmit(e);
         }
-        state.monthlyTargets[currentMonth].push(newTarget);
-        saveState();
-        inputTitle.value = '';
-        renderMonthlyView();
       });
     }
 
@@ -6182,8 +7398,8 @@ ${item.formula}
 
       // Create gradient for under-the-curve
       const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
-      gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+      gradient.addColorStop(0, 'rgba(45, 106, 79, 0.22)');
+      gradient.addColorStop(1, 'rgba(45, 106, 79, 0.0)');
 
       mockChartInstance = new Chart(ctx, {
         type: 'line',
@@ -6193,22 +7409,22 @@ ${item.formula}
             {
               label: 'Full Mock Score (/200)',
               data: scores,
-              borderColor: '#10b981',
+              borderColor: '#2D6A4F',
               backgroundColor: gradient,
               borderWidth: 3,
               fill: true,
               tension: 0.35,
-              pointBackgroundColor: '#10b981',
-              pointBorderColor: '#0f172a',
+              pointBackgroundColor: '#2D6A4F',
+              pointBorderColor: '#FFFFFF',
               pointBorderWidth: 2,
               pointRadius: 5,
               pointHoverRadius: 8,
-              pointHoverBackgroundColor: '#34d399'
+              pointHoverBackgroundColor: '#40916C'
             },
             {
               label: 'Safe Tier 1 Cutoff (145.0)',
               data: cutoffLine,
-              borderColor: '#f59e0b',
+              borderColor: '#EA580C',
               borderWidth: 2,
               borderDash: [6, 6],
               fill: false,
@@ -6227,19 +7443,20 @@ ${item.formula}
           plugins: {
             legend: {
               labels: {
-                color: '#cbd5e1',
-                font: { family: 'ui-monospace, monospace', size: 11 },
+                color: '#0F291E',
+                font: { family: 'Plus Jakarta Sans, sans-serif', size: 11, weight: '600' },
                 usePointStyle: true,
                 pointStyle: 'circle'
               }
             },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#f8fafc',
-              bodyColor: '#cbd5e1',
-              borderColor: '#334155',
+              backgroundColor: 'rgba(15, 41, 30, 0.95)',
+              titleColor: '#FFFFFF',
+              bodyColor: '#E2E8F0',
+              borderColor: 'rgba(45, 106, 79, 0.35)',
               borderWidth: 1,
-              padding: 10,
+              padding: 12,
+              cornerRadius: 8,
               displayColors: true,
               callbacks: {
                 title: function(items) {
@@ -6264,16 +7481,16 @@ ${item.formula}
           },
           scales: {
             x: {
-              grid: { color: 'rgba(51, 65, 85, 0.25)', drawBorder: false },
-              ticks: { color: '#94a3b8', font: { family: 'ui-monospace, monospace', size: 10 } }
+              grid: { color: 'rgba(226, 232, 240, 0.8)', drawBorder: false },
+              ticks: { color: '#64748B', font: { family: 'JetBrains Mono, monospace', size: 10 } }
             },
             y: {
               min: Math.max(0, Math.floor((Math.min(...scores) - 20) / 10) * 10),
               max: 200,
-              grid: { color: 'rgba(51, 65, 85, 0.35)', drawBorder: false },
+              grid: { color: 'rgba(226, 232, 240, 0.8)', drawBorder: false },
               ticks: {
-                color: '#94a3b8',
-                font: { family: 'ui-monospace, monospace', size: 10 },
+                color: '#64748B',
+                font: { family: 'JetBrains Mono, monospace', size: 10 },
                 stepSize: 20
               }
             }
@@ -6319,8 +7536,8 @@ ${item.formula}
             {
               label: 'Maths (/50)',
               data: mathsData,
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderColor: '#2D6A4F',
+              backgroundColor: 'rgba(45, 106, 79, 0.08)',
               borderWidth: 2.5,
               spanGaps: true,
               pointRadius: 4,
@@ -6329,8 +7546,8 @@ ${item.formula}
             {
               label: 'English (/50)',
               data: englishData,
-              borderColor: '#38bdf8',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              borderColor: '#059669',
+              backgroundColor: 'rgba(5, 150, 105, 0.08)',
               borderWidth: 2.5,
               spanGaps: true,
               pointRadius: 4,
@@ -6339,8 +7556,8 @@ ${item.formula}
             {
               label: 'Reasoning (/50)',
               data: reasoningData,
-              borderColor: '#c084fc',
-              backgroundColor: 'rgba(192, 132, 252, 0.1)',
+              borderColor: '#EA580C',
+              backgroundColor: 'rgba(234, 88, 12, 0.08)',
               borderWidth: 2.5,
               spanGaps: true,
               pointRadius: 4,
@@ -6349,8 +7566,8 @@ ${item.formula}
             {
               label: 'GA / GK (/50)',
               data: gaData,
-              borderColor: '#fbbf24',
-              backgroundColor: 'rgba(251, 191, 36, 0.1)',
+              borderColor: '#D97706',
+              backgroundColor: 'rgba(217, 119, 6, 0.08)',
               borderWidth: 2.5,
               spanGaps: true,
               pointRadius: 4,
@@ -6364,19 +7581,28 @@ ${item.formula}
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: {
-              labels: { color: '#cbd5e1', font: { family: 'ui-monospace, monospace', size: 11 }, usePointStyle: true }
+              labels: { color: '#0F291E', font: { family: 'Plus Jakarta Sans, sans-serif', size: 11, weight: '600' }, usePointStyle: true }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 41, 30, 0.95)',
+              titleColor: '#FFFFFF',
+              bodyColor: '#E2E8F0',
+              borderColor: 'rgba(45, 106, 79, 0.35)',
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 8
             }
           },
           scales: {
             x: {
-              grid: { color: 'rgba(51, 65, 85, 0.25)' },
-              ticks: { color: '#94a3b8', font: { family: 'ui-monospace, monospace', size: 10 } }
+              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              ticks: { color: '#64748B', font: { family: 'JetBrains Mono, monospace', size: 10 } }
             },
             y: {
               min: 0,
               max: 50,
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', font: { family: 'ui-monospace, monospace', size: 10 }, stepSize: 10 }
+              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              ticks: { color: '#64748B', font: { family: 'JetBrains Mono, monospace', size: 10 }, stepSize: 10 }
             }
           }
         }
@@ -6403,7 +7629,7 @@ ${item.formula}
             {
               label: 'Accuracy Rate (%)',
               data: accuracyData,
-              borderColor: '#10b981',
+              borderColor: '#059669',
               borderWidth: 2.5,
               spanGaps: true,
               tension: 0.3,
@@ -6412,7 +7638,7 @@ ${item.formula}
             {
               label: 'Percentile Rank (%)',
               data: percentileData,
-              borderColor: '#c084fc',
+              borderColor: '#2D6A4F',
               borderWidth: 2.5,
               spanGaps: true,
               tension: 0.3,
@@ -6421,7 +7647,7 @@ ${item.formula}
             {
               label: '90% Benchmark Threshold',
               data: labels.map(() => 90),
-              borderColor: '#f59e0b',
+              borderColor: '#EA580C',
               borderWidth: 1.5,
               borderDash: [5, 5],
               pointRadius: 0
@@ -6434,19 +7660,28 @@ ${item.formula}
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: {
-              labels: { color: '#cbd5e1', font: { family: 'ui-monospace, monospace', size: 11 }, usePointStyle: true }
+              labels: { color: '#0F172A', font: { family: 'Plus Jakarta Sans, sans-serif', size: 11, weight: '600' }, usePointStyle: true }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#FFFFFF',
+              bodyColor: '#E2E8F0',
+              borderColor: 'rgba(79, 70, 229, 0.35)',
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 8
             }
           },
           scales: {
             x: {
-              grid: { color: 'rgba(51, 65, 85, 0.25)' },
-              ticks: { color: '#94a3b8', font: { family: 'ui-monospace, monospace', size: 10 } }
+              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              ticks: { color: '#64748B', font: { family: 'JetBrains Mono, monospace', size: 10 } }
             },
             y: {
               min: 50,
               max: 100,
-              grid: { color: 'rgba(51, 65, 85, 0.35)' },
-              ticks: { color: '#94a3b8', font: { family: 'ui-monospace, monospace', size: 10 }, stepSize: 10 }
+              grid: { color: 'rgba(226, 232, 240, 0.8)' },
+              ticks: { color: '#64748B', font: { family: 'JetBrains Mono, monospace', size: 10 }, stepSize: 10 }
             }
           }
         }
@@ -6704,6 +7939,59 @@ ${item.formula}
     if (cycleDate) cycleDate.textContent = state.activeCycleDate || '--';
     if (targetHours) targetHours.textContent = `${state.targetHours.toFixed(1)} Hours`;
     if (mathsQs) mathsQs.textContent = `${state.mathsQuestionsDone || 0} / 320`;
+
+    // Dynamic One Piece Pirate Bounty & Rank Calculation
+    const totalPastStudySeconds = (state.history || []).reduce((sum, h) => sum + (h.totalStudySeconds || 0), 0);
+    const totalLoggedStudySeconds = totalPastStudySeconds + calculateTotalStudySeconds();
+    const totalStudyHours = totalLoggedStudySeconds / 3600;
+    const streakDays = state.consecutiveStreak || 0;
+    const totalMathsSolved = (state.history || []).reduce((sum, h) => sum + (h.mathsQuestions || 0), 0) + (state.mathsQuestionsDone || 0);
+
+    // Bounty calculation: Base 30M + 5M per study hour + 10M per streak day + 50k per Maths question
+    let berryBounty = 30000000 + Math.floor(totalStudyHours * 5000000) + (streakDays * 10000000) + (totalMathsSolved * 50000);
+
+    let rankTitle = "Super Rookie";
+    let roleTitle = "Straw Hat Aspirant";
+
+    if (berryBounty >= 3000000000) {
+      rankTitle = "Pirate King Tier";
+      roleTitle = "All-Blue 4600 GP Master";
+    } else if (berryBounty >= 1500000000) {
+      rankTitle = "Yonko Fleet Admiral";
+      roleTitle = "Central Secretariat Commander";
+    } else if (berryBounty >= 500000000) {
+      rankTitle = "Warlord of Grand Line";
+      roleTitle = "Tier-1 Conqueror Fleet";
+    } else if (berryBounty >= 200000000) {
+      rankTitle = "Worst Generation Captain";
+      roleTitle = "Swordsman of Relentless Focus";
+    } else if (berryBounty >= 100000000) {
+      rankTitle = "Grand Line Veteran";
+      roleTitle = "Straw Hat Deck Officer";
+    } else if (berryBounty >= 50000000) {
+      rankTitle = "Super Rookie";
+      roleTitle = "Straw Hat Aspirant";
+    } else {
+      rankTitle = "East Blue Rookie";
+      roleTitle = "Cabin Boy Aspirant";
+    }
+
+    const formattedBounty = berryBounty.toLocaleString('en-US');
+    const compactBounty = berryBounty >= 1000000000
+      ? `${(berryBounty / 1000000000).toFixed(1)}B`
+      : `${Math.round(berryBounty / 1000000)}M`;
+
+    // Update Header
+    const userRankEl = document.getElementById('user-rank-title');
+    const userRoleEl = document.getElementById('user-role-title');
+    if (userRankEl) userRankEl.textContent = `${rankTitle} • ${compactBounty} Berries`;
+    if (userRoleEl) userRoleEl.textContent = roleTitle;
+
+    // Update Sidebar Profile
+    const sideRankEl = document.getElementById('sidebar-rank-title');
+    const sideBountyEl = document.getElementById('sidebar-bounty-display');
+    if (sideRankEl) sideRankEl.textContent = rankTitle;
+    if (sideBountyEl) sideBountyEl.textContent = `฿ ${formattedBounty} BOUNTY`;
   }
 
   function update5amCountdown() {
@@ -7179,7 +8467,7 @@ ${item.formula}
     }
 
     // Hide all sections
-    const sections = ['home', 'subjects', 'syllabus', 'revision', 'calendar', 'journal', 'mock-trends', 'energy', 'vault', 'mock-pdf', 'history', 'settings'];
+    const sections = ['home', 'subjects', 'syllabus', 'revision', 'calendar', 'journal', 'mock-trends', 'energy', 'vault', 'books', 'mock-pdf', 'history', 'settings'];
     sections.forEach(sec => {
       const el = document.getElementById(`section-${sec}`);
       if (el) {
@@ -7231,6 +8519,8 @@ ${item.formula}
       renderEnergyHistory();
     } else if (sectionKey === 'vault') {
       renderVault();
+    } else if (sectionKey === 'books') {
+      renderBookTracker();
     } else if (sectionKey === 'history') {
       renderHistoryTable();
     }
@@ -8405,26 +9695,42 @@ ${item.formula}
     }
 
     const formAddSyllabus = document.getElementById('form-add-syllabus-topic');
+    const handleAddSyllabusSubmit = (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      const sub = document.getElementById('syllabus-topic-subject')?.value || 'maths';
+      const title = (document.getElementById('syllabus-topic-title')?.value || '').trim();
+      const weightage = document.getElementById('syllabus-topic-weightage')?.value || 'High (3-4 Qs)';
+      if (title) {
+        if (!Array.isArray(state.syllabus)) state.syllabus = [];
+        const newTopic = {
+          id: 'syl_' + Date.now(),
+          subject: sub,
+          title,
+          weightage,
+          status: 'Not Started'
+        };
+        state.syllabus.unshift(newTopic);
+        state.activeSyllabusSubject = sub;
+        state.activeSyllabusStatus = 'all';
+        saveState();
+        closeModal('modal-add-syllabus-topic');
+        if (formAddSyllabus) formAddSyllabus.reset();
+        renderSyllabus();
+        try { playChime('start'); } catch (err) {}
+      }
+      return false;
+    };
+
     if (formAddSyllabus) {
-      formAddSyllabus.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const sub = document.getElementById('syllabus-topic-subject')?.value || 'maths';
-        const title = (document.getElementById('syllabus-topic-title')?.value || '').trim();
-        const weightage = document.getElementById('syllabus-topic-weightage')?.value || 'High (3-4 Qs)';
-        if (title) {
-          state.syllabus.push({
-            id: 'syl_' + Date.now(),
-            subject: sub,
-            title,
-            weightage,
-            status: 'Not Started'
-          });
-          saveState();
-          closeModal('modal-add-syllabus-topic');
-          formAddSyllabus.reset();
-          renderSyllabus();
-        }
-      });
+      formAddSyllabus.onsubmit = handleAddSyllabusSubmit;
+      formAddSyllabus.addEventListener('submit', handleAddSyllabusSubmit);
+    }
+    const btnSubmitAddSyllabus = document.getElementById('btn-submit-add-syllabus');
+    if (btnSubmitAddSyllabus) {
+      btnSubmitAddSyllabus.addEventListener('click', handleAddSyllabusSubmit);
     }
 
     document.querySelectorAll('#syllabus-subject-tabs button').forEach(btn => {
@@ -10438,6 +11744,9 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
     // Subject Manager Modal Controls
     bindSubjectManagerModalControls();
 
+    // Novel & Book Reading Hub Event Bindings
+    bindBookTrackerEvents();
+
     // Escape Key Handler closes any open modal or sidebar
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -10445,6 +11754,240 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
         closeSidebar();
       }
     });
+  }
+
+  function bindBookTrackerEvents() {
+    // Open Add Book modal
+    const btnAddBook = document.getElementById('btn-open-add-book-modal');
+    if (btnAddBook) {
+      btnAddBook.addEventListener('click', () => {
+        const form = document.getElementById('form-add-book');
+        if (form) form.reset();
+        openModal('modal-add-book');
+      });
+    }
+
+    const btnAddBookEmpty = document.getElementById('btn-open-add-book-modal-empty');
+    if (btnAddBookEmpty) {
+      btnAddBookEmpty.addEventListener('click', () => {
+        const form = document.getElementById('form-add-book');
+        if (form) form.reset();
+        openModal('modal-add-book');
+      });
+    }
+
+    // Homepage book widget buttons
+    const btnHomeAdd = document.getElementById('btn-home-add-book');
+    if (btnHomeAdd) {
+      btnHomeAdd.addEventListener('click', () => {
+        const form = document.getElementById('form-add-book');
+        if (form) form.reset();
+        openModal('modal-add-book');
+      });
+    }
+
+    const btnHomeOpen = document.getElementById('btn-home-open-books');
+    if (btnHomeOpen) {
+      btnHomeOpen.addEventListener('click', () => {
+        navigateTo('books');
+      });
+    }
+
+    // Reset default books
+    const btnResetDefaults = document.getElementById('btn-reset-book-defaults') || document.getElementById('btn-reset-books-default');
+    if (btnResetDefaults) {
+      btnResetDefaults.addEventListener('click', () => {
+        if (confirm('Reset your book tracker with recommended English comprehension and discipline books? (Your current books will be replaced with defaults)')) {
+          saveBooks(DEFAULT_RECOMMENDED_BOOKS);
+          renderBookTracker();
+          renderHomeBookWidget();
+        }
+      });
+    }
+
+    // Form Add Book Submit
+    const formAddBook = document.getElementById('form-add-book');
+    if (formAddBook) {
+      formAddBook.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = (document.getElementById('book-input-title')?.value || document.getElementById('add-book-title')?.value || '').trim();
+        const author = (document.getElementById('book-input-author')?.value || document.getElementById('add-book-author')?.value || '').trim();
+        const category = document.getElementById('book-input-category')?.value || document.getElementById('add-book-category')?.value || 'Vocabulary & English Reading';
+        const totalPages = parseInt(document.getElementById('book-input-total-pages')?.value || document.getElementById('add-book-total-pages')?.value, 10) || null;
+        const currentPage = parseInt(document.getElementById('book-input-current-page')?.value || document.getElementById('add-book-current-page')?.value, 10) || 0;
+        const status = document.getElementById('book-input-status')?.value || document.getElementById('add-book-status')?.value || 'reading';
+        const notes = (document.getElementById('book-input-notes')?.value || document.getElementById('add-book-notes')?.value || '').trim();
+
+        if (!title) return;
+
+        const newBook = {
+          id: 'book_' + Date.now(),
+          title,
+          author,
+          category,
+          totalPages: totalPages > 0 ? totalPages : null,
+          currentPage: (status === 'completed' && totalPages) ? totalPages : Math.max(0, currentPage),
+          status,
+          notes,
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        if (status === 'completed') {
+          newBook.completedDate = typeof getStudyCycleDate === 'function' ? getStudyCycleDate() : new Date().toISOString().split('T')[0];
+          newBook.rating = 5;
+        }
+
+        const books = loadBooks();
+        books.unshift(newBook);
+        saveBooks(books);
+
+        closeModal('modal-add-book');
+        formAddBook.reset();
+        renderBookTracker();
+        renderHomeBookWidget();
+        try { playChime('start'); } catch (err) {}
+      });
+    }
+
+    // Form Edit Book Submit
+    const formEditBook = document.getElementById('form-edit-book');
+    if (formEditBook) {
+      formEditBook.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-book-id')?.value;
+        const title = (document.getElementById('edit-book-title')?.value || '').trim();
+        const author = (document.getElementById('edit-book-author')?.value || '').trim();
+        const category = document.getElementById('edit-book-category')?.value || 'Vocabulary & English Reading';
+        const totalPages = parseInt(document.getElementById('edit-book-total-pages')?.value, 10) || null;
+        const currentPage = parseInt(document.getElementById('edit-book-current-page')?.value, 10) || 0;
+        const status = document.getElementById('edit-book-status')?.value || 'reading';
+        const completedDate = document.getElementById('edit-book-completed-date')?.value || '';
+        const rating = parseInt(document.getElementById('edit-book-rating')?.value, 10) || 5;
+        const takeaways = (document.getElementById('edit-book-takeaways')?.value || '').trim();
+        const notes = (document.getElementById('edit-book-notes')?.value || '').trim();
+
+        if (!id || !title) return;
+
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book) {
+          book.title = title;
+          book.author = author;
+          book.category = category;
+          book.totalPages = totalPages > 0 ? totalPages : null;
+          book.currentPage = currentPage >= 0 ? currentPage : 0;
+          book.status = status;
+          book.notes = notes;
+          if (status === 'completed') {
+            book.completedDate = completedDate || (typeof getStudyCycleDate === 'function' ? getStudyCycleDate() : new Date().toISOString().split('T')[0]);
+            book.rating = rating;
+            book.takeaways = takeaways;
+            if (book.totalPages && book.currentPage < book.totalPages) {
+              book.currentPage = book.totalPages;
+            }
+          }
+          saveBooks(books);
+          closeModal('modal-edit-book');
+          renderBookTracker();
+          renderHomeBookWidget();
+        }
+      });
+    }
+
+    // Toggle completed fields in edit book modal when status changes
+    const editBookStatus = document.getElementById('edit-book-status');
+    if (editBookStatus) {
+      editBookStatus.addEventListener('change', (e) => {
+        const completedFields = document.getElementById('edit-book-completed-fields');
+        if (completedFields) {
+          completedFields.style.display = (e.target.value === 'completed') ? 'block' : 'none';
+        }
+      });
+    }
+
+    // Form Complete Book Submit
+    const formCompleteBook = document.getElementById('form-complete-book');
+    if (formCompleteBook) {
+      formCompleteBook.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('complete-book-id')?.value;
+        const completedDate = document.getElementById('complete-book-date')?.value || (typeof getStudyCycleDate === 'function' ? getStudyCycleDate() : new Date().toISOString().split('T')[0]);
+        const rating = parseInt(document.getElementById('complete-book-rating-value')?.value, 10) || 5;
+        const takeaways = (document.getElementById('complete-book-takeaways')?.value || '').trim();
+
+        if (!id) return;
+
+        const books = loadBooks();
+        const book = books.find(b => b.id === id);
+        if (book) {
+          book.status = 'completed';
+          book.completedDate = completedDate;
+          book.rating = rating;
+          book.takeaways = takeaways;
+          if (book.totalPages) {
+            book.currentPage = book.totalPages;
+          }
+          saveBooks(books);
+          closeModal('modal-complete-book');
+          renderBookTracker();
+          renderHomeBookWidget();
+          try { playChime('finish'); } catch (err) {}
+        }
+      });
+    }
+
+    // Complete Book Star rating clicks
+    const starsContainer = document.getElementById('complete-book-stars');
+    if (starsContainer) {
+      starsContainer.querySelectorAll('.star-rating-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const starVal = Number(e.currentTarget.getAttribute('data-star')) || 5;
+          const ratingInput = document.getElementById('complete-book-rating-value');
+          if (ratingInput) ratingInput.value = starVal;
+          updateCompleteStarsDisplay(starVal);
+        });
+      });
+    }
+
+    // Shelf filter tabs click
+    document.querySelectorAll('#book-shelf-filter-tabs .book-shelf-filter-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const filter = e.currentTarget.getAttribute('data-shelf-filter');
+        if (filter) {
+          bookShelfFilter = filter;
+          renderBookTracker();
+        }
+      });
+    });
+
+    // Home widget shelf filter tabs click
+    document.querySelectorAll('#home-book-shelf-tabs .home-shelf-tab, [data-home-shelf], [data-home-shelf-filter]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const filter = e.currentTarget.getAttribute('data-home-shelf') || e.currentTarget.getAttribute('data-home-shelf-filter');
+        if (filter) {
+          state.homeBookShelfTab = filter;
+          renderHomeBookWidget();
+        }
+      });
+    });
+
+    // Category filter dropdown
+    const catSelect = document.getElementById('select-books-category-filter');
+    if (catSelect) {
+      catSelect.addEventListener('change', (e) => {
+        bookCategoryFilter = e.target.value;
+        renderBookTracker();
+      });
+    }
+
+    // Search input
+    const inputSearch = document.getElementById('input-books-search');
+    if (inputSearch) {
+      inputSearch.addEventListener('input', (e) => {
+        bookSearchQuery = e.target.value;
+        renderBookTracker();
+      });
+    }
   }
 
   // ==========================================================================
