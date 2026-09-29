@@ -102,67 +102,67 @@
   let lastCloudSyncTimestamp = null;
   let cloudQuotaExceeded = false;
 
-  // 25+ Hard-Hitting Strict Anti-Procrastination & Pirate King Discipline Quotes
+  // 25+ Hard-Hitting Strict Anti-Procrastination & Aspirant Discipline Quotes
   const DISCIPLINE_QUOTES = [
     {
-      quote: "If you don't take risks, you can't create a future! 35 Lakh applicants are fighting across the Grand Line of SSC CGL. While you hesitate at 5:00 AM, someone in a quiet corner of the sea has already solved 50 geometry theorems.",
-      context: "Monkey D. Luffy • Captain's Grand Line Decree • 5 AM Routine"
+      quote: "Success in competitive exams is not about luck; it is about relentless preparation. 30 Lakh applicants are competing for SSC CGL. While you hesitate at 5:00 AM, someone has already solved 50 geometry questions.",
+      context: "Daily Discipline & Consistency • 5:00 AM Routine"
     },
     {
-      quote: "When the world shoves you around, you've just got to stand up and shove back. It's not like anybody's going to save you if you start babbling excuses. Sit down, pick up your pen, and conquer your 320 Maths questions!",
-      context: "Roronoa Zoro • Swordsman's Bushido • 320 Questions Daily"
+      quote: "Excuses will not raise your mock test percentile. When a question is tough, sit down with determination, pick up your pen, and conquer your target questions!",
+      context: "Top Ranker Mindset • 320 Maths Questions Daily"
     },
     {
-      quote: "Brahma Muhurta (5:00 AM) is not a suggestion; it is the calm sea before the world's storms steal your focus. If you can't conquer your warm bed, don't dream of conquering Tier 2 cutoffs.",
-      context: "Early Morning Sacrifice • Silvers Rayleigh Focus Training"
+      quote: "Early morning study (5:00 AM) gives you undisturbed focus before the noise of the day begins. If you master your morning routine, you master your preparation.",
+      context: "Early Morning Focus • Prime Study Hours"
     },
     {
-      quote: "Stop counting only what you have lost! What is gone is gone! Look at what still remains: your syllabus, your rough sheets, and 365 days until the exam. Set sail!",
-      context: "Jinbe • Knight of the Sea • Relentless Resilience"
+      quote: "Stop dwelling on past mock test scores or missed attempts. Look at what still remains: your syllabus, your notebooks, and your remaining time to the exam. Get to work!",
+      context: "Resilience & Focus • Exam Preparedness"
     },
     {
-      quote: "The Railway NTPC exam had 1.25 Crore candidates for 35,000 posts. That is a 0.28% acceptance rate. If you skip General Awareness and Static GK today, you are walking straight into defeat.",
-      context: "Railway Recruitment Board Reality Check • Grand Line Fleet"
+      quote: "Railway NTPC & SSC exams have thousands of aspirants for every post. If you skip General Awareness, Current Affairs, and Static GK today, you fall behind.",
+      context: "Competitive Reality Check • Daily Syllabus Coverage"
     },
     {
-      quote: "Scars on the back are a swordsman's greatest shame. Backing down from difficult revision sets and mock errors is an aspirant's defeat. Confront your weak chapters head-on!",
-      context: "Roronoa Zoro • Honor of the Blade • Weak Areas Radar"
+      quote: "Backing down from difficult revision sets and mock test errors is an aspirant's defeat. Confront your weak chapters head-on until you master every formula!",
+      context: "Targeted Weak Areas Mastery • Revision Radar"
     },
     {
-      quote: "A man's dream will never die! But dreams without 8 honest hours of daily practice will sink straight to the ocean floor. Work until your raw score shatters the cutoff.",
-      context: "Marshall D. Teach • Ambition vs Relentless Execution"
+      quote: "Big career dreams without 8 honest hours of daily practice will not produce results. Work with discipline until your raw score comfortably exceeds the cutoff.",
+      context: "Daily Execution vs Procrastination"
     },
     {
-      quote: "Your parents tell their friends you are preparing for a 4600 Grade Pay Central Government post. Don't turn their faith into an apology. Start the voyage stopwatch and get to work.",
-      context: "Straw Hat Crew Duty • Family Sacrifice & Honor"
+      quote: "Your family believes in your dream of securing a Central Government post. Value their trust and dedication. Start your study timer and maintain honest focus.",
+      context: "Family Trust & Personal Dedication"
     },
     {
-      quote: "A mock test score of 120 means nothing when cutoffs hover above 145+. Every calculation error you ignore today will cost you 2.5 negative marks on exam day.",
-      context: "Mock Diagnostic Reality • Tier 1 Normalization Sea"
+      quote: "A mock test score of 120 means nothing when cutoffs hover higher. Every calculation error you ignore today will cost negative marks on exam day.",
+      context: "Mock Error Analysis • Negative Marks Prevention"
     },
     {
-      quote: "The era where people dream of officer desks without solving thousands of PYQs is over! Motivation is an illusion; only disciplined daily reps carve a legend.",
-      context: "Edward Newgate (Whitebeard) • Law of Relentless Preparation"
+      quote: "Hoping for selection without solving thousands of PYQs is wishful thinking. Motivation is temporary; only daily disciplined reps build true mastery.",
+      context: "The Law of Daily Practice • Previous Year Questions"
     },
     {
-      quote: "When you scroll on social media, remember your direct rival is grinding Modern History dates and Vocab flashcards. The Grand Line exam paper shows zero mercy.",
-      context: "The Competitive Cutoff Law • Emperor's Fleet Trial"
+      quote: "When you scroll on social media, remember your direct competitors are revising Modern History dates and Vocab flashcards. Stay focused on your goals.",
+      context: "Competitive Cutoff Reality • Study Pacing"
     },
     {
-      quote: "Consistency beats genius. The aspirant who sails 8 focused hours every day will crush the one who studies 14 hours once a week and sleeps for three days.",
-      context: "Pacing & Endurance Strategy • Straw Hat Voyage Discipline"
+      quote: "Consistency beats sporadic brilliance. The aspirant who studies 8 focused hours every day will outperform the one who studies 14 hours once a week.",
+      context: "Endurance & Daily Routine • Steady Progress"
     },
     {
-      quote: "Excise Inspector, CSS ASO, MEA Foreign Desk, Income Tax Officer. These seats don't belong to who wished for them—they belong to who solved more questions with precision under fire.",
-      context: "4600 Grade Pay King's Treasure • Tier-2 Victory"
+      quote: "Central Government officer posts belong to those who solved questions with speed and precision under timed exam conditions.",
+      context: "Targeting Selection • Tier-2 Speed Mastery"
     },
     {
-      quote: "Do not fool yourself with passive video watching. Watching someone else solve questions on YouTube is spectating, not sailing. Pick up the rough sheet and solve.",
-      context: "Active Recall vs Passive Spectating • Captain's Law"
+      quote: "Do not fool yourself with passive video watching. Watching someone else solve questions on YouTube is not practice. Pick up the rough sheet and solve.",
+      context: "Active Recall vs Passive Spectating • Study Discipline"
     },
     {
       quote: "Sleep only when your target is conquered. If today's 320 questions are unfinished, your anchor does not drop tonight.",
-      context: "Target Fulfillment Law • Thousand Sunny Voyage"
+      context: "Target Fulfillment Law • Daily Goal Commitment"
     }
   ];
 
@@ -202,11 +202,11 @@
 
   // Default Core Subjects
   const DEFAULT_SUBJECTS = [
-    { id: 'maths', name: 'Mathematics (Quantitative Aptitude)', shortName: 'Maths', icon: '📐', color: 'emerald', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'english', name: 'English Language & Comprehension', shortName: 'English', icon: '📖', color: 'sky', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'reasoning', name: 'Reasoning & General Intelligence', shortName: 'Reasoning', icon: '🧩', color: 'violet', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'ga', name: 'General Awareness (GK & GS)', shortName: 'General Awareness', icon: '🏛️', color: 'amber', seconds: 0, isRunning: false, isDefault: true },
-    { id: 'mocks', name: 'Full Mock & Sectional Analysis', shortName: 'Mock Tests', icon: '📊', color: 'rose', seconds: 0, isRunning: false, isDefault: true }
+    { id: 'maths', name: 'Mathematics (Quantitative Aptitude)', shortName: 'Maths', icon: '📐', color: 'emerald', totalSubjectTime: 0, currentSessionTime: 0, seconds: 0, isRunning: false, isDefault: true },
+    { id: 'english', name: 'English Language & Comprehension', shortName: 'English', icon: '📖', color: 'sky', totalSubjectTime: 0, currentSessionTime: 0, seconds: 0, isRunning: false, isDefault: true },
+    { id: 'reasoning', name: 'Reasoning & General Intelligence', shortName: 'Reasoning', icon: '🧩', color: 'violet', totalSubjectTime: 0, currentSessionTime: 0, seconds: 0, isRunning: false, isDefault: true },
+    { id: 'ga', name: 'General Awareness (GK & GS)', shortName: 'General Awareness', icon: '🏛️', color: 'amber', totalSubjectTime: 0, currentSessionTime: 0, seconds: 0, isRunning: false, isDefault: true },
+    { id: 'mocks', name: 'Full Mock & Sectional Analysis', shortName: 'Mock Tests', icon: '📊', color: 'rose', totalSubjectTime: 0, currentSessionTime: 0, seconds: 0, isRunning: false, isDefault: true }
   ];
 
   // Default Daily Habits
@@ -437,6 +437,24 @@
     return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
   }
 
+  // Format seconds to strict live stopwatch format 00:00:00 (hh:mm:ss with colons)
+  function formatStopwatch(totalSeconds) {
+    const sec = Math.max(0, Math.floor(totalSeconds || 0));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  // Format seconds to full cumulative readable time (e.g. 00h 15m 00s)
+  function formatSubjectCumulativeTime(totalSeconds) {
+    const sec = Math.max(0, Math.floor(totalSeconds || 0));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    return `${String(h).padStart(2, '0')}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  }
+
   // Format seconds to compact mm:ss or hh:mm:ss
   function formatMS(totalSeconds) {
     const sec = Math.max(0, Math.floor(totalSeconds || 0));
@@ -457,13 +475,13 @@
     return Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
   }
 
-  // Play subtle feedback chime & Pirate High-Seas Fanfare
+  // Play subtle feedback chime & Milestone Fanfare
   function playChime(type = 'start') {
     if (!state.soundEnabled) return;
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (type === 'start') {
-        // High-Seas Sailing Bell / Departure Horn (Harmonic brassy chord)
+        // Study Session Departure Bell (Harmonic brassy chord)
         [392.00, 523.25, 659.25].forEach((freq, idx) => {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -478,7 +496,7 @@
           osc.stop(audioCtx.currentTime + 0.35);
         });
       } else if (type === 'pause' || type === 'break') {
-        // Anchor Dropped / Galley Break (Warm two-tone drop)
+        // Break Session Audio Chime (Warm two-tone drop)
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -491,7 +509,7 @@
         osc.start();
         osc.stop(audioCtx.currentTime + 0.28);
       } else if (type === 'reward' || type === 'victory') {
-        // Grand Line Victory Fanfare (Heroic Pirate King Arpeggio: C5 - E5 - G5 - C6)
+        // Milestone Victory Fanfare (Celebratory Arpeggio: C5 - E5 - G5 - C6)
         [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
           const o = audioCtx.createOscillator();
           const g = audioCtx.createGain();
@@ -804,11 +822,90 @@
     }
   ];
 
-  // Default Exam Formula & Short-Trick Vault Items
+  // ==========================================================================
+  // --- INDEXED-DB PERSISTENCE FOR VAULT ATTACHMENTS (PICTURES & PDFS) ---
+  // ==========================================================================
+  const VAULT_DB_NAME = 'cgl_vault_attachments_db';
+  const VAULT_DB_VERSION = 1;
+  const VAULT_STORE_NAME = 'vault_files';
+
+  function openVaultDb() {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined' || !window.indexedDB) {
+        return resolve(null);
+      }
+      try {
+        const req = window.indexedDB.open(VAULT_DB_NAME, VAULT_DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(VAULT_STORE_NAME)) {
+            db.createObjectStore(VAULT_STORE_NAME, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => {
+          console.warn('IndexedDB open error:', e);
+          resolve(null);
+        };
+      } catch (err) {
+        console.warn('IndexedDB exception:', err);
+        resolve(null);
+      }
+    });
+  }
+
+  async function saveVaultAttachmentToDb(id, fileData) {
+    try {
+      const db = await openVaultDb();
+      if (!db) return false;
+      return new Promise((resolve) => {
+        const tx = db.transaction(VAULT_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(VAULT_STORE_NAME);
+        store.put({ id, ...fileData, updatedAt: Date.now() });
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch (err) {
+      console.warn('saveVaultAttachmentToDb error:', err);
+      return false;
+    }
+  }
+
+  async function getVaultAttachmentFromDb(id) {
+    try {
+      const db = await openVaultDb();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction(VAULT_STORE_NAME, 'readonly');
+        const store = tx.objectStore(VAULT_STORE_NAME);
+        const req = store.get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    } catch (err) {
+      console.warn('getVaultAttachmentFromDb error:', err);
+      return null;
+    }
+  }
+
+  async function deleteVaultAttachmentFromDb(id) {
+    try {
+      const db = await openVaultDb();
+      if (!db) return;
+      const tx = db.transaction(VAULT_STORE_NAME, 'readwrite');
+      const store = tx.objectStore(VAULT_STORE_NAME);
+      store.delete(id);
+    } catch (err) {
+      console.warn('deleteVaultAttachmentFromDb error:', err);
+    }
+  }
+
+  // Default Exam Formula, Vocab, Question & Short-Trick Vault Items
   const DEFAULT_VAULT_ITEMS = [
     {
       id: 'v1',
       subject: 'Maths',
+      category: 'formula',
       title: 'Successive Percentage Net Formula',
       formula: 'Net Change % = a + b + (a * b) / 100',
       tip: 'Use positive for profit/markup, negative for loss/discount. Two successive discounts d1 and d2 = (d1 + d2 - (d1 * d2)/100)%.'
@@ -816,6 +913,7 @@
     {
       id: 'v2',
       subject: 'Maths',
+      category: 'formula',
       title: 'Circle Tangent-Secant External Point Theorem',
       formula: 'PT² = PA × PB',
       tip: 'Where PT is the length of tangent from external point P to point of tangency T, and PAB is secant intersecting circle at A and B.'
@@ -823,13 +921,23 @@
     {
       id: 'v3',
       subject: 'Maths',
+      category: 'trick',
       title: 'Algebra: If x + 1/x = k',
       formula: 'x² + 1/x² = k² - 2\nx³ + 1/x³ = k³ - 3k\nx⁵ + 1/x⁵ = (x² + 1/x²)(x³ + 1/x³) - (x + 1/x)',
       tip: 'High-frequency in SSC CGL Tier 1 and Tier 2. Note: If x - 1/x = k, x² + 1/x² = k² + 2.'
     },
     {
+      id: 'v_math_q1',
+      subject: 'Maths',
+      category: 'question',
+      title: 'Tricky PYQ: Alternate Days Time & Work',
+      formula: 'Q: A takes 12 days, B takes 15 days. If they work on alternate days starting with A, in how many days is work completed?\n\n• Total Work = LCM(12, 15) = 60 units\n• Efficiency: A = 5 u/day, B = 4 u/day\n• 2 Days Work = 5 + 4 = 9 units\n• In 6 cycles (12 days) = 6 × 9 = 54 units done\n• Remaining = 60 - 54 = 6 units\n• Day 13 (A turns): 5 units done (1 unit left)\n• Day 14 (B turns): 1/4 day needed\n• Total Time = 13 + 1/4 = 13.25 days',
+      tip: 'Never divide remaining work directly without checking whose turn it is on odd/even days.'
+    },
+    {
       id: 'v4',
       subject: 'English',
+      category: 'formula',
       title: 'Correlative Conjunctions Nearest Subject Rule',
       formula: 'Neither...nor / Either...or / Not only...but also ➔ Verb agrees with the NEAREST subject',
       tip: 'Example: Neither the teacher nor the students WERE present. / Neither the students nor the teacher WAS present.'
@@ -837,13 +945,23 @@
     {
       id: 'v5',
       subject: 'English',
-      title: 'Inversion After Restrictive / Negative Adverbs',
-      formula: 'Hardly / Scarcely / Seldom / No sooner + Auxiliary Verb + Subject + Main Verb',
-      tip: 'Hardly had he arrived WHEN the train left. No sooner did he enter THAN everyone clapped.'
+      category: 'vocab',
+      title: 'Root Word: "MAL" (Bad / Evil / Harmful)',
+      formula: '• Malice: ill-will or evil intent\n• Maladroit: clumsy or awkward (Opposite: Adroit)\n• Malevolent: wishing evil to others (Opposite: Benevolent)\n• Malign: speak harmful untruths about someone\n• Malfeasance: wrongdoing, especially by a public official',
+      tip: 'Opposite root is "BENE" (Good / Beneficial). Often tested in Tier-1 Synonyms/Antonyms.'
+    },
+    {
+      id: 'v_eng_idiom',
+      subject: 'English',
+      category: 'vocab',
+      title: 'Idiom: "Burn the Midnight Oil"',
+      formula: 'Meaning: To study or work late into the night.\nExample: Aspirants are burning the midnight oil to crack SSC CGL 2027.\nSynonyms: Working around the clock, burning candle at both ends.',
+      tip: 'Frequently repeated in SSC Idioms & Phrases section.'
     },
     {
       id: 'v6',
       subject: 'Reasoning',
+      category: 'trick',
       title: 'Clock Hands Angle Formula',
       formula: 'Angle θ = |30H - (11/2)M|',
       tip: 'Where H is hours (1-12) and M is minutes (0-59). If θ > 180°, the reflex angle is 360° - θ.'
@@ -851,13 +969,23 @@
     {
       id: 'v7',
       subject: 'Reasoning',
+      category: 'trick',
       title: 'Calendar Century Codes & Odd Days',
       formula: 'Day Index = (Date + Month Code + Century Code + Year + Year/4) % 7',
       tip: 'Century codes: 1600: 6, 1700: 4, 1800: 2, 1900: 0, 2000: 6. Remainder 0 = Sunday, 1 = Monday...'
     },
     {
+      id: 'v_reas_q1',
+      subject: 'Reasoning',
+      category: 'question',
+      title: 'Tricky PYQ: Sunset Shadow Direction',
+      formula: 'Q: At sunset, Rohan and Sohan are facing each other. If Rohan\'s shadow falls exactly to his right, which direction is Sohan facing?\n\n• Sunset = Sun in West ➔ Shadow falls towards East\n• Shadow is to Rohan\'s right ➔ Rohan\'s right is East\n• Since Right = East, Rohan is facing North\n• Sohan is facing Rohan ➔ Sohan faces SOUTH.',
+      tip: 'Sunrise = Shadow in West. Sunset = Shadow in East. Draw the 4 compass directions quickly.'
+    },
+    {
       id: 'v8',
       subject: 'GA',
+      category: 'trick',
       title: 'Three Battles of Panipat Chronology',
       formula: '1st: 1526 (Babur vs Ibrahim Lodi)\n2nd: 1556 (Akbar & Bairam Khan vs Hemu)\n3rd: 1761 (Ahmad Shah Abdali vs Marathas)',
       tip: 'Remember 1526, 1556 (exactly 30 yrs later), and 1761.'
@@ -865,6 +993,7 @@
     {
       id: 'v9',
       subject: 'GA',
+      category: 'formula',
       title: 'Fundamental Rights Article Categorization',
       formula: 'Equality (14-18) | Freedom (19-22) | Anti-Exploitation (23-24) | Religion (25-28) | Culture (29-30) | Remedies (32)',
       tip: 'Dr. B.R. Ambedkar designated Article 32 (Constitutional Remedies) as the "Heart and Soul of the Constitution".'
@@ -1076,8 +1205,10 @@
     isBreakTimerRunning: false,
     currentBreakSessionStart: null,
 
-    // 320 Maths Target
+    // Daily Maths Target
     mathsQuestionsDone: 0,
+    defaultMathsTarget: 320,
+    mathsTargetModalDate: null,
 
     // Habits
     habits: JSON.parse(JSON.stringify(DEFAULT_HABITS)),
@@ -1516,6 +1647,8 @@
       targetExamDate: DEFAULT_TARGET_EXAM.date,
       subjects: DEFAULT_SUBJECTS.map(s => ({
         ...s,
+        totalSubjectTime: 0,
+        currentSessionTime: 0,
         seconds: 0,
         isRunning: false,
         lastStartTime: null
@@ -1644,7 +1777,10 @@
       const elapsedMs = now - anchor;
       if (elapsedMs >= 1000) {
         const fullSecs = Math.floor(elapsedMs / 1000);
-        runningSubject.seconds = (runningSubject.seconds || 0) + fullSecs;
+        // Tier 2: Active running timer for the ongoing session (starts strictly from 0)
+        runningSubject.currentSessionTime = (runningSubject.currentSessionTime || 0) + fullSecs;
+        // Keep cumulative seconds synchronized with today's total + current session
+        runningSubject.seconds = (runningSubject.totalSubjectTime || 0) + runningSubject.currentSessionTime;
         // Keep fractional millisecond remainder in the anchor for continuous sub-second accuracy
         const newAnchor = anchor + (fullSecs * 1000);
         runningSubject.lastStartTime = newAnchor;
@@ -1664,7 +1800,21 @@
       state = Object.assign({}, saved);
 
       // Safe fallbacks for older schemas or missing fields without overwriting empty arrays
-      if (!Array.isArray(state.subjects)) state.subjects = JSON.parse(JSON.stringify(DEFAULT_SUBJECTS));
+      if (!Array.isArray(state.subjects)) {
+        state.subjects = JSON.parse(JSON.stringify(DEFAULT_SUBJECTS));
+      } else {
+        // Normalize subjects to support two-tier time architecture (totalSubjectTime & currentSessionTime)
+        state.subjects.forEach(s => {
+          if (typeof s.totalSubjectTime !== 'number') {
+            s.totalSubjectTime = (typeof s.seconds === 'number') ? s.seconds : 0;
+          }
+          if (typeof s.currentSessionTime !== 'number') {
+            s.currentSessionTime = 0;
+          }
+          s.seconds = (s.totalSubjectTime || 0) + (s.isRunning ? (s.currentSessionTime || 0) : 0);
+        });
+      }
+      if (typeof state.defaultMathsTarget !== 'number' || state.defaultMathsTarget <= 0) state.defaultMathsTarget = 320;
       if (!Array.isArray(state.habits)) state.habits = JSON.parse(JSON.stringify(DEFAULT_HABITS));
       if (!Array.isArray(state.history)) state.history = [];
       if (!Array.isArray(state.syllabus)) state.syllabus = [];
@@ -1898,7 +2048,29 @@
         safeStorageSet(BOOK_SHELF_STORAGE_KEY, state.books);
         safeStorageSet(BOOK_TRACKER_STORAGE_KEY, state.books);
       }
-      safeStorageSet(STORAGE_KEY, state);
+
+      // Safeguard localStorage against quota limits from uploaded Pictures & PDFs
+      let stateToSave = state;
+      if (Array.isArray(state.vaultItems) && state.vaultItems.some(v => v.attachment && v.attachment.dataUrl && v.attachment.dataUrl.length > 25000)) {
+        stateToSave = {
+          ...state,
+          vaultItems: state.vaultItems.map(v => {
+            if (v.attachment && v.attachment.dataUrl && v.attachment.dataUrl.length > 25000) {
+              return {
+                ...v,
+                attachment: {
+                  ...v.attachment,
+                  hasStoredBinary: true,
+                  dataUrl: '' // IndexedDB persists full binary/base64; avoids localStorage quota overflow
+                }
+              };
+            }
+            return v;
+          })
+        };
+      }
+
+      safeStorageSet(STORAGE_KEY, stateToSave);
     } catch (e) {
       console.error('Error saving state to localStorage:', e);
     }
@@ -1909,9 +2081,12 @@
     }
   }
 
-  // Calculate Total Study Seconds logged today across all subjects
+  // Calculate Total Study Seconds logged today across all subjects (cumulative total + active session)
   function calculateTotalStudySeconds() {
-    return state.subjects.reduce((sum, s) => sum + (s.seconds || 0), 0);
+    return state.subjects.reduce((sum, s) => {
+      const liveSession = s.isRunning ? (s.currentSessionTime || 0) : 0;
+      return sum + (s.totalSubjectTime || 0) + liveSession;
+    }, 0);
   }
 
   // ==========================================================================
@@ -1920,12 +2095,12 @@
 
   /**
    * Called whenever ANY subject timer is started.
-   * Logic:
+   * Two-Tier Time Architecture & Session Reset:
    * 1. Sync ongoing timers to ensure precision.
    * 2. If Break Timer is currently running, automatically pause it!
-   *    Calculate how long the break lasted, add it to today's total break hours, and save.
-   * 3. Pause any other currently running subject timer (only one runs at a time).
-   * 4. Start the target subject timer with precise timestamp anchoring.
+   * 3. Pause any other running subjects & accumulate their session time into totalSubjectTime.
+   * 4. When starting a study timer, strictly reset the live session stopwatch display to "00:00:00"
+   *    (does NOT resume from previous session elapsed time; reflects current sitting).
    */
   function startSubjectTimer(subjectId) {
     const subject = state.subjects.find(s => s.id === subjectId);
@@ -1939,16 +2114,26 @@
       stopBreakTimer();
     }
 
-    // 2. Pause any other running subjects
+    // 2. Pause any other running subjects and commit their current session time
     state.subjects.forEach(s => {
       if (s.id !== subjectId && s.isRunning) {
+        if (s.currentSessionTime > 0) {
+          s.totalSubjectTime = (s.totalSubjectTime || 0) + s.currentSessionTime;
+          s.currentSessionTime = 0;
+        }
+        s.seconds = s.totalSubjectTime || 0;
         s.isRunning = false;
         s.lastStartTime = null;
       }
     });
 
-    // 3. Start target subject with timestamp anchor
+    // 3. Start target subject timer strictly from 00:00:00 for the new session
+    if (subject.currentSessionTime > 0) {
+      subject.totalSubjectTime = (subject.totalSubjectTime || 0) + subject.currentSessionTime;
+    }
     const now = Date.now();
+    subject.currentSessionTime = 0; // Starts strictly from 0
+    subject.seconds = subject.totalSubjectTime || 0;
     subject.isRunning = true;
     subject.lastStartTime = now;
     state.activeSubjectId = subjectId;
@@ -1961,11 +2146,12 @@
   }
 
   /**
-   * Called whenever ANY subject timer is paused or stopped.
-   * Logic:
-   * 1. Sync elapsed seconds and pause/stop the subject timer.
-   * 2. Check if any subject is still running. If NO other subject is running:
-   *    AUTOMATICALLY START THE BREAK/INACTIVITY TIMER IMMEDIATELY!
+   * Called whenever ANY subject timer is paused or completed.
+   * Accumulation on Stop / Complete Session:
+   * 1. Sync elapsed seconds.
+   * 2. Add currentSessionTime into totalSubjectTime (cumulative sum).
+   * 3. Reset currentSessionTime back to 0.
+   * 4. Auto-start Break Timer immediately if no other subject is running.
    */
   function pauseSubjectTimer(subjectId) {
     const subject = state.subjects.find(s => s.id === subjectId);
@@ -1973,6 +2159,12 @@
 
     syncElapsedActiveTime();
 
+    // Add current session into total subject time and reset current session counter back to 0
+    if (subject.currentSessionTime > 0) {
+      subject.totalSubjectTime = (subject.totalSubjectTime || 0) + subject.currentSessionTime;
+      subject.currentSessionTime = 0;
+    }
+    subject.seconds = subject.totalSubjectTime || 0;
     subject.isRunning = false;
     subject.lastStartTime = null;
     state.activeSubjectId = null;
@@ -1993,15 +2185,47 @@
   }
 
   /**
+   * Explicitly stop/complete an active session and accumulate into totalSubjectTime.
+   */
+  function completeSubjectSession(subjectId) {
+    const subject = state.subjects.find(s => s.id === subjectId);
+    if (!subject) return;
+
+    syncElapsedActiveTime();
+
+    if (subject.currentSessionTime > 0) {
+      subject.totalSubjectTime = (subject.totalSubjectTime || 0) + subject.currentSessionTime;
+      subject.currentSessionTime = 0;
+    }
+    subject.seconds = subject.totalSubjectTime || 0;
+    subject.isRunning = false;
+    subject.lastStartTime = null;
+    state.activeSubjectId = null;
+    state.activeSubjectStartTime = null;
+    state.lastActiveTimestamp = Date.now();
+
+    playChime('pause');
+    saveState();
+    updateUI();
+  }
+
+  /**
    * Starts the Break / Inactivity Timer.
    */
   function startBreakTimer(isAuto = false) {
     syncElapsedActiveTime();
 
-    // If subjects were running, stop them
+    // If subjects were running, commit session times and stop them
     state.subjects.forEach(s => {
-      s.isRunning = false;
-      s.lastStartTime = null;
+      if (s.isRunning) {
+        if (s.currentSessionTime > 0) {
+          s.totalSubjectTime = (s.totalSubjectTime || 0) + s.currentSessionTime;
+          s.currentSessionTime = 0;
+        }
+        s.seconds = s.totalSubjectTime || 0;
+        s.isRunning = false;
+        s.lastStartTime = null;
+      }
     });
     state.activeSubjectId = null;
     state.activeSubjectStartTime = null;
@@ -2066,7 +2290,15 @@
         isBreakDay: state.isBreakDay,
         goalMet: goalMet,
         habitsSnapshot: state.habits.map(h => ({ title: h.title, completed: h.completed })),
-        subjectBreakdown: state.subjects.map(s => ({ name: s.name, seconds: s.seconds }))
+        subjectBreakdown: state.subjects.map(s => {
+          const totalTime = (s.totalSubjectTime || 0) + (s.isRunning ? (s.currentSessionTime || 0) : 0);
+          return {
+            id: s.id,
+            name: s.name,
+            seconds: totalTime,
+            totalSubjectTime: totalTime
+          };
+        })
       };
 
       // Check if entry already exists
@@ -2086,12 +2318,16 @@
         checkMilestoneUnlocks(state.consecutiveStreak);
       } else {
         state.consecutiveStreak = 0;
+        updateStreakMilestoneVisuals(0);
       }
 
       // 4. Reset today's counters for new 5:00 AM cycle
       state.subjects.forEach(s => {
+        s.totalSubjectTime = 0;
+        s.currentSessionTime = 0;
         s.seconds = 0;
         s.isRunning = false;
+        s.lastStartTime = null;
       });
       state.todayBreakSeconds = 0;
       state.mathsQuestionsDone = 0;
@@ -2110,8 +2346,66 @@
     }
   }
 
+  // Helper to determine if a given streak count qualifies as a celebratory milestone (e.g. every 7 days or defined milestone)
+  function isStreakMilestone(streak) {
+    const s = Number(streak) || 0;
+    if (s <= 0) return false;
+    // Every 7 days (7, 14, 21, 28, 35, ...) or explicitly configured in MILESTONES list (e.g. 7, 15, 30, 45, 60)
+    const isEvery7Days = (s % 7 === 0);
+    const isPredefinedMilestone = (typeof MILESTONES !== 'undefined' && Array.isArray(MILESTONES)) && MILESTONES.some(m => m.streak === s);
+    return isEvery7Days || isPredefinedMilestone;
+  }
+
+  // Update subtle CSS pulse or glow animation on #top-streak-badge and #cal-streak-counter-number
+  function updateStreakMilestoneVisuals(streak) {
+    const currentStreak = (streak !== undefined && streak !== null) ? Number(streak) : (state.consecutiveStreak || 0);
+    const hasMilestone = isStreakMilestone(currentStreak);
+
+    // 1. Top Header Streak Badge
+    const topBadge = document.getElementById('top-streak-badge');
+    if (topBadge) {
+      if (hasMilestone) {
+        topBadge.classList.add('streak-milestone-glow', 'milestone-glow', 'streak-milestone-pulse', 'milestone-active');
+        topBadge.setAttribute('data-milestone', 'true');
+        topBadge.setAttribute('data-milestone-active', 'true');
+        topBadge.title = `🔥 Milestone Achieved (${currentStreak} Days Streak)! Consistency is Unstoppable!`;
+      } else {
+        topBadge.classList.remove('streak-milestone-glow', 'milestone-glow', 'streak-milestone-pulse', 'milestone-active');
+        topBadge.removeAttribute('data-milestone');
+        topBadge.removeAttribute('data-milestone-active');
+        topBadge.title = 'Daily Consistency Streak';
+      }
+    }
+
+    // 2. Calendar Milestone Streak Counter Number & Badge Wrapper
+    const calCounterNumber = document.getElementById('cal-streak-counter-number');
+    if (calCounterNumber) {
+      if (hasMilestone) {
+        calCounterNumber.classList.add('streak-milestone-glow', 'milestone-glow', 'streak-milestone-pulse', 'milestone-active');
+        calCounterNumber.setAttribute('data-milestone', 'true');
+        calCounterNumber.setAttribute('data-milestone-active', 'true');
+      } else {
+        calCounterNumber.classList.remove('streak-milestone-glow', 'milestone-glow', 'streak-milestone-pulse', 'milestone-active');
+        calCounterNumber.removeAttribute('data-milestone');
+        calCounterNumber.removeAttribute('data-milestone-active');
+      }
+
+      const calBadge = document.getElementById('cal-streak-counter-badge') || calCounterNumber.parentElement;
+      if (calBadge) {
+        if (hasMilestone) {
+          calBadge.classList.add('streak-milestone-glow', 'milestone-glow', 'streak-milestone-pulse');
+          calBadge.setAttribute('data-milestone', 'true');
+        } else {
+          calBadge.classList.remove('streak-milestone-glow', 'milestone-glow', 'streak-milestone-pulse');
+          calBadge.removeAttribute('data-milestone');
+        }
+      }
+    }
+  }
+
   // Check if consecutive streak unlocked a new milestone
   function checkMilestoneUnlocks(streak) {
+    updateStreakMilestoneVisuals(streak);
     const eligible = MILESTONES.filter(m => m.streak <= streak);
     eligible.forEach(m => {
       if (!state.claimedMilestones.includes(m.streak)) {
@@ -2184,21 +2478,16 @@
     renderCalendar();
     renderDayInspectionCard();
     renderMilestones();
-    renderEnergyRating();
-    renderEnergyHistory();
     renderVault();
-    renderBookTracker();
-    renderJournal();
     renderTodoHub();
-    renderMockTrends();
     renderHistoryTable();
     updateSidebarStatus();
     updateAccountabilityQuote();
+    updateStreakMilestoneVisuals(state.consecutiveStreak || 0);
   }
 
   // --- 7A. HOMEPAGE ("ASPIRANT COMMAND CENTER") ---
   function renderHomeView() {
-    renderHomeBookWidget();
     const totalStudySecs = calculateTotalStudySeconds();
     const targetSecs = (state.targetHours || 10.0) * 3600;
     const pct = Math.min(100, Math.round((totalStudySecs / targetSecs) * 100));
@@ -2341,6 +2630,7 @@
     // Top Header Streak
     const topStreak = document.getElementById('top-streak-count');
     if (topStreak) topStreak.textContent = `${state.consecutiveStreak || 0} Days`;
+    updateStreakMilestoneVisuals(state.consecutiveStreak || 0);
   }
 
   // --- 7B. SUBJECT-WISE BREAKDOWN SUMMARY CARD (HOMEPAGE b) ---
@@ -2470,24 +2760,34 @@
     });
   }
 
-  // --- 7D. SUBJECT STOPWATCHES & 320 MATHS TARGET (SECTION 2) ---
+  // --- 7D. SUBJECT STOPWATCHES & DAILY MATHS TARGET (SECTION 2) ---
   function renderSubjectCards() {
     const grid = document.getElementById('subjects-cards-grid');
     if (!grid) return;
 
     // Maths Questions Bar
     const mathsCount = document.getElementById('maths-qs-count');
+    const mathsTargetEl = document.getElementById('maths-qs-target');
+    const mathsTitleTargetEl = document.getElementById('maths-target-title');
     const mathsPct = document.getElementById('maths-qs-pct');
     const mathsBar = document.getElementById('maths-qs-bar');
+    const todayStr = state.activeCycleDate || getStudyCycleDate();
+    const entry = getDateTargetEntry(todayStr);
+    const todayTarget = (entry && entry.mathsTarget) ? entry.mathsTarget : (state.defaultMathsTarget || 320);
     const done = state.mathsQuestionsDone || 0;
-    const mPct = Math.min(100, Math.round((done / 320) * 100));
+    const mPct = Math.min(100, Math.round((done / todayTarget) * 100));
 
     if (mathsCount) mathsCount.textContent = done;
+    if (mathsTargetEl) mathsTargetEl.textContent = todayTarget;
+    if (mathsTitleTargetEl) mathsTitleTargetEl.textContent = todayTarget;
     if (mathsPct) mathsPct.textContent = `${mPct}%`;
     if (mathsBar) mathsBar.style.width = `${mPct}%`;
 
-    // Render each subject stopwatch
+    // Render each subject stopwatch with Two-Tier Time Architecture (Current Session vs Cumulative Total)
     grid.innerHTML = state.subjects.map(s => {
+      const todayTotal = (s.totalSubjectTime || 0) + (s.isRunning ? (s.currentSessionTime || 0) : 0);
+      const sessionSecs = s.currentSessionTime || 0;
+
       return `
         <div class="p-5 rounded-3xl bg-[#0b1120] border ${s.isRunning ? 'border-emerald-500/80 shadow-lg shadow-emerald-500/10' : 'border-slate-800'} space-y-4 transition">
           <div class="flex items-start justify-between">
@@ -2496,23 +2796,26 @@
                 ${s.isRunning ? '<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>' : '<span class="w-2 h-2 rounded-full bg-slate-600"></span>'}
                 <h4 class="text-sm font-bold text-white">${s.name}</h4>
               </div>
-              <span class="text-[11px] font-mono text-slate-400">
-                ${s.isRunning ? 'Running • Auto-links to Break' : 'Stopped'}
-              </span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[11px] font-mono ${s.isRunning ? 'text-emerald-400 font-semibold' : 'text-slate-400'}">
+                  ${s.isRunning ? 'Session Active • Live Ticking' : 'Session Ready'}
+                </span>
+                <span class="text-[10px] text-slate-500 font-mono">• Auto-breaks on pause</span>
+              </div>
             </div>
 
             <div class="flex items-center gap-1.5">
               <button
                 data-edit-subject-time="${s.id}"
-                class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition"
-                title="Manually correct hours, minutes, seconds"
+                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition cursor-pointer border border-slate-700/60"
+                title="Manually correct today's accumulated total"
               >
-                ✏️ Edit
+                ✏️ Edit Total
               </button>
               ${!s.isDefault ? `
                 <button
                   data-delete-subject="${s.id}"
-                  class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-rose-400 text-[11px] transition"
+                  class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-rose-400 text-[11px] transition cursor-pointer border border-slate-700/60"
                   title="Remove custom subject"
                 >
                   ✕
@@ -2521,10 +2824,29 @@
             </div>
           </div>
 
-          <!-- Digital Readout -->
-          <div class="py-3 px-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-center">
-            <span class="text-3xl sm:text-4xl font-extrabold font-mono text-white tracking-tight">
-              ${formatHMS(s.seconds)}
+          <!-- 1. Digital Readout: Current Session Time (starts strictly from 00:00:00) -->
+          <div class="py-3 px-4 rounded-2xl bg-slate-900/90 border ${s.isRunning ? 'border-emerald-500/50 bg-emerald-950/20 shadow-inner' : 'border-slate-800'} text-center space-y-1">
+            <div class="flex items-center justify-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-slate-400">
+              <span class="w-1.5 h-1.5 rounded-full ${s.isRunning ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}"></span>
+              <span class="font-bold ${s.isRunning ? 'text-emerald-300' : 'text-slate-300'}">Current Session Time</span>
+              <span class="text-[10px] text-slate-500 font-normal hidden sm:inline">(Starts strictly from 00:00:00)</span>
+            </div>
+            <div class="text-3xl sm:text-4xl font-extrabold font-mono ${s.isRunning ? 'text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]' : 'text-white'} tracking-tight">
+              ${formatStopwatch(sessionSecs)}
+            </div>
+            <div class="text-[10px] font-mono text-slate-500">
+              ${s.isRunning ? 'Active sitting ticking • Commits to today\'s total on pause/stop' : 'Resets to 00:00:00 on each new sitting'}
+            </div>
+          </div>
+
+          <!-- 2. Two-Tier Visual Display: Today's Total for Subject -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800/90 text-xs font-mono">
+            <span class="text-slate-400 flex items-center gap-1.5">
+              <span>⏱️</span>
+              <span class="font-semibold text-slate-300">Today's Total for Subject:</span>
+            </span>
+            <span class="text-cyan-300 font-extrabold text-sm tracking-wide">
+              ${formatSubjectCumulativeTime(todayTotal)}
             </span>
           </div>
 
@@ -2533,23 +2855,31 @@
             ${s.isRunning ? `
               <button
                 data-pause-subject="${s.id}"
-                class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5"
+                class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition active:scale-95 flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                title="Pause session, add time to today's total, and start break timer"
               >
                 <span>⏸️ Pause (Starts Break)</span>
+              </button>
+              <button
+                data-complete-subject="${s.id}"
+                class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
+                title="Stop session and accumulate into today's total"
+              >
+                <span>⏹️ Stop</span>
               </button>
             ` : `
               <button
                 data-start-subject="${s.id}"
-                class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition active:scale-95 shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition active:scale-95 shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>▶ Start Focus</span>
+                <span>▶ Start Focus (00:00:00)</span>
               </button>
             `}
 
             <button
               data-reset-subject="${s.id}"
-              class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 text-xs font-mono transition"
-              title="Reset this stopwatch to 0"
+              class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 text-xs font-mono border border-slate-700/60 transition cursor-pointer"
+              title="Reset today's total and session time for this subject to 0"
             >
               Reset
             </button>
@@ -2573,11 +2903,20 @@
       });
     });
 
+    grid.querySelectorAll('[data-complete-subject]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-complete-subject');
+        completeSubjectSession(id);
+      });
+    });
+
     grid.querySelectorAll('[data-reset-subject]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-reset-subject');
         const s = state.subjects.find(sub => sub.id === id);
-        if (s && confirm(`Reset time for ${s.name}?`)) {
+        if (s && confirm(`Reset time for ${s.name}? This will clear today's accumulated total (${formatSubjectCumulativeTime(s.totalSubjectTime || 0)}) and current session.`)) {
+          s.totalSubjectTime = 0;
+          s.currentSessionTime = 0;
           s.seconds = 0;
           s.isRunning = false;
           s.lastStartTime = null;
@@ -3109,17 +3448,40 @@
     if (!state.dateTargets[dateStr]) {
       state.dateTargets[dateStr] = {
         mathsDone: (dateStr === state.activeCycleDate) ? (state.mathsQuestionsDone || 0) : 0,
-        mathsTarget: 320,
+        mathsTarget: state.defaultMathsTarget || 320,
         mathsCompleted: false,
         tasks: []
       };
     }
+    // Ensure target is valid number
+    if (typeof state.dateTargets[dateStr].mathsTarget !== 'number' || state.dateTargets[dateStr].mathsTarget <= 0) {
+      state.dateTargets[dateStr].mathsTarget = state.defaultMathsTarget || 320;
+    }
     // If viewing active cycle date, synchronize mathsDone with live state
     if (dateStr === state.activeCycleDate) {
       state.dateTargets[dateStr].mathsDone = state.mathsQuestionsDone || 0;
-      state.dateTargets[dateStr].mathsCompleted = (state.mathsQuestionsDone || 0) >= (state.dateTargets[dateStr].mathsTarget || 320);
+      state.dateTargets[dateStr].mathsCompleted = (state.mathsQuestionsDone || 0) >= state.dateTargets[dateStr].mathsTarget;
     }
     return state.dateTargets[dateStr];
+  }
+
+  function setMathsTargetForDate(dateStr, targetVal, alsoSetAsDefault = false) {
+    const val = Math.max(1, parseInt(targetVal, 10) || 320);
+    const entry = getDateTargetEntry(dateStr);
+    entry.mathsTarget = val;
+    entry.mathsCompleted = (entry.mathsDone || 0) >= val;
+
+    if (alsoSetAsDefault) {
+      state.defaultMathsTarget = val;
+      const settingInput = document.getElementById('input-setting-maths-target');
+      if (settingInput) settingInput.value = val;
+    }
+
+    saveState();
+    renderDateMathsMission();
+    renderTargetTimelineStrip();
+    renderSubjectCards();
+    updateSidebarStatus();
   }
 
   function renderTargetHub() {
@@ -3312,14 +3674,14 @@
     });
   }
 
-  // --- 7F3.2 DATE-SPECIFIC 320 MATHS MISSION ---
+  // --- 7F3.2 DATE-SPECIFIC MATHS MISSION ---
   function renderDateMathsMission() {
     const curDate = state.selectedTargetDate || getStudyCycleDate();
     const activeCycle = state.activeCycleDate || getStudyCycleDate();
     const entry = getDateTargetEntry(curDate);
 
     const doneCount = entry.mathsDone || 0;
-    const targetCount = entry.mathsTarget || 320;
+    const targetCount = entry.mathsTarget || state.defaultMathsTarget || 320;
     const isConquered = doneCount >= targetCount;
     const pct = Math.min(100, Math.round((doneCount / targetCount) * 100));
 
@@ -3336,6 +3698,10 @@
         dateLabelEl.textContent = formatMonthDayShort(curDate);
       }
     }
+
+    // Target in title and counter
+    const titleTargetEl = document.getElementById('hub-maths-target-title');
+    if (titleTargetEl) titleTargetEl.textContent = targetCount;
 
     // Counts & Percentage
     const doneEl = document.getElementById('hub-maths-done-count');
@@ -3358,18 +3724,22 @@
       }
     }
 
-    // Input
+    // Input for questions solved
     const inputEl = document.getElementById('input-hub-maths-done');
     if (inputEl) inputEl.value = doneCount;
+
+    // Input for target questions
+    const inputTargetEl = document.getElementById('input-hub-maths-target');
+    if (inputTargetEl) inputTargetEl.value = targetCount;
 
     // Conquered Status Button
     const btnConquered = document.getElementById('btn-toggle-maths-conquered');
     if (btnConquered) {
       if (isConquered) {
-        btnConquered.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-emerald-500 text-slate-950 border border-emerald-400 shadow-md shadow-emerald-500/30 transition flex items-center gap-1.5';
-        btnConquered.innerHTML = `<span>✓</span> 320 Conquered!`;
+        btnConquered.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-emerald-500 text-slate-950 border border-emerald-400 shadow-md shadow-emerald-500/30 transition flex items-center gap-1.5 cursor-pointer';
+        btnConquered.innerHTML = `<span>✓</span> ${targetCount} Conquered!`;
       } else {
-        btnConquered.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-slate-800 text-slate-300 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40 border border-slate-700 transition flex items-center gap-1.5';
+        btnConquered.className = 'px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-slate-800 text-slate-300 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40 border border-slate-700 transition flex items-center gap-1.5 cursor-pointer';
         btnConquered.innerHTML = `<span>⚡</span> Mark Conquered`;
       }
     }
@@ -3767,81 +4137,353 @@
     }).join('');
   }
 
-  // --- 7F5. FORMULA & SHORT-TRICK VAULT ---
+  // --- 7F5. FORMULA, VOCAB & TRICK VAULT WITH PICTURE & PDF ATTACHMENTS ---
+  function formatFileSize(bytes) {
+    if (!bytes || isNaN(bytes)) return '0 KB';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  function downloadVaultAttachment(attachment, fallbackTitle = 'vault_item') {
+    if (!attachment || !attachment.dataUrl) {
+      alert('Attachment file data is not available to download.');
+      return;
+    }
+    try {
+      const a = document.createElement('a');
+      a.href = attachment.dataUrl;
+      const ext = attachment.type === 'pdf' ? '.pdf' : '.png';
+      a.download = attachment.name || `${fallbackTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Error downloading attachment:', err);
+      window.open(attachment.dataUrl, '_blank');
+    }
+  }
+
+  function renderVaultSubjectFilterTabs() {
+    const container = document.getElementById('vault-subject-filter-tabs');
+    if (!container) return;
+
+    // Collect standard subjects + any custom subjects from state.subjects and state.vaultItems
+    const standardSubjects = [
+      { id: 'all', name: 'All Subjects', icon: '✨' },
+      { id: 'Maths', name: 'Maths', icon: '📐' },
+      { id: 'English', name: 'English', icon: '📖' },
+      { id: 'Reasoning', name: 'Reasoning', icon: '🧩' },
+      { id: 'GA', name: 'General Awareness', icon: '🌍' }
+    ];
+
+    const existingNames = new Set(['all', 'maths', 'english', 'reasoning', 'ga', 'general awareness']);
+    const customSubjects = [];
+
+    // From state.subjects
+    (state.subjects || []).forEach(s => {
+      const n = (s.name || s.shortName || '').trim();
+      if (n && !existingNames.has(n.toLowerCase())) {
+        existingNames.add(n.toLowerCase());
+        customSubjects.push({ id: n, name: n, icon: '📚' });
+      }
+    });
+
+    // From vault items
+    (state.vaultItems || []).forEach(v => {
+      const n = (v.subject || '').trim();
+      if (n && !existingNames.has(n.toLowerCase())) {
+        existingNames.add(n.toLowerCase());
+        customSubjects.push({ id: n, name: n, icon: '📚' });
+      }
+    });
+
+    const allTabs = [...standardSubjects, ...customSubjects];
+
+    container.innerHTML = allTabs.map(tab => {
+      const isActive = (state.activeVaultFilter || 'all').toLowerCase() === tab.id.toLowerCase();
+      const activeCls = isActive
+        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
+        : 'bg-slate-800 text-slate-300 hover:bg-slate-700';
+      return `
+        <button
+          data-vault-filter="${escapeHtml(tab.id)}"
+          class="px-3 py-1.5 rounded-xl text-xs font-semibold ${activeCls} transition whitespace-nowrap flex items-center gap-1.5"
+        >
+          <span>${tab.icon}</span>
+          <span>${escapeHtml(tab.name)}</span>
+        </button>
+      `;
+    }).join('');
+
+    // Reattach listeners
+    container.querySelectorAll('button[data-vault-filter]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        state.activeVaultFilter = e.currentTarget.getAttribute('data-vault-filter');
+        renderVault();
+      });
+    });
+  }
+
+  function renderVaultTypeFilterTabs() {
+    const container = document.getElementById('vault-type-filter-tabs');
+    if (!container) return;
+
+    const currentType = (state.activeVaultTypeFilter || 'all').toLowerCase();
+    container.querySelectorAll('button[data-vault-type]').forEach(btn => {
+      const type = (btn.getAttribute('data-vault-type') || 'all').toLowerCase();
+      if (type === currentType) {
+        btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap shadow-md shadow-emerald-500/20';
+      } else {
+        btn.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap';
+      }
+    });
+  }
+
   function renderVault() {
     const grid = document.getElementById('vault-items-grid');
     if (!grid) return;
 
-    // Filter tabs styling
-    document.querySelectorAll('#vault-subject-filter-tabs button').forEach(btn => {
-      const filter = btn.getAttribute('data-vault-filter');
-      if (filter === state.activeVaultFilter) {
-        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500 text-white transition whitespace-nowrap shadow-md shadow-emerald-500/20';
-      } else {
-        btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap';
-      }
-    });
+    renderVaultSubjectFilterTabs();
+    renderVaultTypeFilterTabs();
 
     let items = state.vaultItems || [];
-    if (state.activeVaultFilter !== 'all') {
-      items = items.filter(v => v.subject.toLowerCase() === state.activeVaultFilter.toLowerCase());
+
+    // 1. Filter by Subject
+    if (state.activeVaultFilter && state.activeVaultFilter !== 'all') {
+      items = items.filter(v => (v.subject || '').toLowerCase() === state.activeVaultFilter.toLowerCase());
     }
 
+    // 2. Filter by Category / Type
+    if (state.activeVaultTypeFilter && state.activeVaultTypeFilter !== 'all') {
+      if (state.activeVaultTypeFilter === 'attachment') {
+        items = items.filter(v => v.attachment && (v.attachment.dataUrl || v.attachment.name));
+      } else {
+        items = items.filter(v => (v.category || 'formula').toLowerCase() === state.activeVaultTypeFilter.toLowerCase());
+      }
+    }
+
+    // 3. Search query
     if (state.vaultSearchQuery && state.vaultSearchQuery.trim()) {
       const q = state.vaultSearchQuery.toLowerCase().trim();
       items = items.filter(v => 
-        v.title.toLowerCase().includes(q) || 
-        v.formula.toLowerCase().includes(q) || 
-        (v.tip && v.tip.toLowerCase().includes(q))
+        (v.title || '').toLowerCase().includes(q) || 
+        (v.formula || '').toLowerCase().includes(q) || 
+        (v.tip && v.tip.toLowerCase().includes(q)) ||
+        (v.subject || '').toLowerCase().includes(q) ||
+        (v.category && v.category.toLowerCase().includes(q)) ||
+        (v.attachment && v.attachment.name && v.attachment.name.toLowerCase().includes(q))
       );
     }
 
     if (items.length === 0) {
-      grid.innerHTML = `<div class="col-span-full p-8 text-center text-xs text-slate-500">No formula cards found matching your filter. Click "+ Add Formula / Trick" to store one.</div>`;
+      grid.innerHTML = `
+        <div class="col-span-full p-10 text-center rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-3">
+          <div class="text-3xl">🗝️</div>
+          <h4 class="text-sm font-bold text-white">No Vault Cards Found</h4>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto">
+            No items matching your current filters. Click <strong class="text-emerald-400 font-semibold">+ Add Formula / Vocab / Question</strong> to store new formulas, words, tricky questions, or notes with pictures and PDFs.
+          </p>
+        </div>
+      `;
       return;
     }
 
     grid.innerHTML = items.map(item => {
-      return `
-        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 flex flex-col justify-between hover:border-slate-700 transition">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between gap-2">
-              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">${item.subject}</span>
-              <button
-                data-delete-vault-item="${item.id}"
-                class="p-1 rounded text-slate-500 hover:text-rose-400 text-xs transition"
-                title="Delete formula"
+      const cat = (item.category || 'formula').toLowerCase();
+      let catBadge = '';
+      if (cat === 'vocab') {
+        catBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">📖 Vocab</span>';
+      } else if (cat === 'question') {
+        catBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">❓ Question</span>';
+      } else if (cat === 'trick') {
+        catBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">⚡ Trick</span>';
+      } else {
+        catBadge = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">📐 Formula</span>';
+      }
+
+      // Subject badge color
+      const subLower = (item.subject || '').toLowerCase();
+      let subColorCls = 'text-slate-300 bg-slate-800 border-slate-700';
+      let subIcon = '📚';
+      if (subLower.includes('math')) {
+        subColorCls = 'text-blue-400 bg-blue-500/10 border-blue-500/25';
+        subIcon = '📐';
+      } else if (subLower.includes('eng')) {
+        subColorCls = 'text-amber-400 bg-amber-500/10 border-amber-500/25';
+        subIcon = '📖';
+      } else if (subLower.includes('reason')) {
+        subColorCls = 'text-purple-400 bg-purple-500/10 border-purple-500/25';
+        subIcon = '🧩';
+      } else if (subLower.includes('ga') || subLower.includes('general')) {
+        subColorCls = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25';
+        subIcon = '🌍';
+      }
+
+      // Attachment rendering
+      let attachmentMarkup = '';
+      if (item.attachment && (item.attachment.dataUrl || item.attachment.name)) {
+        if (item.attachment.type === 'pdf') {
+          attachmentMarkup = `
+            <div class="mt-2.5 p-3 rounded-2xl bg-slate-950/80 border border-rose-500/25 hover:border-rose-500/45 transition flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <div class="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-lg text-rose-400 shrink-0">
+                  📄
+                </div>
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-white truncate" title="${escapeHtml(item.attachment.name || 'Document.pdf')}">
+                    ${escapeHtml(item.attachment.name || 'Document.pdf')}
+                  </div>
+                  <div class="text-[10px] text-rose-300/80 font-mono">
+                    PDF Document • ${formatFileSize(item.attachment.size)}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  data-view-vault-pdf="${item.id}"
+                  class="px-2.5 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/35 text-rose-200 text-xs font-semibold flex items-center gap-1 transition"
+                  title="Read PDF inside viewer"
+                >
+                  <span>👁️</span> Read
+                </button>
+                <button
+                  data-download-vault-pdf="${item.id}"
+                  class="p-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition"
+                  title="Download PDF"
+                >
+                  ⬇️
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          // Image attachment
+          attachmentMarkup = `
+            <div class="mt-2.5 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1 text-emerald-400 font-semibold">
+                  <span>🖼️</span> Attached Picture
+                </span>
+                <span class="text-[10px] font-mono text-slate-400">${formatFileSize(item.attachment.size)}</span>
+              </div>
+              <div
+                data-view-vault-img="${item.id}"
+                class="relative group rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 cursor-pointer max-h-48 flex items-center justify-center hover:border-emerald-500/60 transition shadow-inner"
+                title="Click to view full picture in lightbox"
               >
-                ✕
-              </button>
+                <img
+                  src="${item.attachment.dataUrl || ''}"
+                  alt="${escapeHtml(item.title)}"
+                  class="w-full h-44 object-cover object-center group-hover:scale-105 transition duration-300"
+                  loading="lazy"
+                />
+                <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                  <span class="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-lg flex items-center gap-1.5">
+                    <span>🔍</span> View Full Image
+                  </span>
+                </div>
+              </div>
             </div>
-            <h4 class="text-sm font-bold text-white">${item.title}</h4>
-            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-300 whitespace-pre-wrap selection:bg-emerald-500 selection:text-black">
-${item.formula}
+          `;
+        }
+      }
+
+      return `
+        <div class="p-5 rounded-3xl bg-slate-900/90 border border-slate-800/90 space-y-3.5 flex flex-col justify-between hover:border-slate-700/90 transition shadow-lg">
+          <div class="space-y-2.5">
+            <!-- Header badges & delete -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border ${subColorCls}">
+                  ${subIcon} ${escapeHtml(item.subject)}
+                </span>
+                ${catBadge}
+                ${item.attachment ? (item.attachment.type === 'pdf' ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/20">📄 PDF</span>' : '<span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">📷 Pic</span>') : ''}
+              </div>
+              <div class="flex items-center gap-1">
+                <button
+                  data-edit-vault-item="${item.id}"
+                  class="p-1 px-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs transition"
+                  title="Edit item or upload picture/pdf"
+                >
+                  ✏️
+                </button>
+                <button
+                  data-delete-vault-item="${item.id}"
+                  class="p-1 px-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 text-xs transition"
+                  title="Delete item"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
-            ${item.tip ? `<p class="text-[11px] text-slate-400 leading-relaxed"><span class="text-amber-400 font-mono">💡 Pro-Tip:</span> ${item.tip}</p>` : ''}
+
+            <!-- Title -->
+            <h4 class="text-sm font-bold text-white leading-snug">${escapeHtml(item.title)}</h4>
+
+            <!-- Formula / Content Box -->
+            ${item.formula ? `
+              <div class="p-3 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-300 whitespace-pre-wrap selection:bg-emerald-500 selection:text-black leading-relaxed">
+${escapeHtml(item.formula)}
+              </div>
+            ` : ''}
+
+            <!-- Tip / Note -->
+            ${item.tip ? `
+              <p class="text-[11px] text-slate-300 leading-relaxed bg-slate-800/40 p-2.5 rounded-xl border border-slate-800/60">
+                <span class="text-amber-400 font-mono font-bold">💡 Note:</span> ${escapeHtml(item.tip)}
+              </p>
+            ` : ''}
+
+            <!-- Attachment -->
+            ${attachmentMarkup}
           </div>
 
-          <div class="pt-2 border-t border-slate-800/80 flex items-center justify-end">
+          <!-- Bottom Actions -->
+          <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5">
+              ${!item.attachment ? `
+                <button
+                  data-quick-attach-vault="${item.id}"
+                  class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-1 transition"
+                  title="Add picture or PDF to this card"
+                >
+                  <span>📎</span> Add Pic / PDF
+                </button>
+              ` : `
+                <button
+                  data-edit-vault-item="${item.id}"
+                  class="px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 transition"
+                >
+                  <span>✏️</span> Edit
+                </button>
+              `}
+            </div>
+
             <button
               data-copy-vault="${item.id}"
-              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition active:scale-95"
+              class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono flex items-center gap-1.5 transition active:scale-95"
             >
               <span>📋</span>
-              <span class="copy-label">Copy Formula</span>
+              <span class="copy-label">Copy</span>
             </button>
           </div>
         </div>
       `;
     }).join('');
 
-    // Attach copy and delete listeners
+    // Attach Action Listeners
+    // 1. Copy
     grid.querySelectorAll('[data-copy-vault]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-copy-vault');
         const item = state.vaultItems.find(v => v.id === id);
         if (item) {
-          const textToCopy = `${item.title}\n\n${item.formula}${item.tip ? `\n\nTip: ${item.tip}` : ''}`;
+          const parts = [item.title];
+          if (item.formula) parts.push(item.formula);
+          if (item.tip) parts.push(`Note: ${item.tip}`);
+          const textToCopy = parts.join('\n\n');
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(textToCopy).then(() => {
               const label = btn.querySelector('.copy-label');
@@ -3860,16 +4502,137 @@ ${item.formula}
       });
     });
 
+    // 2. Edit
+    grid.querySelectorAll('[data-edit-vault-item], [data-quick-attach-vault]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-edit-vault-item') || e.currentTarget.getAttribute('data-quick-attach-vault');
+        const item = state.vaultItems.find(v => v.id === id);
+        if (item) {
+          openVaultAddModal(item);
+        }
+      });
+    });
+
+    // 3. Delete
     grid.querySelectorAll('[data-delete-vault-item]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-delete-vault-item');
-        if (confirm('Delete this formula from your vault?')) {
+        if (confirm('Delete this card and its uploaded attachments from your vault?')) {
+          deleteVaultAttachmentFromDb(id);
           state.vaultItems = state.vaultItems.filter(v => v.id !== id);
           saveState();
           renderVault();
         }
       });
     });
+
+    // 4. View Image in Lightbox
+    grid.querySelectorAll('[data-view-vault-img]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-view-vault-img');
+        const item = state.vaultItems.find(v => v.id === id);
+        if (item && item.attachment && item.attachment.dataUrl) {
+          openVaultImageViewer(item);
+        }
+      });
+    });
+
+    // 5. View PDF in Reader
+    grid.querySelectorAll('[data-view-vault-pdf]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-view-vault-pdf');
+        const item = state.vaultItems.find(v => v.id === id);
+        if (item && item.attachment && item.attachment.dataUrl) {
+          openVaultPdfViewer(item);
+        }
+      });
+    });
+
+    // 6. Download PDF
+    grid.querySelectorAll('[data-download-vault-pdf]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-download-vault-pdf');
+        const item = state.vaultItems.find(v => v.id === id);
+        if (item && item.attachment) {
+          downloadVaultAttachment(item.attachment, item.title);
+        }
+      });
+    });
+  }
+
+  // Lightbox and PDF Viewer Controllers
+  let currentVaultImageZoom = 1;
+
+  function openVaultImageViewer(item) {
+    const modal = document.getElementById('modal-vault-image-viewer');
+    const img = document.getElementById('vault-lightbox-img');
+    const title = document.getElementById('vault-image-viewer-title');
+    const downloadBtn = document.getElementById('btn-download-vault-image');
+
+    if (!modal || !img || !item.attachment) return;
+
+    currentVaultImageZoom = 1;
+    img.style.transform = 'scale(1)';
+    img.src = item.attachment.dataUrl;
+    if (title) title.textContent = `${item.title} (${item.subject})`;
+
+    if (downloadBtn) {
+      downloadBtn.onclick = () => downloadVaultAttachment(item.attachment, item.title);
+    }
+
+    openModal('modal-vault-image-viewer');
+  }
+
+  function openVaultPdfViewer(item) {
+    const modal = document.getElementById('modal-vault-pdf-viewer');
+    const iframe = document.getElementById('vault-pdf-iframe');
+    const title = document.getElementById('vault-pdf-viewer-title');
+    const size = document.getElementById('vault-pdf-viewer-size');
+    const downloadBtn = document.getElementById('btn-download-vault-pdf');
+    const openExtBtn = document.getElementById('btn-open-pdf-external');
+
+    if (!modal || !iframe || !item.attachment) return;
+
+    iframe.src = item.attachment.dataUrl;
+    if (title) title.textContent = item.attachment.name || item.title;
+    if (size) size.textContent = `PDF • ${formatFileSize(item.attachment.size)}`;
+
+    if (downloadBtn) {
+      downloadBtn.onclick = () => downloadVaultAttachment(item.attachment, item.title);
+    }
+    if (openExtBtn) {
+      openExtBtn.onclick = () => {
+        const win = window.open();
+        if (win) {
+          win.document.write(`<iframe src="${item.attachment.dataUrl}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+        } else {
+          downloadVaultAttachment(item.attachment, item.title);
+        }
+      };
+    }
+
+    openModal('modal-vault-pdf-viewer');
+  }
+
+  // Rehydrate attachments from IndexedDB
+  async function rehydrateVaultAttachments() {
+    if (!Array.isArray(state.vaultItems)) return;
+    let anyLoaded = false;
+    for (const item of state.vaultItems) {
+      if (item.attachment && (!item.attachment.dataUrl || item.attachment.hasStoredBinary)) {
+        const stored = await getVaultAttachmentFromDb(item.id);
+        if (stored && stored.dataUrl) {
+          item.attachment.dataUrl = stored.dataUrl;
+          item.attachment.type = stored.type || item.attachment.type;
+          item.attachment.name = stored.name || item.attachment.name;
+          item.attachment.size = stored.size || item.attachment.size;
+          anyLoaded = true;
+        }
+      }
+    }
+    if (anyLoaded) {
+      renderVault();
+    }
   }
 
   // ==========================================================================
@@ -4868,7 +5631,7 @@ ${item.formula}
     openModal('modal-edit-book');
   }
 
-  // --- 7G. GAMIFIED CALENDAR & TREASURE BOXES (SECTION 6) ---
+  // --- 7G. STUDY CALENDAR & MILESTONE REWARDS (SECTION 6) ---
   let calViewMonth = new Date().getMonth();
   let calViewYear = new Date().getFullYear();
 
@@ -4879,6 +5642,7 @@ ${item.formula}
 
     if (!grid) return;
     if (streakCounter) streakCounter.textContent = state.consecutiveStreak || 0;
+    updateStreakMilestoneVisuals(state.consecutiveStreak || 0);
 
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     if (monthLabel) monthLabel.textContent = `${monthNames[calViewMonth]} ${calViewYear}`;
@@ -5060,102 +5824,8 @@ ${item.formula}
       habitsItemsHtml = `<p class="text-xs text-slate-500 italic py-2">No habit checklist recorded for this calendar date.</p>`;
     }
 
-    // Journal Sync record
-    const journalEntry = state.journalEntries ? state.journalEntries.find(j => j.date === selectedDate) : null;
-    let journalSnippetHtml = '';
-    if (journalEntry) {
-      const evals = journalEntry.evaluations || {};
-      const passedCount = Object.values(evals).filter(v => v === true).length;
-      let execBadge = '';
-      if (journalEntry.overallExecution === 'good') {
-        execBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">✔ Good Execution</span>`;
-      } else if (journalEntry.overallExecution === 'poor') {
-        execBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">✘ Lacked Discipline</span>`;
-      } else {
-        execBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-slate-800 text-slate-400 border border-slate-700">📝 In Progress</span>`;
-      }
-
-      journalSnippetHtml = `
-        <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
-          <div class="flex items-center justify-between text-xs">
-            <span class="font-bold text-slate-200 flex items-center gap-1.5">
-              <span>📓</span> Daily Aspirant Journal Record
-            </span>
-            ${execBadge}
-          </div>
-          <p class="text-xs text-slate-300 italic line-clamp-2 leading-relaxed font-sans">
-            "${escapeHtml(journalEntry.notes || 'No text notes written')}"
-          </p>
-          <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
-            <span class="text-[11px] font-mono text-slate-400">
-              Discipline: <strong class="text-emerald-400">${passedCount}/5 ✔ Passed</strong>
-            </span>
-            <button id="btn-inspect-open-journal" class="px-3 py-1 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 text-xs font-mono font-semibold transition flex items-center gap-1 border border-emerald-500/30">
-              <span>✏️ Open in Journal</span>
-            </button>
-          </div>
-        </div>
-      `;
-    } else {
-      journalSnippetHtml = `
-        <div class="p-3.5 rounded-2xl bg-slate-900/50 border border-slate-800 flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <span class="text-slate-500">📓</span>
-            <span class="text-xs text-slate-400">No journal entry recorded for ${selectedDate}.</span>
-          </div>
-          <button id="btn-inspect-write-journal" class="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition flex items-center gap-1 border border-slate-700">
-            <span>+ Write Journal</span>
-          </button>
-        </div>
-      `;
-    }
-
-    // Weekly To-Do Planner Tasks for this specific selected date
-    const inspectedWeekMon = getMondayOfWeek(selectedDate);
-    const inspectedWeekTodos = (state.weeklyTodos && state.weeklyTodos[inspectedWeekMon]) || [];
-    const inspectedDayTodos = inspectedWeekTodos.filter(t => t.date === selectedDate);
-    const inspectedDayTodosDone = inspectedDayTodos.filter(t => t.completed).length;
-
-    let todosSnippetHtml = `
-      <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-bold text-slate-200 flex items-center gap-1.5">
-            <span>📅</span> Weekly Planner Goals for this Day
-          </span>
-          <span class="text-[11px] font-mono font-bold ${inspectedDayTodosDone === inspectedDayTodos.length && inspectedDayTodos.length > 0 ? 'text-emerald-400' : 'text-slate-400'}">
-            ${inspectedDayTodosDone}/${inspectedDayTodos.length} Completed
-          </span>
-        </div>
-        <div class="space-y-1.5">
-          ${inspectedDayTodos.length > 0 ? inspectedDayTodos.map(t => `
-            <div class="p-2 rounded-xl ${t.completed ? 'bg-emerald-950/25 border border-emerald-500/30' : (t.status === 'crossed' ? 'bg-rose-950/25 border border-rose-500/30' : 'bg-slate-950/70 border border-slate-800')} flex items-center justify-between gap-2 text-xs">
-              <div class="flex items-center gap-2 flex-1 min-w-0">
-                <button
-                  type="button"
-                  data-inspect-todo-toggle="${t.id}"
-                  class="w-5 h-5 rounded flex items-center justify-center font-bold text-[11px] cursor-pointer transition ${t.completed ? 'bg-emerald-500 text-slate-950 shadow-sm shadow-emerald-500/30' : (t.status === 'crossed' ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/30' : 'bg-slate-800 text-slate-400 hover:bg-emerald-500/20 hover:text-emerald-300')}"
-                  title="Toggle task completion status"
-                >
-                  ${t.completed ? '✓' : (t.status === 'crossed' ? '✕' : '○')}
-                </button>
-                <span class="truncate ${t.completed ? 'line-through text-slate-400' : (t.status === 'crossed' ? 'line-through text-rose-300/80' : 'text-slate-200')}">
-                  ${escapeHtml(t.title)}
-                </span>
-              </div>
-              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800/80 text-slate-300 border border-slate-700/60 shrink-0">
-                ${escapeHtml(t.subject || 'Task')}
-              </span>
-            </div>
-          `).join('') : '<p class="text-xs text-slate-500 italic py-1">No to-do goals scheduled for this day yet.</p>'}
-        </div>
-        <div class="flex items-center justify-between pt-1.5 border-t border-slate-800/80">
-          <span class="text-[10px] font-mono text-slate-500">Week: ${inspectedWeekMon}</span>
-          <button id="btn-inspect-open-todo-hub" class="px-3 py-1 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 text-sky-300 text-xs font-mono font-semibold transition flex items-center gap-1 border border-sky-500/30 cursor-pointer">
-            <span>📆 Open Week in To-Do Hub</span>
-          </button>
-        </div>
-      </div>
-    `;
+    const journalSnippetHtml = '';
+    const todosSnippetHtml = '';
 
     // Action button at bottom
     let actionBtnHtml = '';
@@ -5248,59 +5918,12 @@ ${item.formula}
       </div>
     `;
 
-    // Hook Weekly To-Do list interactions from Calendar Day Inspector
-    const btnOpenTodoHub = panel.querySelector('#btn-inspect-open-todo-hub');
-    if (btnOpenTodoHub) {
-      btnOpenTodoHub.addEventListener('click', () => {
-        state.selectedTodoWeekStart = inspectedWeekMon;
-        navigateTo('todo-hub');
-      });
-    }
-
-    panel.querySelectorAll('[data-inspect-todo-toggle]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const taskId = e.currentTarget.getAttribute('data-inspect-todo-toggle');
-        const weekTodos = state.weeklyTodos[inspectedWeekMon];
-        if (weekTodos) {
-          const task = weekTodos.find(t => t.id === taskId);
-          if (task) {
-            if (task.completed) {
-              task.completed = false;
-              task.status = 'pending';
-            } else {
-              task.completed = true;
-              task.status = 'completed';
-            }
-            saveState();
-            renderDayInspectionCard();
-            renderCalendar();
-          }
-        }
-      });
-    });
-
     // Hook edit or create buttons
     const btnEdit = panel.querySelector('#btn-edit-inspected-day');
     if (btnEdit && log) {
       btnEdit.addEventListener('click', () => {
         const idx = state.history.findIndex(h => h.date === selectedDate);
         if (idx >= 0) openEditHistoryModal(idx);
-      });
-    }
-
-    const btnOpenJournal = panel.querySelector('#btn-inspect-open-journal');
-    if (btnOpenJournal) {
-      btnOpenJournal.addEventListener('click', () => {
-        state.selectedJournalDate = selectedDate;
-        navigateTo('journal');
-      });
-    }
-
-    const btnWriteJournal = panel.querySelector('#btn-inspect-write-journal');
-    if (btnWriteJournal) {
-      btnWriteJournal.addEventListener('click', () => {
-        state.selectedJournalDate = selectedDate;
-        navigateTo('journal');
       });
     }
 
@@ -5334,6 +5957,7 @@ ${item.formula}
     if (!container) return;
 
     const streak = state.consecutiveStreak || 0;
+    updateStreakMilestoneVisuals(streak);
 
     container.innerHTML = MILESTONES.map(m => {
       const isUnlocked = streak >= m.streak;
@@ -5347,7 +5971,7 @@ ${item.formula}
         statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">✓ Claimed</span>`;
       } else if (isUnlocked) {
         cardClass = 'unlocked';
-        statusBadge = `<button data-claim-milestone="${m.streak}" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-white shadow-md hover:bg-emerald-600 animate-pulse">🎁 Open Chest</button>`;
+        statusBadge = `<button data-claim-milestone="${m.streak}" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-white shadow-md hover:bg-emerald-600 animate-pulse">🎁 Claim Reward</button>`;
       } else {
         statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-500 bg-slate-800 border border-slate-700">🔒 ${m.streak - streak} Days Left</span>`;
       }
@@ -5553,103 +6177,16 @@ ${item.formula}
     }
   }
 
-  // Switch Hub Tabs (Daily Hub | Weekly Planner | Monthly Milestones)
+  // Switch Hub Tabs (Daily Hub)
   function switchHubTab(tabName) {
-    if (!['daily', 'weekly', 'monthly'].includes(tabName)) {
-      tabName = 'daily';
-    }
-    state.revisionActiveTab = tabName;
-    saveState();
-
-    const tabDaily = document.getElementById('tab-btn-hub-daily');
-    const tabWeekly = document.getElementById('tab-btn-hub-weekly');
-    const tabMonthly = document.getElementById('tab-btn-hub-monthly');
-    const indicator = document.getElementById('hub-active-tab-indicator');
-
-    const viewDaily = document.getElementById('hub-view-daily');
-    const viewWeekly = document.getElementById('hub-view-weekly');
-    const viewMonthly = document.getElementById('hub-view-monthly');
-
-    if (tabDaily) tabDaily.classList.toggle('active', tabName === 'daily');
-    if (tabWeekly) tabWeekly.classList.toggle('active', tabName === 'weekly');
-    if (tabMonthly) tabMonthly.classList.toggle('active', tabName === 'monthly');
-
-    if (viewDaily) viewDaily.classList.toggle('hidden', tabName !== 'daily');
-    if (viewWeekly) viewWeekly.classList.toggle('hidden', tabName !== 'weekly');
-    if (viewMonthly) viewMonthly.classList.toggle('hidden', tabName !== 'monthly');
-
-    if (indicator) {
-      if (tabName === 'weekly') {
-        indicator.textContent = 'Weekly Planner (Mon–Sun) Active';
-      } else if (tabName === 'monthly') {
-        indicator.textContent = 'Monthly Milestones Active';
-      } else {
-        indicator.textContent = 'Daily Hub Active';
-      }
-    }
-
-    if (tabName === 'weekly') {
-      renderWeeklyView();
-    } else if (tabName === 'monthly') {
-      renderMonthlyView();
-    } else {
-      renderTargetHub();
-      renderRevisionSystem();
-    }
+    renderTargetHub();
+    renderRevisionSystem();
   }
 
-  // Master Render for Revision & To-Do Hub Views
+  // Master Render for Revision & Daily Targets Hub View
   function renderTodoHub() {
-    const section = document.getElementById('section-revision');
-    if (!section) return;
-
-    // Safety checks for state attributes
-    if (!state.selectedTodoWeekStart) {
-      state.selectedTodoWeekStart = getMondayOfWeek(getStudyCycleDate());
-    }
-    if (!state.selectedTodoMonth) {
-      state.selectedTodoMonth = getMonthKey(getStudyCycleDate());
-    }
-    if (!state.revisionActiveTab) {
-      state.revisionActiveTab = 'daily';
-    }
-    if (!state.weeklyTodos || typeof state.weeklyTodos !== 'object') {
-      state.weeklyTodos = {};
-    }
-    if (!state.monthlyTargets || typeof state.monthlyTargets !== 'object') {
-      state.monthlyTargets = {};
-    }
-
-    const currentTab = state.revisionActiveTab || 'daily';
-    const tabDaily = document.getElementById('tab-btn-hub-daily');
-    const tabWeekly = document.getElementById('tab-btn-hub-weekly');
-    const tabMonthly = document.getElementById('tab-btn-hub-monthly');
-    const indicator = document.getElementById('hub-active-tab-indicator');
-
-    const viewDaily = document.getElementById('hub-view-daily');
-    const viewWeekly = document.getElementById('hub-view-weekly');
-    const viewMonthly = document.getElementById('hub-view-monthly');
-
-    if (tabDaily) tabDaily.classList.toggle('active', currentTab === 'daily');
-    if (tabWeekly) tabWeekly.classList.toggle('active', currentTab === 'weekly');
-    if (tabMonthly) tabMonthly.classList.toggle('active', currentTab === 'monthly');
-
-    if (viewDaily) viewDaily.classList.toggle('hidden', currentTab !== 'daily');
-    if (viewWeekly) viewWeekly.classList.toggle('hidden', currentTab !== 'weekly');
-    if (viewMonthly) viewMonthly.classList.toggle('hidden', currentTab !== 'monthly');
-
-    if (indicator) {
-      if (currentTab === 'weekly') {
-        indicator.textContent = 'Weekly Planner (Mon–Sun) Active';
-      } else if (currentTab === 'monthly') {
-        indicator.textContent = 'Monthly Milestones Active';
-      } else {
-        indicator.textContent = 'Daily Hub Active';
-      }
-    }
-
-    renderWeeklyView();
-    renderMonthlyView();
+    renderTargetHub();
+    renderRevisionSystem();
   }
 
   // --- RENDER WEEKLY VIEW (MON TO SUN: 7 DAYS) ---
@@ -7938,60 +8475,61 @@ ${item.formula}
 
     if (cycleDate) cycleDate.textContent = state.activeCycleDate || '--';
     if (targetHours) targetHours.textContent = `${state.targetHours.toFixed(1)} Hours`;
-    if (mathsQs) mathsQs.textContent = `${state.mathsQuestionsDone || 0} / 320`;
+    const todayTarget = (state.dateTargets && state.dateTargets[state.activeCycleDate] && state.dateTargets[state.activeCycleDate].mathsTarget) || state.defaultMathsTarget || 320;
+    if (mathsQs) mathsQs.textContent = `${state.mathsQuestionsDone || 0} / ${todayTarget}`;
 
-    // Dynamic One Piece Pirate Bounty & Rank Calculation
+    // Dynamic Aspirant Mastery Level & Rank Calculation
     const totalPastStudySeconds = (state.history || []).reduce((sum, h) => sum + (h.totalStudySeconds || 0), 0);
     const totalLoggedStudySeconds = totalPastStudySeconds + calculateTotalStudySeconds();
     const totalStudyHours = totalLoggedStudySeconds / 3600;
     const streakDays = state.consecutiveStreak || 0;
     const totalMathsSolved = (state.history || []).reduce((sum, h) => sum + (h.mathsQuestions || 0), 0) + (state.mathsQuestionsDone || 0);
 
-    // Bounty calculation: Base 30M + 5M per study hour + 10M per streak day + 50k per Maths question
-    let berryBounty = 30000000 + Math.floor(totalStudyHours * 5000000) + (streakDays * 10000000) + (totalMathsSolved * 50000);
+    // Score calculation: Base 30k + 5k per study hour + 10k per streak day + 50 per Maths question
+    let masteryScore = 30000 + Math.floor(totalStudyHours * 5000) + (streakDays * 10000) + (totalMathsSolved * 50);
 
-    let rankTitle = "Super Rookie";
-    let roleTitle = "Straw Hat Aspirant";
+    let rankTitle = "Aspiring Candidate";
+    let roleTitle = "Dedicated Learner";
 
-    if (berryBounty >= 3000000000) {
-      rankTitle = "Pirate King Tier";
-      roleTitle = "All-Blue 4600 GP Master";
-    } else if (berryBounty >= 1500000000) {
-      rankTitle = "Yonko Fleet Admiral";
-      roleTitle = "Central Secretariat Commander";
-    } else if (berryBounty >= 500000000) {
-      rankTitle = "Warlord of Grand Line";
-      roleTitle = "Tier-1 Conqueror Fleet";
-    } else if (berryBounty >= 200000000) {
-      rankTitle = "Worst Generation Captain";
-      roleTitle = "Swordsman of Relentless Focus";
-    } else if (berryBounty >= 100000000) {
-      rankTitle = "Grand Line Veteran";
-      roleTitle = "Straw Hat Deck Officer";
-    } else if (berryBounty >= 50000000) {
-      rankTitle = "Super Rookie";
-      roleTitle = "Straw Hat Aspirant";
+    if (masteryScore >= 3000000) {
+      rankTitle = "Apex Ranker (AIR Top 100)";
+      roleTitle = "4600 Grade Pay Officer Level";
+    } else if (masteryScore >= 1500000) {
+      rankTitle = "Tier-2 Mastery Champion";
+      roleTitle = "Inspector / ASO Cadre Target";
+    } else if (masteryScore >= 500000) {
+      rankTitle = "Advanced Aspirant";
+      roleTitle = "Tier-1 High Scorer";
+    } else if (masteryScore >= 200000) {
+      rankTitle = "Consistent Aspirant";
+      roleTitle = "Daily Target Finisher";
+    } else if (masteryScore >= 100000) {
+      rankTitle = "Disciplined Aspirant";
+      roleTitle = "Routine Achiever";
+    } else if (masteryScore >= 50000) {
+      rankTitle = "Active Aspirant";
+      roleTitle = "Focused Candidate";
     } else {
-      rankTitle = "East Blue Rookie";
-      roleTitle = "Cabin Boy Aspirant";
+      rankTitle = "Aspiring Candidate";
+      roleTitle = "Dedicated Learner";
     }
 
-    const formattedBounty = berryBounty.toLocaleString('en-US');
-    const compactBounty = berryBounty >= 1000000000
-      ? `${(berryBounty / 1000000000).toFixed(1)}B`
-      : `${Math.round(berryBounty / 1000000)}M`;
+    const formattedScore = masteryScore.toLocaleString('en-US');
+    const compactScore = masteryScore >= 1000000
+      ? `${(masteryScore / 1000000).toFixed(1)}M`
+      : `${Math.round(masteryScore / 1000)}k`;
 
     // Update Header
     const userRankEl = document.getElementById('user-rank-title');
     const userRoleEl = document.getElementById('user-role-title');
-    if (userRankEl) userRankEl.textContent = `${rankTitle} • ${compactBounty} Berries`;
+    if (userRankEl) userRankEl.textContent = `${rankTitle} • ${compactScore} XP`;
     if (userRoleEl) userRoleEl.textContent = roleTitle;
 
     // Update Sidebar Profile
     const sideRankEl = document.getElementById('sidebar-rank-title');
     const sideBountyEl = document.getElementById('sidebar-bounty-display');
     if (sideRankEl) sideRankEl.textContent = rankTitle;
-    if (sideBountyEl) sideBountyEl.textContent = `฿ ${formattedBounty} BOUNTY`;
+    if (sideBountyEl) sideBountyEl.textContent = `★ ${formattedScore} XP`;
   }
 
   function update5amCountdown() {
@@ -8071,10 +8609,10 @@ ${item.formula}
     const inputM = document.getElementById('edit-subject-mins');
     const inputS = document.getElementById('edit-subject-secs');
 
-    if (title) title.textContent = `Edit Time: ${s.name}`;
+    if (title) title.textContent = `Edit Today's Total: ${s.name}`;
     if (inputId) inputId.value = s.id;
 
-    const total = s.seconds || 0;
+    const total = (s.totalSubjectTime || 0) + (s.isRunning ? (s.currentSessionTime || 0) : 0);
     if (inputH) inputH.value = Math.floor(total / 3600);
     if (inputM) inputM.value = Math.floor((total % 3600) / 60);
     if (inputS) inputS.value = total % 60;
@@ -8460,14 +8998,12 @@ ${item.formula}
       sectionKey = 'calendar';
     }
 
-    let targetHubTab = null;
     if (sectionKey === 'todo-hub') {
       sectionKey = 'revision';
-      targetHubTab = 'weekly';
     }
 
     // Hide all sections
-    const sections = ['home', 'subjects', 'syllabus', 'revision', 'calendar', 'journal', 'mock-trends', 'energy', 'vault', 'books', 'mock-pdf', 'history', 'settings'];
+    const sections = ['home', 'subjects', 'syllabus', 'revision', 'calendar', 'vault', 'history', 'settings'];
     sections.forEach(sec => {
       const el = document.getElementById(`section-${sec}`);
       if (el) {
@@ -8482,7 +9018,7 @@ ${item.formula}
     // Update active class in sidebar links
     document.querySelectorAll('#sidebar-nav .nav-link').forEach(btn => {
       const linkNav = btn.getAttribute('data-nav');
-      if (linkNav === sectionKey || (sectionKey === 'calendar' && linkNav === 'habits') || (sectionKey === 'revision' && linkNav === 'todo-hub' && targetHubTab)) {
+      if (linkNav === sectionKey || (sectionKey === 'calendar' && linkNav === 'habits')) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
@@ -8498,29 +9034,16 @@ ${item.formula}
     } else if (sectionKey === 'syllabus') {
       renderSyllabus();
     } else if (sectionKey === 'revision') {
-      if (targetHubTab) {
-        switchHubTab(targetHubTab);
-      } else {
-        renderTodoHub();
-        renderTargetHub();
-        renderRevisionSystem();
-      }
+      renderTodoHub();
+      renderTargetHub();
+      renderRevisionSystem();
     } else if (sectionKey === 'calendar') {
       renderCalendar();
       renderDayInspectionCard();
       renderHabitsList();
       renderMilestones();
-    } else if (sectionKey === 'journal') {
-      renderJournal();
-    } else if (sectionKey === 'mock-trends') {
-      renderMockTrends();
-    } else if (sectionKey === 'energy') {
-      renderEnergyRating();
-      renderEnergyHistory();
     } else if (sectionKey === 'vault') {
       renderVault();
-    } else if (sectionKey === 'books') {
-      renderBookTracker();
     } else if (sectionKey === 'history') {
       renderHistoryTable();
     }
@@ -9906,6 +10429,139 @@ ${item.formula}
       });
     });
 
+    // --- Custom Maths Target Controls (Daily Hub & Modal) ---
+    const btnApplyMathsTarget = document.getElementById('btn-apply-hub-maths-target');
+    const inputMathsTarget = document.getElementById('input-hub-maths-target');
+    function applyCustomMathsTarget() {
+      if (!inputMathsTarget) return;
+      const val = Math.max(1, parseInt(inputMathsTarget.value, 10) || 320);
+      const curDate = state.selectedTargetDate || getStudyCycleDate();
+      setMathsTargetForDate(curDate, val);
+      try { playChime('start'); } catch (err) {}
+    }
+
+    if (btnApplyMathsTarget) btnApplyMathsTarget.addEventListener('click', applyCustomMathsTarget);
+    if (inputMathsTarget) {
+      inputMathsTarget.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyCustomMathsTarget();
+        }
+      });
+    }
+
+    // Modal Edit Maths Target hooks
+    function openMathsTargetModal(dateStr) {
+      const curDate = dateStr || state.selectedTargetDate || getStudyCycleDate();
+      state.mathsTargetModalDate = curDate;
+      const entry = getDateTargetEntry(curDate);
+      const targetVal = entry.mathsTarget || state.defaultMathsTarget || 320;
+
+      const dateLabel = document.getElementById('modal-maths-target-date-label');
+      if (dateLabel) {
+        if (curDate === state.activeCycleDate) {
+          dateLabel.textContent = 'Today (Live)';
+        } else if (curDate === getPastCycleDate(1)) {
+          dateLabel.textContent = 'Yesterday (' + formatMonthDayShort(curDate) + ')';
+        } else if (curDate === getFutureCycleDate(1)) {
+          dateLabel.textContent = 'Tomorrow (' + formatMonthDayShort(curDate) + ')';
+        } else {
+          dateLabel.textContent = formatMonthDayShort(curDate) || curDate;
+        }
+      }
+
+      const inputModalTarget = document.getElementById('input-modal-maths-target');
+      if (inputModalTarget) {
+        inputModalTarget.value = targetVal;
+        setTimeout(() => inputModalTarget.select(), 100);
+      }
+
+      const chkDefault = document.getElementById('checkbox-maths-target-default');
+      if (chkDefault) chkDefault.checked = false;
+
+      openModal('modal-edit-maths-target');
+    }
+
+    const btnEditHubTarget = document.getElementById('btn-edit-hub-maths-target');
+    if (btnEditHubTarget) {
+      btnEditHubTarget.addEventListener('click', () => {
+        openMathsTargetModal(state.selectedTargetDate || getStudyCycleDate());
+      });
+    }
+
+    const hubTargetCountEl = document.getElementById('hub-maths-target-count');
+    if (hubTargetCountEl) {
+      hubTargetCountEl.addEventListener('click', () => {
+        openMathsTargetModal(state.selectedTargetDate || getStudyCycleDate());
+      });
+    }
+
+    const btnEditSubjTarget = document.getElementById('btn-edit-subjects-maths-target');
+    if (btnEditSubjTarget) {
+      btnEditSubjTarget.addEventListener('click', () => {
+        openMathsTargetModal(state.activeCycleDate || getStudyCycleDate());
+      });
+    }
+
+    const mathsQsTargetEl = document.getElementById('maths-qs-target');
+    if (mathsQsTargetEl) {
+      mathsQsTargetEl.addEventListener('click', () => {
+        openMathsTargetModal(state.activeCycleDate || getStudyCycleDate());
+      });
+    }
+
+    // Preset buttons in modal
+    document.querySelectorAll('#modal-edit-maths-target .btn-maths-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const val = parseInt(e.currentTarget.getAttribute('data-preset-target'), 10);
+        const inputModalTarget = document.getElementById('input-modal-maths-target');
+        if (inputModalTarget && val) {
+          inputModalTarget.value = val;
+        }
+      });
+    });
+
+    // Form submit for edit maths target modal
+    const formEditMathsTarget = document.getElementById('form-edit-maths-target');
+    if (formEditMathsTarget) {
+      formEditMathsTarget.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputModalTarget = document.getElementById('input-modal-maths-target');
+        const chkDefault = document.getElementById('checkbox-maths-target-default');
+        const val = Math.max(1, parseInt(inputModalTarget ? inputModalTarget.value : '320', 10) || 320);
+        const targetDate = state.mathsTargetModalDate || state.selectedTargetDate || getStudyCycleDate();
+        const isDefault = chkDefault ? chkDefault.checked : false;
+
+        setMathsTargetForDate(targetDate, val, isDefault);
+        closeModal('modal-edit-maths-target');
+        try { playChime('start'); } catch (err) {}
+      });
+    }
+
+    // Settings: Save default daily maths target
+    const btnSaveDefaultMaths = document.getElementById('btn-save-default-maths-target');
+    const inputSettingMaths = document.getElementById('input-setting-maths-target');
+    if (inputSettingMaths) {
+      inputSettingMaths.value = state.defaultMathsTarget || 320;
+    }
+    if (btnSaveDefaultMaths && inputSettingMaths) {
+      btnSaveDefaultMaths.addEventListener('click', () => {
+        const val = Math.max(1, parseInt(inputSettingMaths.value, 10) || 320);
+        state.defaultMathsTarget = val;
+        const todayStr = state.activeCycleDate || getStudyCycleDate();
+        const entry = getDateTargetEntry(todayStr);
+        if (entry) {
+          entry.mathsTarget = val;
+          entry.mathsCompleted = (entry.mathsDone || 0) >= val;
+        }
+        saveState();
+        renderDateMathsMission();
+        renderSubjectCards();
+        updateSidebarStatus();
+        try { playChime('finish'); } catch (err) {}
+      });
+    }
+
     // Inline Task Form for Selected Date
     const formInlineTask = document.getElementById('form-inline-add-date-task');
     if (formInlineTask) {
@@ -10111,43 +10767,368 @@ ${item.formula}
       });
     }
 
-    // --- Formula & Short-Trick Vault Listeners ---
-    const btnAddVault = document.getElementById('btn-add-vault-item');
-    if (btnAddVault) {
-      btnAddVault.addEventListener('click', () => openModal('modal-add-vault-item'));
+    // --- Formula, Vocab, Question & Short-Trick Vault Listeners ---
+    let pendingVaultAttachment = null;
+
+    function updateVaultCategoryHints() {
+      const cat = document.getElementById('vault-item-category')?.value || 'formula';
+      const formulaLabel = document.getElementById('vault-item-formula-label');
+      const formulaInput = document.getElementById('vault-item-formula');
+      const tipLabel = document.getElementById('vault-item-tip-label');
+      const tipInput = document.getElementById('vault-item-tip');
+
+      if (cat === 'vocab') {
+        if (formulaLabel) formulaLabel.textContent = 'Word Meaning, Root & Sentence Examples';
+        if (formulaInput) formulaInput.placeholder = 'e.g. Definition, root etymology, synonyms, antonyms, example sentences...';
+        if (tipLabel) tipLabel.textContent = 'Memory Mnemonic / Exam Context';
+        if (tipInput) tipInput.placeholder = 'e.g. Frequently tested in SSC Tier 1 Antonyms, root word hook...';
+      } else if (cat === 'question') {
+        if (formulaLabel) formulaLabel.textContent = 'Tricky Question Statement & Solution Steps';
+        if (formulaInput) formulaInput.placeholder = 'e.g. Question: ... \nSolution: Step 1..., Step 2...';
+        if (tipLabel) tipLabel.textContent = 'Common Trap / Shortcut Solution Hack';
+        if (tipInput) tipInput.placeholder = 'e.g. Watch out for alternate day sequence, base 10 trap...';
+      } else if (cat === 'trick') {
+        if (formulaLabel) formulaLabel.textContent = 'Short-Trick / Speed Calculation Method';
+        if (formulaInput) formulaInput.placeholder = 'e.g. 5-second mental math technique, pattern breakdown...';
+        if (tipLabel) tipLabel.textContent = 'When to Apply & Key Conditions';
+        if (tipInput) tipInput.placeholder = 'e.g. Apply when discount is successive or unit digits sum to 10...';
+      } else {
+        if (formulaLabel) formulaLabel.textContent = 'Formula / Concept Rule';
+        if (formulaInput) formulaInput.placeholder = 'e.g. Net Change % = a + b + (a * b) / 100, or PT² = PA × PB...';
+        if (tipLabel) tipLabel.textContent = 'Pro-Tip / Application Note';
+        if (tipInput) tipInput.placeholder = 'e.g. Use positive for profit, negative for discount/loss...';
+      }
     }
 
-    const formAddVault = document.getElementById('form-add-vault-item');
-    if (formAddVault) {
-      formAddVault.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const sub = document.getElementById('vault-item-subject')?.value || 'maths';
-        const title = (document.getElementById('vault-item-title')?.value || '').trim();
-        const formula = (document.getElementById('vault-item-formula')?.value || '').trim();
-        const tip = (document.getElementById('vault-item-tip')?.value || '').trim();
+    function showVaultFilePreview(att) {
+      const container = document.getElementById('vault-file-preview-container');
+      const dropzone = document.getElementById('vault-file-dropzone');
+      const thumbBox = document.getElementById('vault-file-thumbnail-box');
+      const nameEl = document.getElementById('vault-file-name');
+      const sizeEl = document.getElementById('vault-file-size');
 
-        if (title && formula) {
-          state.vaultItems.unshift({
-            id: 'v_' + Date.now(),
-            subject: sub,
-            title,
-            formula,
-            tip
+      if (!container || !att) return;
+
+      if (nameEl) nameEl.textContent = att.name || (att.type === 'pdf' ? 'document.pdf' : 'picture.png');
+      if (sizeEl) sizeEl.textContent = formatFileSize(att.size);
+
+      if (thumbBox) {
+        if (att.type === 'image' && att.dataUrl) {
+          thumbBox.innerHTML = `<img src="${att.dataUrl}" alt="Preview" class="w-full h-full object-cover rounded-lg" />`;
+        } else {
+          thumbBox.innerHTML = `<span class="text-2xl">📄</span>`;
+        }
+      }
+
+      container.classList.remove('hidden');
+      if (dropzone) dropzone.classList.add('hidden');
+    }
+
+    function hideVaultFilePreview() {
+      const container = document.getElementById('vault-file-preview-container');
+      const dropzone = document.getElementById('vault-file-dropzone');
+      const fileInput = document.getElementById('vault-item-file');
+
+      if (container) container.classList.add('hidden');
+      if (dropzone) dropzone.classList.remove('hidden');
+      if (fileInput) fileInput.value = '';
+      pendingVaultAttachment = null;
+    }
+
+    function optimizeVaultImage(dataUrl, callback) {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const optimized = canvas.toDataURL('image/jpeg', 0.88);
+        callback(optimized);
+      };
+      img.onerror = () => {
+        callback(dataUrl);
+      };
+      img.src = dataUrl;
+    }
+
+    function handleVaultFileSelect(file) {
+      if (!file) return;
+      const maxBytes = 15 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        alert('File is too large! Maximum allowed size is 15MB.');
+        return;
+      }
+
+      const isImg = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+      if (!isImg && !isPdf) {
+        alert('Unsupported file format! Please upload an image (PNG, JPG, WEBP) or a PDF document.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rawDataUrl = e.target.result;
+        if (isImg) {
+          optimizeVaultImage(rawDataUrl, (optUrl) => {
+            pendingVaultAttachment = {
+              id: 'att_' + Date.now(),
+              type: 'image',
+              mimeType: file.type || 'image/jpeg',
+              name: file.name,
+              size: Math.round(optUrl.length * 0.75),
+              dataUrl: optUrl
+            };
+            showVaultFilePreview(pendingVaultAttachment);
           });
-          saveState();
-          closeModal('modal-add-vault-item');
-          formAddVault.reset();
-          renderVault();
+        } else {
+          pendingVaultAttachment = {
+            id: 'att_' + Date.now(),
+            type: 'pdf',
+            mimeType: 'application/pdf',
+            name: file.name,
+            size: file.size,
+            dataUrl: rawDataUrl
+          };
+          showVaultFilePreview(pendingVaultAttachment);
+        }
+      };
+      reader.onerror = () => {
+        alert('Failed to read the file. Please try again.');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function openVaultAddModal(editItem = null) {
+      const modal = document.getElementById('modal-add-vault-item');
+      const form = document.getElementById('form-add-vault-item');
+      if (!modal || !form) return;
+
+      const modalTitle = document.getElementById('vault-modal-title');
+      const submitBtn = document.getElementById('btn-submit-vault-item');
+      const editIdInput = document.getElementById('vault-item-edit-id');
+      const subjectSelect = document.getElementById('vault-item-subject');
+      const categorySelect = document.getElementById('vault-item-category');
+      const titleInput = document.getElementById('vault-item-title');
+      const formulaInput = document.getElementById('vault-item-formula');
+      const tipInput = document.getElementById('vault-item-tip');
+      const fileInput = document.getElementById('vault-item-file');
+
+      // Populate subject options with standard and custom subjects
+      if (subjectSelect) {
+        const standard = [
+          { id: 'Maths', name: '📐 Mathematics' },
+          { id: 'English', name: '📖 English' },
+          { id: 'Reasoning', name: '🧩 Reasoning' },
+          { id: 'GA', name: '🌍 General Awareness' }
+        ];
+
+        const custom = (state.subjects || []).filter(s => {
+          const n = (s.shortName || s.name || '').trim().toLowerCase();
+          return !['maths', 'mathematics', 'english', 'reasoning', 'ga', 'general awareness'].includes(n);
+        }).map(s => ({ id: s.name, name: `📚 ${s.name}` }));
+
+        const allOpts = [...standard, ...custom];
+        const selectedSub = editItem ? editItem.subject : (state.activeVaultFilter !== 'all' ? state.activeVaultFilter : 'Maths');
+
+        subjectSelect.innerHTML = allOpts.map(opt => `
+          <option value="${escapeHtml(opt.id)}" ${opt.id.toLowerCase() === selectedSub.toLowerCase() ? 'selected' : ''}>
+            ${escapeHtml(opt.name)}
+          </option>
+        `).join('');
+      }
+
+      if (editItem) {
+        if (editIdInput) editIdInput.value = editItem.id;
+        if (modalTitle) modalTitle.innerHTML = `<span>✏️</span> <span>Edit Vault Card</span>`;
+        if (submitBtn) submitBtn.textContent = 'Update Vault Card';
+        if (categorySelect) categorySelect.value = editItem.category || 'formula';
+        if (titleInput) titleInput.value = editItem.title || '';
+        if (formulaInput) formulaInput.value = editItem.formula || '';
+        if (tipInput) tipInput.value = editItem.tip || '';
+
+        if (editItem.attachment && (editItem.attachment.dataUrl || editItem.attachment.name)) {
+          pendingVaultAttachment = { ...editItem.attachment };
+          showVaultFilePreview(pendingVaultAttachment);
+        } else {
+          hideVaultFilePreview();
+        }
+      } else {
+        if (editIdInput) editIdInput.value = '';
+        if (modalTitle) modalTitle.innerHTML = `<span>🗝️</span> <span>Add Formula / Vocab / Question to Vault</span>`;
+        if (submitBtn) submitBtn.textContent = 'Save to Vault';
+        form.reset();
+        if (categorySelect) {
+          const typeFilter = state.activeVaultTypeFilter || 'all';
+          categorySelect.value = (typeFilter !== 'all' && typeFilter !== 'attachment') ? typeFilter : 'formula';
+        }
+        hideVaultFilePreview();
+      }
+
+      if (fileInput) fileInput.value = '';
+      updateVaultCategoryHints();
+      openModal('modal-add-vault-item');
+    }
+
+    const btnAddVault = document.getElementById('btn-add-vault-item');
+    if (btnAddVault) {
+      btnAddVault.addEventListener('click', () => openVaultAddModal(null));
+    }
+
+    // Category change updates hints
+    const selectVaultCategory = document.getElementById('vault-item-category');
+    if (selectVaultCategory) {
+      selectVaultCategory.addEventListener('change', updateVaultCategoryHints);
+    }
+
+    // File Dropzone & Browse Handlers
+    const vaultDropzone = document.getElementById('vault-file-dropzone');
+    const vaultFileInput = document.getElementById('vault-item-file');
+    const btnRemoveVaultFile = document.getElementById('btn-remove-vault-file');
+
+    if (vaultDropzone && vaultFileInput) {
+      vaultDropzone.addEventListener('click', () => {
+        vaultFileInput.click();
+      });
+
+      vaultDropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        vaultDropzone.classList.add('border-emerald-500', 'bg-emerald-500/10');
+      });
+
+      vaultDropzone.addEventListener('dragleave', () => {
+        vaultDropzone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
+      });
+
+      vaultDropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        vaultDropzone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleVaultFileSelect(e.dataTransfer.files[0]);
+        }
+      });
+
+      vaultFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          handleVaultFileSelect(e.target.files[0]);
         }
       });
     }
 
-    document.querySelectorAll('#vault-subject-filter-tabs button').forEach(btn => {
+    if (btnRemoveVaultFile) {
+      btnRemoveVaultFile.addEventListener('click', hideVaultFilePreview);
+    }
+
+    // Form Submit
+    const formAddVault = document.getElementById('form-add-vault-item');
+    if (formAddVault) {
+      formAddVault.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const sub = document.getElementById('vault-item-subject')?.value || 'Maths';
+        const category = document.getElementById('vault-item-category')?.value || 'formula';
+        const title = (document.getElementById('vault-item-title')?.value || '').trim();
+        const formula = (document.getElementById('vault-item-formula')?.value || '').trim();
+        const tip = (document.getElementById('vault-item-tip')?.value || '').trim();
+        const editId = document.getElementById('vault-item-edit-id')?.value;
+
+        if (!title) {
+          alert('Please enter a title for this card.');
+          return;
+        }
+
+        if (!formula && !pendingVaultAttachment) {
+          alert('Please enter formula/vocab/question content or attach a picture/PDF.');
+          return;
+        }
+
+        let savedItem = null;
+
+        if (editId) {
+          savedItem = state.vaultItems.find(v => v.id === editId);
+          if (savedItem) {
+            savedItem.subject = sub;
+            savedItem.category = category;
+            savedItem.title = title;
+            savedItem.formula = formula;
+            savedItem.tip = tip;
+            savedItem.attachment = pendingVaultAttachment ? { ...pendingVaultAttachment } : null;
+            savedItem.updatedAt = Date.now();
+          }
+        } else {
+          savedItem = {
+            id: 'v_' + Date.now(),
+            subject: sub,
+            category,
+            title,
+            formula,
+            tip,
+            attachment: pendingVaultAttachment ? { ...pendingVaultAttachment } : null,
+            createdAt: Date.now()
+          };
+          if (!Array.isArray(state.vaultItems)) state.vaultItems = [];
+          state.vaultItems.unshift(savedItem);
+        }
+
+        // Persist file into IndexedDB
+        if (savedItem) {
+          if (pendingVaultAttachment && pendingVaultAttachment.dataUrl) {
+            saveVaultAttachmentToDb(savedItem.id, pendingVaultAttachment);
+          } else if (!pendingVaultAttachment) {
+            deleteVaultAttachmentFromDb(savedItem.id);
+          }
+        }
+
+        saveState();
+        closeModal('modal-add-vault-item');
+        formAddVault.reset();
+        pendingVaultAttachment = null;
+        renderVault();
+        playChime('success');
+      });
+    }
+
+    // Category / Type filter pills listeners
+    document.querySelectorAll('#vault-type-filter-tabs button[data-vault-type]').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        state.activeVaultFilter = e.currentTarget.getAttribute('data-vault-filter');
+        state.activeVaultTypeFilter = e.currentTarget.getAttribute('data-vault-type');
         renderVault();
       });
     });
+
+    // Image Zoom listeners
+    const btnZoomIn = document.getElementById('btn-zoom-vault-image-in');
+    const btnZoomOut = document.getElementById('btn-zoom-vault-image-out');
+    const lightboxImg = document.getElementById('vault-lightbox-img');
+
+    if (btnZoomIn && lightboxImg) {
+      btnZoomIn.addEventListener('click', () => {
+        currentVaultImageZoom = Math.min(3.5, currentVaultImageZoom + 0.25);
+        lightboxImg.style.transform = `scale(${currentVaultImageZoom})`;
+      });
+    }
+
+    if (btnZoomOut && lightboxImg) {
+      btnZoomOut.addEventListener('click', () => {
+        currentVaultImageZoom = Math.max(0.5, currentVaultImageZoom - 0.25);
+        lightboxImg.style.transform = `scale(${currentVaultImageZoom})`;
+      });
+    }
 
     const inputVaultSearch = document.getElementById('input-vault-search');
     if (inputVaultSearch) {
@@ -10160,7 +11141,7 @@ ${item.formula}
     const btnResetVault = document.getElementById('btn-reset-vault');
     if (btnResetVault) {
       btnResetVault.addEventListener('click', () => {
-        if (confirm('Restore default formula and short-trick cards in vault?')) {
+        if (confirm('Restore default formula, vocab & short-trick cards in your vault?')) {
           state.vaultItems = JSON.parse(JSON.stringify(DEFAULT_VAULT_ITEMS));
           saveState();
           renderVault();
@@ -10236,16 +11217,35 @@ ${item.formula}
       });
     }
 
-    // --- 320 Maths Target Quick Buttons ---
+    // --- Daily Maths Target Quick Buttons ---
+    function updateTodayMathsDone(newVal) {
+      state.mathsQuestionsDone = Math.max(0, newVal);
+      const todayStr = state.activeCycleDate || getStudyCycleDate();
+      const entry = getDateTargetEntry(todayStr);
+      if (entry) {
+        entry.mathsDone = state.mathsQuestionsDone;
+        const target = entry.mathsTarget || state.defaultMathsTarget || 320;
+        entry.mathsCompleted = state.mathsQuestionsDone >= target;
+      }
+      saveState();
+      renderSubjectCards();
+      renderDateMathsMission();
+      renderTargetTimelineStrip();
+      updateSidebarStatus();
+      if (entry && entry.mathsCompleted) {
+        try { playChime('start'); } catch (err) {}
+      }
+    }
+
     const btnMaths10 = document.getElementById('btn-maths-add-10');
     const btnMaths25 = document.getElementById('btn-maths-add-25');
     const btnMaths50 = document.getElementById('btn-maths-add-50');
     const btnMathsReset = document.getElementById('btn-maths-reset');
 
-    if (btnMaths10) btnMaths10.addEventListener('click', () => { state.mathsQuestionsDone = (state.mathsQuestionsDone || 0) + 10; saveState(); renderSubjectCards(); updateSidebarStatus(); });
-    if (btnMaths25) btnMaths25.addEventListener('click', () => { state.mathsQuestionsDone = (state.mathsQuestionsDone || 0) + 25; saveState(); renderSubjectCards(); updateSidebarStatus(); });
-    if (btnMaths50) btnMaths50.addEventListener('click', () => { state.mathsQuestionsDone = (state.mathsQuestionsDone || 0) + 50; saveState(); renderSubjectCards(); updateSidebarStatus(); });
-    if (btnMathsReset) btnMathsReset.addEventListener('click', () => { if (confirm('Reset maths questions today?')) { state.mathsQuestionsDone = 0; saveState(); renderSubjectCards(); updateSidebarStatus(); } });
+    if (btnMaths10) btnMaths10.addEventListener('click', () => { updateTodayMathsDone((state.mathsQuestionsDone || 0) + 10); });
+    if (btnMaths25) btnMaths25.addEventListener('click', () => { updateTodayMathsDone((state.mathsQuestionsDone || 0) + 25); });
+    if (btnMaths50) btnMaths50.addEventListener('click', () => { updateTodayMathsDone((state.mathsQuestionsDone || 0) + 50); });
+    if (btnMathsReset) btnMathsReset.addEventListener('click', () => { if (confirm('Reset maths questions today?')) { updateTodayMathsDone(0); } });
 
     // --- Subject Form Edit Time Submit ---
     const formEditSubject = document.getElementById('form-edit-subject-time');
@@ -10258,7 +11258,9 @@ ${item.formula}
           const h = parseInt(document.getElementById('edit-subject-hrs').value, 10) || 0;
           const m = parseInt(document.getElementById('edit-subject-mins').value, 10) || 0;
           const sec = parseInt(document.getElementById('edit-subject-secs').value, 10) || 0;
-          s.seconds = (h * 3600) + (m * 60) + sec;
+          s.totalSubjectTime = (h * 3600) + (m * 60) + sec;
+          s.currentSessionTime = 0;
+          s.seconds = s.totalSubjectTime;
           if (s.isRunning) {
             const now = Date.now();
             s.lastStartTime = now;
@@ -10280,6 +11282,8 @@ ${item.formula}
           state.subjects.push({
             id: 'custom_' + Date.now(),
             name: name.trim(),
+            totalSubjectTime: 0,
+            currentSessionTime: 0,
             seconds: 0,
             isRunning: false,
             isDefault: false
@@ -10295,6 +11299,8 @@ ${item.formula}
       resetSubjectsAll.addEventListener('click', () => {
         if (confirm("Reset ALL subject stopwatches to 0?")) {
           state.subjects.forEach(s => {
+            s.totalSubjectTime = 0;
+            s.currentSessionTime = 0;
             s.seconds = 0;
             s.isRunning = false;
             s.lastStartTime = null;
@@ -10489,6 +11495,7 @@ ${item.formula}
       btnResetStreaks.addEventListener('click', () => {
         if (confirm('Reset current consecutive streak counter?')) {
           state.consecutiveStreak = 0;
+          updateStreakMilestoneVisuals(0);
           saveState();
           renderCalendar();
           renderMilestones();
@@ -10590,6 +11597,8 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       btnSecResetSubjects.addEventListener('click', () => {
         if (confirm("Reset today's subject timers?")) {
           state.subjects.forEach(s => {
+            s.totalSubjectTime = 0;
+            s.currentSessionTime = 0;
             s.seconds = 0;
             s.isRunning = false;
             s.lastStartTime = null;
@@ -12082,6 +13091,20 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
       console.error('Error in updateUI:', err);
     }
     try {
+      rehydrateVaultAttachments();
+    } catch (err) {
+      console.error('Error in rehydrateVaultAttachments:', err);
+    }
+    try {
+      updateStreakMilestoneVisuals(state.consecutiveStreak || 0);
+      if (typeof window !== 'undefined') {
+        window.updateStreakMilestoneVisuals = updateStreakMilestoneVisuals;
+        window.isStreakMilestone = isStreakMilestone;
+      }
+    } catch (err) {
+      console.error('Error initializing streak milestone visuals:', err);
+    }
+    try {
       startTickEngine();
     } catch (err) {
       console.error('Error in startTickEngine:', err);
@@ -12269,7 +13292,22 @@ Section 4 - English Comprehension: 24 attempted, 21 correct, 3 wrong. Score: 40.
         dateTargets: state.dateTargets || {},
         energyRatingToday: state.energyRatingToday,
         energyHistory: state.energyHistory || [],
-        vaultItems: state.vaultItems || [],
+        vaultItems: (state.vaultItems || []).map(v => {
+          if (v && v.attachment && v.attachment.dataUrl && v.attachment.dataUrl.length > 25000) {
+            return {
+              ...v,
+              attachment: {
+                id: v.attachment.id,
+                name: v.attachment.name,
+                type: v.attachment.type,
+                mimeType: v.attachment.mimeType,
+                size: v.attachment.size,
+                hasStoredBinary: true
+              }
+            };
+          }
+          return v;
+        }),
         spacedRepChapters: state.spacedRepChapters || [],
         consecutiveStreak: state.consecutiveStreak || 0,
         claimedMilestones: state.claimedMilestones || [],

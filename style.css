@@ -76,9 +76,8 @@
    ========================================================================== */
 
 body,
-.grand-line-ocean,
-.ocean-breeze-bg,
-.sky-island-bg {
+.app-container-bg,
+.app-light-bg {
   background-color: #F4F7F4 !important;
   background-image:
     radial-gradient(ellipse at 15% 0%, rgba(45, 106, 79, 0.08) 0%, transparent 60%),
@@ -105,7 +104,6 @@ body,
    2. CARD ARCHITECTURE & SOFT ROUNDED CONTAINERS
    ========================================================================== */
 
-.pirate-card,
 .glass-card,
 .dashboard-card,
 .todo-day-card,
@@ -125,7 +123,6 @@ body,
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.pirate-card:hover,
 .glass-card:hover,
 .dashboard-card:hover,
 .todo-day-card:hover,
@@ -235,7 +232,6 @@ circle.stroke-slate-800\/90 {
    ========================================================================== */
 
 h1, h2, h3, h4, h5, h6,
-.font-manga,
 .font-display,
 .text-navy-deep {
   font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif !important;
@@ -294,7 +290,7 @@ h1, h2, h3, h4, h5, h6,
 
 button,
 .btn-pill,
-.btn-sunny,
+.btn-primary,
 #btn-edit-exam-date,
 #btn-rotate-quote,
 #btn-goto-stopwatches,
@@ -307,7 +303,6 @@ button,
 }
 
 /* Primary Action Button (Forest Pine Gradient) */
-.btn-sunny,
 button.btn-primary {
   background: var(--forest-gradient) !important;
   color: #FFFFFF !important;
@@ -317,21 +312,20 @@ button.btn-primary {
   box-shadow: 0 4px 12px rgba(45, 106, 79, 0.25) !important;
 }
 
-.btn-sunny:hover,
 button.btn-primary:hover {
   background: var(--forest-gradient-hover) !important;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(45, 106, 79, 0.35) !important;
 }
 
-.btn-sunny:active,
 button.btn-primary:active {
   transform: translateY(0);
 }
 
 /* Coral Action Button (Urgent, Alert, Break, Reset) */
 .btn-crimson,
-.btn-luffy {
+.btn-coral,
+.btn-accent {
   background: var(--coral-gradient) !important;
   color: #FFFFFF !important;
   font-weight: 700 !important;
@@ -341,7 +335,8 @@ button.btn-primary:active {
 }
 
 .btn-crimson:hover,
-.btn-luffy:hover {
+.btn-coral:hover,
+.btn-accent:hover {
   background: var(--coral-gradient-hover) !important;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(255, 107, 74, 0.35) !important;
@@ -628,6 +623,95 @@ progress,
 #top-streak-badge span:first-child {
   display: inline-block;
   animation: flamePulse 2.4s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   STREAK MILESTONE GAMIFICATION PULSE & GLOW (Every 7 Days / Major Milestones)
+   ========================================================================== */
+
+/* Subtle glowing pulse for the top header streak badge */
+@keyframes streakMilestoneBadgePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45), 0 1px 3px rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.45);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px rgba(245, 158, 11, 0.5), 0 0 24px 6px rgba(251, 191, 36, 0.3);
+    border-color: rgba(245, 158, 11, 0.95);
+    transform: scale(1.035);
+  }
+}
+
+/* Subtle glow & pulse animation for calendar streak counter number */
+@keyframes streakMilestoneNumberPulse {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(52, 211, 153, 0.45);
+    filter: drop-shadow(0 0 2px rgba(52, 211, 153, 0.4));
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 0 14px rgba(52, 211, 153, 0.95), 0 0 22px rgba(16, 185, 129, 0.7);
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.75));
+    transform: scale(1.18);
+  }
+}
+
+/* Calendar streak badge container glow */
+@keyframes streakMilestoneBadgeContainerGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35);
+    border-color: rgba(16, 185, 129, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 14px 3px rgba(16, 185, 129, 0.5), 0 0 22px 5px rgba(52, 211, 153, 0.25);
+    border-color: rgba(16, 185, 129, 0.85);
+  }
+}
+
+/* Top streak badge milestone styling */
+#top-streak-badge.streak-milestone-glow,
+#top-streak-badge.milestone-glow,
+#top-streak-badge.streak-milestone-pulse,
+#top-streak-badge.milestone-pulse,
+#top-streak-badge.milestone-active,
+#top-streak-badge[data-milestone="true"],
+#top-streak-badge[data-milestone-active="true"] {
+  animation: streakMilestoneBadgePulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  background-color: #FEF3C7 !important;
+  border-color: #F59E0B !important;
+  color: #92400E !important;
+}
+
+#top-streak-badge.streak-milestone-glow .flame-icon,
+#top-streak-badge[data-milestone="true"] .flame-icon {
+  animation: flamePulse 1.2s ease-in-out infinite !important;
+}
+
+/* Calendar streak counter number milestone styling */
+#cal-streak-counter-number.streak-milestone-glow,
+#cal-streak-counter-number.milestone-glow,
+#cal-streak-counter-number.streak-milestone-pulse,
+#cal-streak-counter-number.milestone-pulse,
+#cal-streak-counter-number.milestone-active,
+#cal-streak-counter-number[data-milestone="true"],
+#cal-streak-counter-number[data-milestone-active="true"],
+.streak-milestone-active #cal-streak-counter-number {
+  display: inline-block;
+  animation: streakMilestoneNumberPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  color: #10B981 !important;
+  font-weight: 800;
+}
+
+/* Calendar streak container wrapper milestone styling */
+#cal-streak-counter-badge.streak-milestone-glow,
+#cal-streak-counter-badge.milestone-glow,
+#cal-streak-counter-badge.streak-milestone-pulse,
+#cal-streak-counter-badge[data-milestone="true"],
+#cal-streak-counter-badge[data-milestone-active="true"],
+.cal-milestone-pill-glow {
+  animation: streakMilestoneBadgeContainerGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  border-color: #10B981 !important;
 }
 
 /* Break pulse alert */
@@ -1496,5 +1580,179 @@ div.text-slate-400,
 label.text-slate-400 {
   color: #4B5563 !important;
 }
+
+/* ==========================================================================
+   PDF-to-Vocab Smart Learning & Spaced Repetition Engine
+   High-Contrast Cards, Ivory Typography & Gamified Micro-Interactions
+   ========================================================================== */
+
+#section-pdf-vocab {
+  color: #FAFAF9;
+}
+
+#section-pdf-vocab p,
+#section-pdf-vocab span,
+#section-pdf-vocab div {
+  color-scheme: dark;
+}
+
+#section-pdf-vocab .text-white {
+  color: #FFFFFF !important;
+}
+
+#section-pdf-vocab .text-slate-100 {
+  color: #F8FAFC !important;
+}
+
+#section-pdf-vocab .text-slate-200 {
+  color: #E2E8F0 !important;
+}
+
+#section-pdf-vocab .text-slate-300 {
+  color: #CBD5E1 !important;
+}
+
+#section-pdf-vocab .text-slate-400 {
+  color: #94A3B8 !important;
+}
+
+#section-pdf-vocab .text-slate-500 {
+  color: #64748B !important;
+}
+
+/* Sub-Tab Navigation for Vocab Engine */
+.vocab-subtab-btn {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  color: #94A3B8;
+}
+
+.vocab-subtab-btn:hover {
+  background: rgba(30, 41, 59, 0.8);
+  color: #F8FAFC;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.vocab-subtab-btn.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(16, 185, 129, 0.2) 100%);
+  border-color: rgba(99, 102, 241, 0.8);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+}
+
+/* Category Badges with Vivid Semantic Glow */
+.badge-cat-synonyms {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.badge-cat-antonyms {
+  background: rgba(249, 115, 22, 0.15);
+  color: #FB923C;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.badge-cat-ows {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818CF8;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.badge-cat-idioms {
+  background: rgba(168, 85, 247, 0.15);
+  color: #C084FC;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.badge-cat-spelling {
+  background: rgba(234, 179, 8, 0.15);
+  color: #FACC15;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+/* Vocab Word Item Card */
+.vocab-word-card {
+  background: #0D1527;
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.vocab-word-card:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 0 12px rgba(99, 102, 241, 0.1);
+  transform: translateY(-1px);
+}
+
+.vocab-word-card.mastered {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(180deg, #0D1527 0%, rgba(6, 78, 59, 0.15) 100%);
+}
+
+.vocab-word-card.in-weak-list {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: linear-gradient(180deg, #0D1527 0%, rgba(127, 29, 29, 0.15) 100%);
+}
+
+/* Dynamic Quiz Option Card Styles */
+.quiz-opt-btn {
+  background: #0F172A;
+  border: 2px solid rgba(51, 65, 85, 0.7);
+  border-radius: 1rem;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  width: 100%;
+}
+
+.quiz-opt-btn:hover:not(:disabled) {
+  border-color: #6366F1;
+  background: #1E293B;
+  transform: scale-[1.01];
+}
+
+.quiz-opt-btn.correct-choice {
+  background: rgba(6, 78, 59, 0.4) !important;
+  border-color: #10B981 !important;
+  color: #34D399 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3) !important;
+}
+
+.quiz-opt-btn.wrong-choice {
+  background: rgba(127, 29, 29, 0.4) !important;
+  border-color: #EF4444 !important;
+  color: #F87171 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Weak word streak graduation indicators */
+.streak-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(71, 85, 105, 0.6);
+  transition: all 0.3s ease;
+}
+
+.streak-dot.active {
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  transform: scale(1.2);
+}
+
+/* Mega Revision Day Golden Shimmer */
+@keyframes goldenShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.mega-revision-active {
+  background: linear-gradient(90deg, #1E1B4B 0%, #451A03 50%, #1E1B4B 100%);
+  background-size: 200% 100%;
+  animation: goldenShimmer 8s infinite linear;
+}
+
 
 
